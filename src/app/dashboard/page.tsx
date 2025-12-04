@@ -9,8 +9,9 @@ import {
   getUserChecks,
   createCheck,
   deleteCheck,
-  calculateRealStatus,
+  updateCheck,
 } from "@/lib/checks";
+import { calculateRealStatus } from "@/lib/checks";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const [checks, setChecks] = useState<Check[]>([]);
   const [loadingChecks, setLoadingChecks] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingCheck, setEditingCheck] = useState<Check | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -57,6 +59,21 @@ export default function DashboardPage() {
       setShowCreateModal(false);
     } catch (error) {
       console.error("Failed to create check:", error);
+    }
+  };
+
+  const handleEditCheck = async (
+    name: string,
+    schedule: string,
+    gracePeriod: number
+  ) => {
+    if (!editingCheck) return;
+    try {
+      await updateCheck(editingCheck.id, { name, schedule, gracePeriod });
+      await loadChecks();
+      setEditingCheck(null);
+    } catch (error) {
+      console.error("Failed to update check:", error);
     }
   };
 
@@ -191,6 +208,12 @@ export default function DashboardPage() {
                       Copy URL
                     </button>
                     <button
+                      onClick={() => setEditingCheck(check)}
+                      className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1"
+                    >
+                      Edit
+                    </button>
+                    <button
                       onClick={() => handleDeleteCheck(check.id)}
                       className="text-red-400 hover:text-red-300 text-sm px-3 py-1"
                     >
@@ -216,35 +239,55 @@ export default function DashboardPage() {
       </main>
 
       {showCreateModal && (
-        <CreateCheckModal
+        <CheckModal
           onClose={() => setShowCreateModal(false)}
-          onCreate={handleCreateCheck}
+          onSave={handleCreateCheck}
+          title="Create New Check"
+        />
+      )}
+
+      {editingCheck && (
+        <CheckModal
+          onClose={() => setEditingCheck(null)}
+          onSave={handleEditCheck}
+          title="Edit Check"
+          initialName={editingCheck.name}
+          initialSchedule={editingCheck.schedule}
+          initialGracePeriod={editingCheck.gracePeriod}
         />
       )}
     </div>
   );
 }
 
-function CreateCheckModal({
+function CheckModal({
   onClose,
-  onCreate,
+  onSave,
+  title,
+  initialName = "",
+  initialSchedule = "every 5 minutes",
+  initialGracePeriod = 5,
 }: {
   onClose: () => void;
-  onCreate: (name: string, schedule: string, gracePeriod: number) => void;
+  onSave: (name: string, schedule: string, gracePeriod: number) => void;
+  title: string;
+  initialName?: string;
+  initialSchedule?: string;
+  initialGracePeriod?: number;
 }) {
-  const [name, setName] = useState("");
-  const [schedule, setSchedule] = useState("every 5 minutes");
-  const [gracePeriod, setGracePeriod] = useState(5);
+  const [name, setName] = useState(initialName);
+  const [schedule, setSchedule] = useState(initialSchedule);
+  const [gracePeriod, setGracePeriod] = useState(initialGracePeriod);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreate(name, schedule, gracePeriod);
+    onSave(name, schedule, gracePeriod);
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-white mb-4">Create New Check</h2>
+        <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -308,7 +351,7 @@ function CreateCheckModal({
               type="submit"
               className="flex-1 bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-blue-700 transition-colors"
             >
-              Create
+              Save
             </button>
           </div>
         </form>
