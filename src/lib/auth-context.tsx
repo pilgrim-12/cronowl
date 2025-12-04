@@ -14,8 +14,6 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   GoogleAuthProvider,
   GithubAuthProvider,
   sendPasswordResetEmail,
@@ -53,15 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for redirect result on page load
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result?.user) {
-          await saveUserToFirestore(result.user);
-        }
-      })
-      .catch(console.error);
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         await saveUserToFirestore(user);
@@ -86,21 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Use redirect on production, popup on localhost
-    if (window.location.hostname === "localhost") {
-      await signInWithPopup(auth, provider);
-    } else {
-      await signInWithRedirect(auth, provider);
-    }
+    await signInWithPopup(auth, provider);
   };
 
   const signInWithGithub = async () => {
     const provider = new GithubAuthProvider();
-    if (window.location.hostname === "localhost") {
-      await signInWithPopup(auth, provider);
-    } else {
-      await signInWithRedirect(auth, provider);
-    }
+    await signInWithPopup(auth, provider);
   };
 
   const resetPassword = async (email: string) => {
