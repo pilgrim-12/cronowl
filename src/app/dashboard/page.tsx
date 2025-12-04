@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
-import { Check, getUserChecks, createCheck, deleteCheck } from "@/lib/checks";
+import {
+  Check,
+  getUserChecks,
+  createCheck,
+  deleteCheck,
+  calculateRealStatus,
+} from "@/lib/checks";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -64,8 +70,9 @@ export default function DashboardPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (check: Check) => {
+    const realStatus = calculateRealStatus(check);
+    switch (realStatus) {
       case "up":
         return "bg-green-500";
       case "down":
@@ -166,7 +173,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-3 h-3 rounded-full ${getStatusColor(
-                        check.status
+                        check
                       )}`}
                     />
                     <div>

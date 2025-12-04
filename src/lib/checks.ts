@@ -1,35 +1,29 @@
 import {
   collection,
-  doc,
   addDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
   query,
   where,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
   orderBy,
-  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { SCHEDULE_MINUTES } from "./constants";
 
 export interface Check {
   id: string;
   userId: string;
   name: string;
   slug: string;
-  schedule: string; // e.g., "every 5 minutes", "every hour", "every day"
-  gracePeriod: number; // minutes
+  schedule: string;
+  gracePeriod: number;
   status: "up" | "down" | "new";
   lastPing: Timestamp | null;
   createdAt: Timestamp;
 }
-
-export type CreateCheckInput = {
-  name: string;
-  schedule: string;
-  gracePeriod: number;
-};
 
 function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -40,59 +34,84 @@ function generateSlug(): string {
   return slug;
 }
 
+export function calculateRealStatus(check: Check): "up" | "down" | "new" {
+  if (check.status === "new" || !check.lastPing) {
+    return "new";
+  }
+
+  const now = new Date();
+  const lastPing = check.lastPing.toDate();
+  const scheduleMinutes = SCHEDULE_MINUTES[check.schedule] || 60;
+  const gracePeriod = check.gracePeriod || 5;
+  const expectedInterval = (scheduleMinutes + gracePeriod) * 60 * 1000;
+
+  const timeSinceLastPing = now.getTime() - lastPing.getTime();
+
+  if (timeSinceLastPing > expectedInterval) {
+    return "down";
+  }
+
+  return "up";
+}
+
 export async function createCheck(
   userId: string,
-  input: CreateCheckInput
+  data: { name: string; schedule: string; gracePeriod: number }
 ): Promise<string> {
-  const slug = generateSlug();
-  const docRef = await addDoc(collection(db, "checks"), {
+  const checkData = {
     userId,
-    name: input.name,
-    slug,
-    schedule: input.schedule,
-    gracePeriod: input.gracePeriod,
+    name: data.name,
+    slug: generateSlug(),
+    schedule: data.schedule,
+    gracePeriod: data.gracePeriod,
     status: "new",
     lastPing: null,
-    createdAt: serverTimestamp(),
-  });
+    createdAt: Timestamp.now(),
+  };
+
+  const docRef = await addDoc(collection(db, "checks"), checkData);
   return docRef.id;
 }
 
 export async function getUserChecks(userId: string): Promise<Check[]> {
-  const q = query(
+  const checksQuery = query(
     collection(db, "checks"),
     where("userId", "==", userId),
     orderBy("createdAt", "desc")
   );
-  const snapshot = await getDocs(q);
+
+  const snapshot = await getDocs(checksQuery);
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   })) as Check[];
 }
 
-export async function updateCheck(
-  checkId: string,
-  data: Partial<CreateCheckInput>
-): Promise<void> {
-  await updateDoc(doc(db, "checks", checkId), data);
-}
-
 export async function deleteCheck(checkId: string): Promise<void> {
   await deleteDoc(doc(db, "checks", checkId));
 }
 
+export async function updateCheck(
+  checkId: string,
+  data: Partial<Check>
+): Promise<void> {
+  await updateDoc(doc(db, "checks", checkId), data);
+}
+
 export async function recordPing(slug: string): Promise<boolean> {
-  const q = query(collection(db, "checks"), where("slug", "==", slug));
-  const snapshot = await getDocs(q);
+  const checksQuery = query(
+    collection(db, "checks"),
+    where("slug", "==", slug)
+  );
+  const snapshot = await getDocs(checksQuery);
 
   if (snapshot.empty) {
     return false;
   }
 
   const checkDoc = snapshot.docs[0];
-  await updateDoc(checkDoc.ref, {
-    lastPing: serverTimestamp(),
+  await updateDoc(doc(db, "checks", checkDoc.id), {
+    lastPing: Timestamp.now(),
     status: "up",
   });
 
