@@ -22,6 +22,7 @@ export default function DashboardPage() {
     if (user) {
       loadChecks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadChecks = async () => {

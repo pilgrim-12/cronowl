@@ -18,7 +18,8 @@ import {
   GithubAuthProvider,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { auth } from "./firebase";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -33,12 +34,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+async function saveUserToFirestore(user: User) {
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      email: user.email,
+      createdAt: new Date(),
+    });
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await saveUserToFirestore(user);
+      }
       setUser(user);
       setLoading(false);
     });
