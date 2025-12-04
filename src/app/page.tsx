@@ -1,65 +1,264 @@
-import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-gray-950">
+      {/* Header */}
+      <header className="border-b border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-white">🦉 CronOwl</h1>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-gray-400 hover:text-white text-sm"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
             >
-              Learning
-            </a>{" "}
-            center.
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-6xl mx-auto px-4 py-24 text-center">
+        <div className="text-6xl mb-6">🦉</div>
+        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+          Know when your cron jobs
+          <br />
+          <span className="text-blue-500">stop working</span>
+        </h2>
+        <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+          Simple monitoring for your scheduled tasks. Get alerted before your
+          users notice something is broken.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            href="/signup"
+            className="bg-blue-600 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Start Monitoring — Free
+          </Link>
+          <a
+            href="#how-it-works"
+            className="border border-gray-700 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-gray-800 transition-colors"
+          >
+            How it works
+          </a>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section id="how-it-works" className="bg-gray-900 py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <h3 className="text-3xl font-bold text-white text-center mb-12">
+            Dead simple setup
+          </h3>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="text-4xl mb-4">1️⃣</div>
+              <h4 className="text-xl font-semibold text-white mb-2">
+                Create a check
+              </h4>
+              <p className="text-gray-400">
+                Set up a check with your expected schedule (every hour, daily,
+                etc.)
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-4">2️⃣</div>
+              <h4 className="text-xl font-semibold text-white mb-2">
+                Add one line
+              </h4>
+              <p className="text-gray-400">
+                Add a curl request to the end of your cron script
+              </p>
+              <code className="text-green-400 text-sm mt-2 block">
+                curl https://cronowl.vercel.app/api/ping/abc123
+              </code>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-4">3️⃣</div>
+              <h4 className="text-xl font-semibold text-white mb-2">
+                Get alerted
+              </h4>
+              <p className="text-gray-400">
+                If your job stops pinging, we&apos;ll email you immediately
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use cases */}
+      <section className="py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <h3 className="text-3xl font-bold text-white text-center mb-12">
+            Monitor what matters
+          </h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">💾</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Database backups
+              </h4>
+              <p className="text-gray-400 text-sm">
+                Know if your backup script fails
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">📧</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Email digests
+              </h4>
+              <p className="text-gray-400 text-sm">
+                Ensure newsletters go out on time
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">🔄</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Data sync
+              </h4>
+              <p className="text-gray-400 text-sm">Monitor API integrations</p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">🧹</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Cleanup jobs
+              </h4>
+              <p className="text-gray-400 text-sm">
+                Verify temp files get deleted
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">📊</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Report generation
+              </h4>
+              <p className="text-gray-400 text-sm">Track scheduled reports</p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="text-3xl mb-3">🔔</div>
+              <h4 className="text-lg font-semibold text-white mb-1">
+                Any scheduled task
+              </h4>
+              <p className="text-gray-400 text-sm">
+                If it runs on a schedule, we can monitor it
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="bg-gray-900 py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <h3 className="text-3xl font-bold text-white text-center mb-4">
+            Simple pricing
+          </h3>
+          <p className="text-gray-400 text-center mb-12">
+            Start free, upgrade when you need more
           </p>
+          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            {/* Free */}
+            <div className="bg-gray-800 rounded-lg p-8">
+              <h4 className="text-xl font-semibold text-white mb-2">Free</h4>
+              <div className="text-4xl font-bold text-white mb-4">$0</div>
+              <ul className="space-y-3 mb-8">
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> 3 checks
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Email alerts
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> 1 minute minimum
+                  interval
+                </li>
+              </ul>
+              <Link
+                href="/signup"
+                className="block text-center border border-gray-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-gray-700 transition-colors"
+              >
+                Get Started
+              </Link>
+            </div>
+            {/* Pro */}
+            <div className="bg-blue-600 rounded-lg p-8">
+              <h4 className="text-xl font-semibold text-white mb-2">Pro</h4>
+              <div className="text-4xl font-bold text-white mb-4">
+                $5<span className="text-lg font-normal">/month</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="text-white flex items-center gap-2">
+                  <span>✓</span> Unlimited checks
+                </li>
+                <li className="text-white flex items-center gap-2">
+                  <span>✓</span> Email alerts
+                </li>
+                <li className="text-white flex items-center gap-2">
+                  <span>✓</span> Slack integration (soon)
+                </li>
+                <li className="text-white flex items-center gap-2">
+                  <span>✓</span> Ping history
+                </li>
+              </ul>
+              <Link
+                href="/signup"
+                className="block text-center bg-white text-blue-600 rounded-lg px-6 py-3 font-medium hover:bg-gray-100 transition-colors"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </section>
+
+      {/* CTA */}
+      <section className="py-20">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h3 className="text-3xl font-bold text-white mb-4">
+            Stop losing sleep over cron jobs
+          </h3>
+          <p className="text-gray-400 mb-8">
+            Join developers who trust CronOwl to watch their scheduled tasks
+          </p>
+          <Link
+            href="/signup"
+            className="inline-block bg-blue-600 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-blue-700 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Start Monitoring — It&apos;s Free
+          </Link>
         </div>
-      </main>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-gray-800 py-8">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-gray-400 text-sm">
+            © 2025 CronOwl. Built with ☕ by indie developers.
+          </div>
+          <div className="flex gap-6 text-sm">
+            <a href="#" className="text-gray-400 hover:text-white">
+              Terms
+            </a>
+            <a href="#" className="text-gray-400 hover:text-white">
+              Privacy
+            </a>
+            <a
+              href="mailto:support@cronowl.com"
+              className="text-gray-400 hover:text-white"
+            >
+              Contact
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
