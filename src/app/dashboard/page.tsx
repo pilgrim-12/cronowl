@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { Check, getUserChecks, createCheck, deleteCheck } from "@/lib/checks";
 
@@ -100,7 +101,22 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white">🦉 CronOwl</h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm">{user.email}</span>
+            <div className="flex items-center gap-2">
+              {user.photoURL ? (
+                <Image
+                  src={user.photoURL}
+                  alt="Avatar"
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm">
+                  {user.email?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <span className="text-gray-400 text-sm">{user.email}</span>
+            </div>
             <button
               onClick={() => signOut()}
               className="text-gray-400 hover:text-white text-sm"
