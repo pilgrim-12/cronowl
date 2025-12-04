@@ -1,74 +1,117 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   collection,
+  query,
+  where,
   getDocs,
   updateDoc,
   doc,
   getDoc,
+  addDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendDownAlert } from "@/lib/email";
+import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 
-export async function GET(request: Request) {
-  // Verify Vercel cron or manual secret
-  const authHeader = request.headers.get("authorization");
-  const isVercelCron = request.headers.get("x-vercel-cron") === "true";
+async function checkUserChecks(userId: string, currentCheckId: string) {
+  const checksQuery = query(
+    collection(db, "checks"),
+    where("userId", "==", userId)
+  );
+  const checksSnapshot = await getDocs(checksQuery);
+  const now = new Date();
 
-  if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userDoc = await getDoc(doc(db, "users", userId));
+  const userEmail = userDoc.exists() ? userDoc.data().email : null;
+
+  for (const checkDoc of checksSnapshot.docs) {
+    if (checkDoc.id === currentCheckId) continue;
+
+    const check = checkDoc.data();
+    if (check.status === "new" || !check.lastPing) continue;
+
+    const lastPing = check.lastPing.toDate();
+    const scheduleMinutes = SCHEDULE_MINUTES[check.schedule] || 60;
+    const gracePeriod = check.gracePeriod || 5;
+    const expectedInterval = (scheduleMinutes + gracePeriod) * 60 * 1000;
+
+    const timeSinceLastPing = now.getTime() - lastPing.getTime();
+
+    if (timeSinceLastPing > expectedInterval && check.status !== "down") {
+      await updateDoc(doc(db, "checks", checkDoc.id), { status: "down" });
+      if (userEmail) {
+        await sendDownAlert(userEmail, check.name);
+      }
     }
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
 
   try {
-    const checksSnapshot = await getDocs(collection(db, "checks"));
-    const now = new Date();
-    let checkedCount = 0;
-    let downCount = 0;
+    const checksQuery = query(
+      collection(db, "checks"),
+      where("slug", "==", slug)
+    );
+    const checksSnapshot = await getDocs(checksQuery);
 
-    for (const checkDoc of checksSnapshot.docs) {
-      const check = checkDoc.data();
+    if (checksSnapshot.empty) {
+      return NextResponse.json({ error: "Check not found" }, { status: 404 });
+    }
 
-      if (check.status === "new" || !check.lastPing) {
-        continue;
-      }
+    const checkDoc = checksSnapshot.docs[0];
+    const check = checkDoc.data();
+    const wasDown = check.status === "down";
 
-      const lastPing = check.lastPing.toDate();
-      const scheduleMinutes = SCHEDULE_MINUTES[check.schedule] || 60;
-      const gracePeriod = check.gracePeriod || 5;
-      const expectedInterval = (scheduleMinutes + gracePeriod) * 60 * 1000;
+    // Update check status
+    await updateDoc(doc(db, "checks", checkDoc.id), {
+      lastPing: Timestamp.now(),
+      status: "up",
+    });
 
-      const timeSinceLastPing = now.getTime() - lastPing.getTime();
-      checkedCount++;
+    // Save ping to history
+    const ip =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+    const userAgent = request.headers.get("user-agent") || "unknown";
 
-      if (timeSinceLastPing > expectedInterval && check.status !== "down") {
-        await updateDoc(doc(db, "checks", checkDoc.id), {
-          status: "down",
-        });
+    await addDoc(collection(db, "checks", checkDoc.id, "pings"), {
+      timestamp: Timestamp.now(),
+      ip: ip.split(",")[0].trim(),
+      userAgent,
+    });
 
-        const userDoc = await getDoc(doc(db, "users", check.userId));
-        const userEmail = userDoc.exists() ? userDoc.data().email : null;
-
-        if (userEmail) {
-          await sendDownAlert(userEmail, check.name);
-        }
-
-        downCount++;
+    // Send recovery alert if was down
+    if (wasDown) {
+      const userDoc = await getDoc(doc(db, "users", check.userId));
+      const userEmail = userDoc.exists() ? userDoc.data().email : null;
+      if (userEmail) {
+        await sendRecoveryAlert(userEmail, check.name);
       }
     }
 
-    return NextResponse.json({
-      ok: true,
-      checked: checkedCount,
-      down: downCount,
-      timestamp: now.toISOString(),
-    });
+    // Check other user's checks
+    await checkUserChecks(check.userId, checkDoc.id);
+
+    return NextResponse.json({ ok: true, message: "Pong!" });
   } catch (error) {
-    console.error("Cron check error:", error);
+    console.error("Ping error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  return GET(request, { params });
 }

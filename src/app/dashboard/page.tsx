@@ -6,12 +6,14 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import {
   Check,
+  Ping,
   getUserChecks,
   createCheck,
   deleteCheck,
   updateCheck,
+  getCheckPings,
+  calculateRealStatus,
 } from "@/lib/checks";
-import { calculateRealStatus } from "@/lib/checks";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -20,6 +22,8 @@ export default function DashboardPage() {
   const [loadingChecks, setLoadingChecks] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCheck, setEditingCheck] = useState<Check | null>(null);
+  const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
+  const [pings, setPings] = useState<Record<string, Ping[]>>({});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,6 +48,26 @@ export default function DashboardPage() {
       console.error("Failed to load checks:", error);
     } finally {
       setLoadingChecks(false);
+    }
+  };
+
+  const loadPings = async (checkId: string) => {
+    try {
+      const checkPings = await getCheckPings(checkId);
+      setPings((prev) => ({ ...prev, [checkId]: checkPings }));
+    } catch (error) {
+      console.error("Failed to load pings:", error);
+    }
+  };
+
+  const toggleExpand = (checkId: string) => {
+    if (expandedCheck === checkId) {
+      setExpandedCheck(null);
+    } else {
+      setExpandedCheck(checkId);
+      if (!pings[checkId]) {
+        loadPings(checkId);
+      }
     }
   };
 
@@ -208,6 +232,12 @@ export default function DashboardPage() {
                       Copy URL
                     </button>
                     <button
+                      onClick={() => toggleExpand(check.id)}
+                      className="text-gray-400 hover:text-white text-sm px-3 py-1"
+                    >
+                      {expandedCheck === check.id ? "Hide" : "History"}
+                    </button>
+                    <button
                       onClick={() => setEditingCheck(check)}
                       className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1"
                     >
@@ -232,6 +262,38 @@ export default function DashboardPage() {
                     ? new Date(check.lastPing.toDate()).toLocaleString()
                     : "Never"}
                 </p>
+
+                {/* Ping History */}
+                {expandedCheck === check.id && (
+                  <div className="mt-4 border-t border-gray-800 pt-4">
+                    <h4 className="text-sm font-medium text-gray-300 mb-3">
+                      Recent Pings
+                    </h4>
+                    {!pings[check.id] ? (
+                      <p className="text-gray-500 text-sm">Loading...</p>
+                    ) : pings[check.id].length === 0 ? (
+                      <p className="text-gray-500 text-sm">No pings yet</p>
+                    ) : (
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {pings[check.id].map((ping) => (
+                          <div
+                            key={ping.id}
+                            className="flex items-center justify-between text-sm bg-gray-800 rounded px-3 py-2"
+                          >
+                            <span className="text-gray-300">
+                              {new Date(
+                                ping.timestamp.toDate()
+                              ).toLocaleString()}
+                            </span>
+                            <span className="text-gray-500 text-xs truncate max-w-xs">
+                              {ping.ip}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -8,6 +8,7 @@ import {
   doc,
   updateDoc,
   orderBy,
+  limit,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -23,6 +24,13 @@ export interface Check {
   status: "up" | "down" | "new";
   lastPing: Timestamp | null;
   createdAt: Timestamp;
+}
+
+export interface Ping {
+  id: string;
+  timestamp: Timestamp;
+  ip: string;
+  userAgent: string;
 }
 
 function generateSlug(): string {
@@ -98,22 +106,19 @@ export async function updateCheck(
   await updateDoc(doc(db, "checks", checkId), data);
 }
 
-export async function recordPing(slug: string): Promise<boolean> {
-  const checksQuery = query(
-    collection(db, "checks"),
-    where("slug", "==", slug)
+export async function getCheckPings(
+  checkId: string,
+  count: number = 20
+): Promise<Ping[]> {
+  const pingsQuery = query(
+    collection(db, "checks", checkId, "pings"),
+    orderBy("timestamp", "desc"),
+    limit(count)
   );
-  const snapshot = await getDocs(checksQuery);
 
-  if (snapshot.empty) {
-    return false;
-  }
-
-  const checkDoc = snapshot.docs[0];
-  await updateDoc(doc(db, "checks", checkDoc.id), {
-    lastPing: Timestamp.now(),
-    status: "up",
-  });
-
-  return true;
+  const snapshot = await getDocs(pingsQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Ping[];
 }
