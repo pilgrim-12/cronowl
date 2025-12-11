@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const [editingCheck, setEditingCheck] = useState<Check | null>(null);
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
   const [pings, setPings] = useState<Record<string, Ping[]>>({});
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -196,12 +197,42 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
-          >
-            + New Check
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex bg-gray-800 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                  viewMode === "list"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                title="List view"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-gray-700 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+                title="Grid view"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
+            >
+              + New Check
+            </button>
+          </div>
         </div>
 
         {loadingChecks ? (
@@ -224,7 +255,7 @@ export default function DashboardPage() {
               Create your first check
             </button>
           </div>
-        ) : (
+        ) : viewMode === "list" ? (
           <div className="space-y-4">
             {checks.map((check) => (
               <div key={check.id} className="bg-gray-900 rounded-lg p-4">
@@ -312,6 +343,65 @@ export default function DashboardPage() {
                     )}
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {checks.map((check) => (
+              <div
+                key={check.id}
+                className="bg-gray-900 rounded-lg p-4 flex flex-col"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={`w-4 h-4 rounded-full ${getStatusColor(check)}`}
+                  />
+                  <h3 className="text-white font-medium truncate flex-1">
+                    {check.name}
+                  </h3>
+                </div>
+
+                <p className="text-gray-400 text-sm mb-2">
+                  {check.schedule}
+                </p>
+                <p className="text-gray-500 text-xs mb-3">
+                  Grace: {check.gracePeriod}min
+                </p>
+
+                <div className="bg-gray-800 rounded p-2 mb-3">
+                  <code className="text-green-400 text-xs break-all line-clamp-2">
+                    {getPingUrl(check.slug)}
+                  </code>
+                </div>
+
+                <p className="text-gray-500 text-xs mb-4">
+                  Last ping:{" "}
+                  {check.lastPing
+                    ? new Date(check.lastPing.toDate()).toLocaleString()
+                    : "Never"}
+                </p>
+
+                <div className="mt-auto flex items-center gap-2 pt-3 border-t border-gray-800">
+                  <button
+                    onClick={() => copyToClipboard(getPingUrl(check.slug))}
+                    className="text-gray-400 hover:text-white text-xs px-2 py-1 bg-gray-800 rounded flex-1"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => setEditingCheck(check)}
+                    className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteCheck(check.id)}
+                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
