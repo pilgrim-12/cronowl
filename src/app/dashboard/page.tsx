@@ -28,10 +28,29 @@ export default function DashboardPage() {
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
   const [pings, setPings] = useState<Record<string, Ping[]>>({});
   const [statusHistory, setStatusHistory] = useState<Record<string, StatusEvent[]>>({});
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("cronowl-view-mode") as "list" | "grid") || "list";
+    }
+    return "list";
+  });
+  const [refreshInterval, setRefreshInterval] = useState(() => {
+    if (typeof window !== "undefined") {
+      return Number(localStorage.getItem("cronowl-refresh-interval")) || 30;
+    }
+    return 30;
+  });
   const [countdown, setCountdown] = useState(30);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Save preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem("cronowl-view-mode", viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem("cronowl-refresh-interval", String(refreshInterval));
+  }, [refreshInterval]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -252,18 +271,32 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            <select
-              value={refreshInterval}
-              onChange={(e) => setRefreshInterval(Number(e.target.value))}
-              className="bg-gray-800 text-gray-300 text-sm rounded-lg px-2 py-1.5 border-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              title="Auto-refresh interval"
-            >
-              <option value={10}>10s</option>
-              <option value={30}>30s</option>
-              <option value={60}>1m</option>
-              <option value={120}>2m</option>
-              <option value={300}>5m</option>
-            </select>
+            <div className="flex bg-gray-800 rounded-lg p-1 gap-0.5">
+              {[
+                { value: 5, label: "5s" },
+                { value: 10, label: "10s" },
+                { value: 15, label: "15s" },
+                { value: 30, label: "30s" },
+                { value: 60, label: "1m" },
+                { value: 120, label: "2m" },
+                { value: 300, label: "5m" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setRefreshInterval(option.value);
+                    setCountdown(option.value);
+                  }}
+                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                    refreshInterval === option.value
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-400 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
             <div className="flex bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
@@ -380,75 +413,98 @@ export default function DashboardPage() {
 
                 {/* Expanded History Section */}
                 {expandedCheck === check.id && (
-                  <div className="mt-4 border-t border-gray-800 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Status History */}
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                  <div className="mt-4 border-t border-gray-800 pt-4">
+                    {/* Status History Timeline */}
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
                         Status History
                       </h4>
                       {!statusHistory[check.id] ? (
                         <p className="text-gray-500 text-sm">Loading...</p>
                       ) : statusHistory[check.id].length === 0 ? (
-                        <p className="text-gray-500 text-sm">No status changes yet</p>
+                        <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                          <p className="text-gray-500 text-sm">No status changes recorded yet</p>
+                        </div>
                       ) : (
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {statusHistory[check.id].map((event) => (
+                        <div className="flex flex-wrap gap-2">
+                          {statusHistory[check.id].slice(0, 10).map((event) => (
                             <div
                               key={event.id}
-                              className="flex items-center gap-3 text-sm bg-gray-800 rounded px-3 py-2"
+                              className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                                event.status === "up"
+                                  ? "bg-green-500/10 border border-green-500/20"
+                                  : "bg-red-500/10 border border-red-500/20"
+                              }`}
                             >
                               <div
                                 className={`w-2 h-2 rounded-full ${
                                   event.status === "up" ? "bg-green-500" : "bg-red-500"
                                 }`}
                               />
-                              <span className="text-gray-300 flex-1">
-                                {event.status === "up" ? "Recovered" : "Went down"}
-                              </span>
-                              <span className="text-gray-500 text-xs">
-                                {new Date(event.timestamp.toDate()).toLocaleString()}
-                              </span>
+                              <div className="flex flex-col">
+                                <span className={`text-xs font-medium ${
+                                  event.status === "up" ? "text-green-400" : "text-red-400"
+                                }`}>
+                                  {event.status === "up" ? "UP" : "DOWN"}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {new Date(event.timestamp.toDate()).toLocaleDateString()}{" "}
+                                  {new Date(event.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
                               {event.duration && (
                                 <span
-                                  className={`text-xs px-1.5 py-0.5 rounded ${
+                                  className={`text-xs px-2 py-0.5 rounded-full ml-1 ${
                                     event.status === "up"
                                       ? "bg-red-500/20 text-red-400"
                                       : "bg-green-500/20 text-green-400"
                                   }`}
+                                  title={event.status === "up" ? "Downtime duration" : "Uptime duration"}
                                 >
                                   {formatDuration(event.duration)}
                                 </span>
                               )}
                             </div>
                           ))}
+                          {statusHistory[check.id].length > 10 && (
+                            <div className="flex items-center text-gray-500 text-xs px-3">
+                              +{statusHistory[check.id].length - 10} more
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
 
-                    {/* Ping History */}
+                    {/* Recent Pings */}
                     <div>
-                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
                         Recent Pings
                       </h4>
                       {!pings[check.id] ? (
                         <p className="text-gray-500 text-sm">Loading...</p>
                       ) : pings[check.id].length === 0 ? (
-                        <p className="text-gray-500 text-sm">No pings yet</p>
+                        <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                          <p className="text-gray-500 text-sm">No pings received yet</p>
+                        </div>
                       ) : (
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {pings[check.id].map((ping) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                          {pings[check.id].slice(0, 10).map((ping) => (
                             <div
                               key={ping.id}
-                              className="flex items-center justify-between text-sm bg-gray-800 rounded px-3 py-2"
+                              className="bg-gray-800 rounded-lg px-3 py-2 text-center"
                             >
-                              <span className="text-gray-300">
-                                {new Date(
-                                  ping.timestamp.toDate()
-                                ).toLocaleString()}
-                              </span>
-                              <span className="text-gray-500 text-xs truncate max-w-xs">
-                                {ping.ip}
-                              </span>
+                              <div className="text-gray-300 text-sm">
+                                {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                              <div className="text-gray-500 text-xs">
+                                {new Date(ping.timestamp.toDate()).toLocaleDateString()}
+                              </div>
                             </div>
                           ))}
                         </div>
