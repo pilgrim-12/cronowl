@@ -543,6 +543,21 @@ export default function DashboardPage() {
   );
 }
 
+const SCHEDULE_OPTIONS = [
+  { value: "every 1 minute", label: "1m", group: "minutes" },
+  { value: "every 2 minutes", label: "2m", group: "minutes" },
+  { value: "every 5 minutes", label: "5m", group: "minutes" },
+  { value: "every 10 minutes", label: "10m", group: "minutes" },
+  { value: "every 15 minutes", label: "15m", group: "minutes" },
+  { value: "every 30 minutes", label: "30m", group: "minutes" },
+  { value: "every hour", label: "1h", group: "hours" },
+  { value: "every 2 hours", label: "2h", group: "hours" },
+  { value: "every 6 hours", label: "6h", group: "hours" },
+  { value: "every 12 hours", label: "12h", group: "hours" },
+  { value: "every day", label: "1d", group: "days" },
+  { value: "every week", label: "1w", group: "days" },
+];
+
 function CheckModal({
   onClose,
   onSave,
@@ -567,9 +582,13 @@ function CheckModal({
     onSave(name, schedule, gracePeriod);
   };
 
+  const minuteOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "minutes");
+  const hourOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "hours");
+  const dayOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "days");
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md">
+      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-lg">
         <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -587,22 +606,62 @@ function CheckModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Expected Schedule
             </label>
-            <select
-              value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="every 1 minute">Every 1 minute</option>
-              <option value="every 5 minutes">Every 5 minutes</option>
-              <option value="every 15 minutes">Every 15 minutes</option>
-              <option value="every 30 minutes">Every 30 minutes</option>
-              <option value="every hour">Every hour</option>
-              <option value="every day">Every day</option>
-              <option value="every week">Every week</option>
-            </select>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-gray-500 w-12 py-1.5">Min:</span>
+                {minuteOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSchedule(option.value)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      schedule === option.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-gray-500 w-12 py-1.5">Hour:</span>
+                {hourOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSchedule(option.value)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      schedule === option.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-xs text-gray-500 w-12 py-1.5">Day:</span>
+                {dayOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSchedule(option.value)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      schedule === option.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div>
