@@ -559,6 +559,12 @@ export default function DashboardPage() {
                     Copy
                   </button>
                   <button
+                    onClick={() => toggleExpand(check.id)}
+                    className="text-gray-400 hover:text-white text-xs px-2 py-1"
+                  >
+                    {expandedCheck === check.id ? "Hide" : "History"}
+                  </button>
+                  <button
                     onClick={() => setEditingCheck(check)}
                     className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1"
                   >
@@ -571,6 +577,65 @@ export default function DashboardPage() {
                     Delete
                   </button>
                 </div>
+
+                {/* Expanded History Section for Grid View */}
+                {expandedCheck === check.id && (
+                  <div className="mt-4 border-t border-gray-800 pt-4">
+                    {/* Status History */}
+                    <div className="mb-4">
+                      <h4 className="text-xs font-medium text-gray-400 mb-2">Status History</h4>
+                      {!statusHistory[check.id] ? (
+                        <p className="text-gray-500 text-xs">Loading...</p>
+                      ) : statusHistory[check.id].length === 0 ? (
+                        <p className="text-gray-500 text-xs">No status changes yet</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {statusHistory[check.id].slice(0, 5).map((event) => (
+                            <div
+                              key={event.id}
+                              className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 ${
+                                event.status === "up"
+                                  ? "bg-green-500/10 text-green-400"
+                                  : "bg-red-500/10 text-red-400"
+                              }`}
+                            >
+                              <div
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  event.status === "up" ? "bg-green-500" : "bg-red-500"
+                                }`}
+                              />
+                              <span>{event.status === "up" ? "UP" : "DOWN"}</span>
+                              <span className="text-gray-500">
+                                {new Date(event.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recent Pings */}
+                    <div>
+                      <h4 className="text-xs font-medium text-gray-400 mb-2">Recent Pings</h4>
+                      {!pings[check.id] ? (
+                        <p className="text-gray-500 text-xs">Loading...</p>
+                      ) : pings[check.id].length === 0 ? (
+                        <p className="text-gray-500 text-xs">No pings yet</p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {pings[check.id].slice(0, 5).map((ping) => (
+                            <div
+                              key={ping.id}
+                              className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-400"
+                            >
+                              {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
