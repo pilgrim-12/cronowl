@@ -13,6 +13,7 @@ import {
 import { db } from "@/lib/firebase";
 import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
+import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 
 async function checkUserChecks(userId: string, currentCheckId: string) {
   const checksQuery = query(
@@ -87,13 +88,19 @@ export async function GET(
       userAgent,
     });
 
-    // Send recovery alert if was down
+    // Record status change and send recovery alert if was down
     if (wasDown) {
+      const lastEvent = await getLastStatusEvent(checkDoc.id);
+      await addStatusEvent(checkDoc.id, "up", lastEvent?.timestamp);
+
       const userDoc = await getDoc(doc(db, "users", check.userId));
       const userEmail = userDoc.exists() ? userDoc.data().email : null;
       if (userEmail) {
         await sendRecoveryAlert(userEmail, check.name);
       }
+    } else if (check.status === "new") {
+      // First ping - record initial "up" status
+      await addStatusEvent(checkDoc.id, "up");
     }
 
     // Check other user's checks

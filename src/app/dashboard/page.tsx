@@ -7,11 +7,13 @@ import { useAuth } from "@/lib/auth-context";
 import {
   Check,
   Ping,
+  StatusEvent,
   getUserChecks,
   createCheck,
   deleteCheck,
   updateCheck,
   getCheckPings,
+  getStatusHistory,
   calculateRealStatus,
 } from "@/lib/checks";
 
@@ -25,6 +27,7 @@ export default function DashboardPage() {
   const [editingCheck, setEditingCheck] = useState<Check | null>(null);
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
   const [pings, setPings] = useState<Record<string, Ping[]>>({});
+  const [statusHistory, setStatusHistory] = useState<Record<string, StatusEvent[]>>({});
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [countdown, setCountdown] = useState(30);
@@ -87,6 +90,15 @@ export default function DashboardPage() {
     }
   };
 
+  const loadStatusHistory = async (checkId: string) => {
+    try {
+      const history = await getStatusHistory(checkId);
+      setStatusHistory((prev) => ({ ...prev, [checkId]: history }));
+    } catch (error) {
+      console.error("Failed to load status history:", error);
+    }
+  };
+
   const toggleExpand = (checkId: string) => {
     if (expandedCheck === checkId) {
       setExpandedCheck(null);
@@ -95,7 +107,23 @@ export default function DashboardPage() {
       if (!pings[checkId]) {
         loadPings(checkId);
       }
+      if (!statusHistory[checkId]) {
+        loadStatusHistory(checkId);
+      }
     }
+  };
+
+  const formatDuration = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+    if (seconds < 86400) {
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    }
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
   };
 
   const handleCreateCheck = async (
@@ -350,35 +378,82 @@ export default function DashboardPage() {
                     : "Never"}
                 </p>
 
-                {/* Ping History */}
+                {/* Expanded History Section */}
                 {expandedCheck === check.id && (
-                  <div className="mt-4 border-t border-gray-800 pt-4">
-                    <h4 className="text-sm font-medium text-gray-300 mb-3">
-                      Recent Pings
-                    </h4>
-                    {!pings[check.id] ? (
-                      <p className="text-gray-500 text-sm">Loading...</p>
-                    ) : pings[check.id].length === 0 ? (
-                      <p className="text-gray-500 text-sm">No pings yet</p>
-                    ) : (
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {pings[check.id].map((ping) => (
-                          <div
-                            key={ping.id}
-                            className="flex items-center justify-between text-sm bg-gray-800 rounded px-3 py-2"
-                          >
-                            <span className="text-gray-300">
-                              {new Date(
-                                ping.timestamp.toDate()
-                              ).toLocaleString()}
-                            </span>
-                            <span className="text-gray-500 text-xs truncate max-w-xs">
-                              {ping.ip}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="mt-4 border-t border-gray-800 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Status History */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                        Status History
+                      </h4>
+                      {!statusHistory[check.id] ? (
+                        <p className="text-gray-500 text-sm">Loading...</p>
+                      ) : statusHistory[check.id].length === 0 ? (
+                        <p className="text-gray-500 text-sm">No status changes yet</p>
+                      ) : (
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {statusHistory[check.id].map((event) => (
+                            <div
+                              key={event.id}
+                              className="flex items-center gap-3 text-sm bg-gray-800 rounded px-3 py-2"
+                            >
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  event.status === "up" ? "bg-green-500" : "bg-red-500"
+                                }`}
+                              />
+                              <span className="text-gray-300 flex-1">
+                                {event.status === "up" ? "Recovered" : "Went down"}
+                              </span>
+                              <span className="text-gray-500 text-xs">
+                                {new Date(event.timestamp.toDate()).toLocaleString()}
+                              </span>
+                              {event.duration && (
+                                <span
+                                  className={`text-xs px-1.5 py-0.5 rounded ${
+                                    event.status === "up"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : "bg-green-500/20 text-green-400"
+                                  }`}
+                                >
+                                  {formatDuration(event.duration)}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ping History */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                        Recent Pings
+                      </h4>
+                      {!pings[check.id] ? (
+                        <p className="text-gray-500 text-sm">Loading...</p>
+                      ) : pings[check.id].length === 0 ? (
+                        <p className="text-gray-500 text-sm">No pings yet</p>
+                      ) : (
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {pings[check.id].map((ping) => (
+                            <div
+                              key={ping.id}
+                              className="flex items-center justify-between text-sm bg-gray-800 rounded px-3 py-2"
+                            >
+                              <span className="text-gray-300">
+                                {new Date(
+                                  ping.timestamp.toDate()
+                                ).toLocaleString()}
+                              </span>
+                              <span className="text-gray-500 text-xs truncate max-w-xs">
+                                {ping.ip}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

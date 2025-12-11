@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { sendDownAlert } from "@/lib/email";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
+import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { collection, getDocs, updateDoc, doc, getDoc } from "firebase/firestore";
 
 export async function GET(request: NextRequest) {
@@ -36,6 +37,10 @@ export async function GET(request: NextRequest) {
       await updateDoc(doc(db, "checks", checkDoc.id), {
         status: "down",
       });
+
+      // Record status change to down
+      const lastEvent = await getLastStatusEvent(checkDoc.id);
+      await addStatusEvent(checkDoc.id, "down", lastEvent?.timestamp);
 
       const userDoc = await getDoc(doc(db, "users", check.userId));
       if (userDoc.exists()) {

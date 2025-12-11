@@ -33,6 +33,13 @@ export interface Ping {
   userAgent: string;
 }
 
+export interface StatusEvent {
+  id: string;
+  status: "up" | "down";
+  timestamp: Timestamp;
+  duration?: number; // seconds in previous status
+}
+
 function generateSlug(): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let slug = "";
@@ -121,4 +128,64 @@ export async function getCheckPings(
     id: doc.id,
     ...doc.data(),
   })) as Ping[];
+}
+
+export async function addStatusEvent(
+  checkId: string,
+  status: "up" | "down",
+  previousEventTimestamp?: Timestamp
+): Promise<string> {
+  const now = Timestamp.now();
+  const eventData: Omit<StatusEvent, "id"> = {
+    status,
+    timestamp: now,
+  };
+
+  // Calculate duration in previous status
+  if (previousEventTimestamp) {
+    const durationMs = now.toMillis() - previousEventTimestamp.toMillis();
+    eventData.duration = Math.round(durationMs / 1000);
+  }
+
+  const docRef = await addDoc(
+    collection(db, "checks", checkId, "statusHistory"),
+    eventData
+  );
+  return docRef.id;
+}
+
+export async function getStatusHistory(
+  checkId: string,
+  count: number = 50
+): Promise<StatusEvent[]> {
+  const historyQuery = query(
+    collection(db, "checks", checkId, "statusHistory"),
+    orderBy("timestamp", "desc"),
+    limit(count)
+  );
+
+  const snapshot = await getDocs(historyQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as StatusEvent[];
+}
+
+export async function getLastStatusEvent(
+  checkId: string
+): Promise<StatusEvent | null> {
+  const historyQuery = query(
+    collection(db, "checks", checkId, "statusHistory"),
+    orderBy("timestamp", "desc"),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(historyQuery);
+  if (snapshot.empty) return null;
+
+  const doc = snapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as StatusEvent;
 }
