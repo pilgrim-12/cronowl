@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="80" fill="#1e3a5f"/>
+  <circle cx="256" cy="256" r="190" fill="#3b82f6"/>
+  <!-- Owl body -->
+  <ellipse cx="256" cy="290" rx="120" ry="135" fill="#f5f5dc"/>
+  <!-- Left eye -->
+  <circle cx="200" cy="235" r="58" fill="white"/>
+  <circle cx="200" cy="235" r="32" fill="#1e3a5f"/>
+  <circle cx="208" cy="225" r="10" fill="white"/>
+  <!-- Right eye -->
+  <circle cx="312" cy="235" r="58" fill="white"/>
+  <circle cx="312" cy="235" r="32" fill="#1e3a5f"/>
+  <circle cx="320" cy="225" r="10" fill="white"/>
+  <!-- Beak -->
+  <polygon points="256,265 235,305 277,305" fill="#f59e0b"/>
+  <!-- Ears -->
+  <polygon points="145,140 175,210 115,195" fill="#f5f5dc"/>
+  <polygon points="367,140 337,210 397,195" fill="#f5f5dc"/>
+</svg>

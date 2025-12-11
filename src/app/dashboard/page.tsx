@@ -16,6 +16,7 @@ import {
   getStatusHistory,
   calculateRealStatus,
 } from "@/lib/checks";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -660,6 +661,8 @@ export default function DashboardPage() {
           initialGracePeriod={editingCheck.gracePeriod}
         />
       )}
+
+      <InstallPrompt />
     </div>
   );
 }
