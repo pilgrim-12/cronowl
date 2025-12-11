@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
@@ -26,6 +26,9 @@ export default function DashboardPage() {
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
   const [pings, setPings] = useState<Record<string, Ping[]>>({});
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [refreshInterval, setRefreshInterval] = useState(30);
+  const [countdown, setCountdown] = useState(30);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -55,13 +58,25 @@ export default function DashboardPage() {
     if (!user) return;
 
     loadChecks();
+    setCountdown(refreshInterval);
 
-    const interval = setInterval(() => {
-      loadChecks(true);
-    }, 30000);
+    // Countdown timer (every second)
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          loadChecks(true);
+          return refreshInterval;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(interval);
-  }, [user, loadChecks]);
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current);
+      }
+    };
+  }, [user, loadChecks, refreshInterval]);
 
   const loadPings = async (checkId: string) => {
     try {
@@ -192,12 +207,35 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-2xl font-bold text-white">Your Checks</h2>
             {lastUpdated && (
-              <p className="text-gray-500 text-xs mt-1">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-gray-500 text-xs">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
+                      style={{ width: `${(countdown / refreshInterval) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-gray-500 text-xs tabular-nums">{countdown}s</span>
+                </div>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-3">
+            <select
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              className="bg-gray-800 text-gray-300 text-sm rounded-lg px-2 py-1.5 border-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+              title="Auto-refresh interval"
+            >
+              <option value={10}>10s</option>
+              <option value={30}>30s</option>
+              <option value={60}>1m</option>
+              <option value={120}>2m</option>
+              <option value={300}>5m</option>
+            </select>
             <div className="flex bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
