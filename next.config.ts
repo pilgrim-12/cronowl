@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Allow webpack config from next-pwa with Turbopack
+  turbopack: {},
 };
 
 const config = withPWA({
