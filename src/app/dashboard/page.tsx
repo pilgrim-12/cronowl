@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [checks, setChecks] = useState<Check[]>([]);
   const [loadingChecks, setLoadingChecks] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCheck, setEditingCheck] = useState<Check | null>(null);
   const [expandedCheck, setExpandedCheck] = useState<string | null>(null);
@@ -31,25 +32,35 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadChecks();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const loadChecks = async () => {
+  const loadChecks = useCallback(async (silent = false) => {
     if (!user) return;
-    setLoadingChecks(true);
+    if (!silent) {
+      setLoadingChecks(true);
+    }
     try {
       const userChecks = await getUserChecks(user.uid);
       setChecks(userChecks);
+      setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to load checks:", error);
     } finally {
-      setLoadingChecks(false);
+      if (!silent) {
+        setLoadingChecks(false);
+      }
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    loadChecks();
+
+    const interval = setInterval(() => {
+      loadChecks(true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user, loadChecks]);
 
   const loadPings = async (checkId: string) => {
     try {
@@ -177,7 +188,14 @@ export default function DashboardPage() {
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-white">Your Checks</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Your Checks</h2>
+            {lastUpdated && (
+              <p className="text-gray-500 text-xs mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
+          </div>
           <button
             onClick={() => setShowCreateModal(true)}
             className="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
