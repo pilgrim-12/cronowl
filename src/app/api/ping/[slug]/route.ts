@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
+import { sendPushNotification } from "@/lib/firebase-admin";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 
@@ -94,9 +95,30 @@ export async function GET(
       await addStatusEvent(checkDoc.id, "up", lastEvent?.timestamp);
 
       const userDoc = await getDoc(doc(db, "users", check.userId));
-      const userEmail = userDoc.exists() ? userDoc.data().email : null;
-      if (userEmail) {
-        await sendRecoveryAlert(userEmail, check.name);
+      if (userDoc.exists()) {
+        const user = userDoc.data();
+
+        // Send email recovery alert
+        if (user.email) {
+          await sendRecoveryAlert(user.email, check.name);
+        }
+
+        // Send push notification if user has push tokens
+        if (user.pushTokens && user.pushTokens.length > 0) {
+          try {
+            await sendPushNotification(user.pushTokens, {
+              title: `🟢 ${check.name} is BACK UP`,
+              body: `Your cron job "${check.name}" has recovered and is now running normally.`,
+              data: {
+                checkId: checkDoc.id,
+                checkName: check.name,
+                type: "recovery",
+              },
+            });
+          } catch (pushError) {
+            console.error("Failed to send push notification:", pushError);
+          }
+        }
       }
     } else if (check.status === "new") {
       // First ping - record initial "up" status

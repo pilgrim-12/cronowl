@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { sendDownAlert } from "@/lib/email";
+import { sendPushNotification } from "@/lib/firebase-admin";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { collection, getDocs, updateDoc, doc, getDoc } from "firebase/firestore";
@@ -45,7 +46,26 @@ export async function GET(request: NextRequest) {
       const userDoc = await getDoc(doc(db, "users", check.userId));
       if (userDoc.exists()) {
         const user = userDoc.data();
+
+        // Send email alert
         await sendDownAlert(user.email, check.name);
+
+        // Send push notification if user has push tokens
+        if (user.pushTokens && user.pushTokens.length > 0) {
+          try {
+            await sendPushNotification(user.pushTokens, {
+              title: `🔴 ${check.name} is DOWN`,
+              body: `Your cron job "${check.name}" has not reported in and is now marked as down.`,
+              data: {
+                checkId: checkDoc.id,
+                checkName: check.name,
+                type: "down",
+              },
+            });
+          } catch (pushError) {
+            console.error("Failed to send push notification:", pushError);
+          }
+        }
       }
 
       down++;
