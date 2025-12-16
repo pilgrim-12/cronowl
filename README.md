@@ -43,6 +43,7 @@ CronOwl monitors your scheduled tasks (cron jobs, backups, ETL pipelines, etc.) 
 ### Alerting
 - ✅ **Email Alerts** - Instant notification when jobs fail or recover
 - ✅ **Push Notifications** - Browser and mobile push via FCM
+- ✅ **Telegram Notifications** - Alerts via Telegram bot
 - ✅ **Recovery Alerts** - Know when services come back online
 
 ### Execution Metrics
@@ -99,11 +100,34 @@ FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY----
 # Resend (for email alerts - get key at resend.com)
 RESEND_API_KEY=re_abc123...
 
+# Telegram Bot (optional - for Telegram alerts)
+TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+TELEGRAM_WEBHOOK_SECRET=your-random-webhook-secret
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=YourBotName
+
 # Optional: Secret for cron endpoint
 CRON_SECRET=your-random-secret
 ```
 
-### 4. Run Development Server
+### 4. Telegram Bot Setup (Optional)
+
+To enable Telegram notifications:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather):
+   - Send `/newbot` and follow the prompts
+   - Copy the bot token to `TELEGRAM_BOT_TOKEN`
+
+2. Set up the webhook:
+   ```bash
+   curl "https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://your-domain.com/api/telegram/webhook&secret_token=<YOUR_WEBHOOK_SECRET>"
+   ```
+
+3. Link your account in the dashboard:
+   - Click "Link Telegram" in the header
+   - Copy the 6-character code
+   - Send it to your bot in Telegram
+
+### 5. Run Development Server
 
 ```bash
 npm run dev
@@ -298,6 +322,8 @@ Add these in Vercel dashboard → Settings → Environment Variables:
 - All Firebase Admin SDK variables
 - `RESEND_API_KEY`
 - `CRON_SECRET`
+- `TELEGRAM_BOT_TOKEN` (if using Telegram)
+- `TELEGRAM_WEBHOOK_SECRET` (if using Telegram)
 
 ### Cron Job for Down Detection
 
@@ -312,7 +338,7 @@ This checks all active jobs and sends alerts for any that are overdue.
 
 - [ ] Slow execution alerts (notify if job takes too long)
 - [ ] Public status page
-- [ ] Telegram integration
+- [x] Telegram integration
 - [ ] Slack integration
 - [ ] Webhook notifications
 - [ ] Multiple notification channels per check

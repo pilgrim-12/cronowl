@@ -13,6 +13,7 @@ import {
 import { db } from "@/lib/firebase";
 import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
 import { sendPushNotification } from "@/lib/firebase-admin";
+import { sendTelegramDownAlert, sendTelegramRecoveryAlert } from "@/lib/telegram";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 
@@ -25,7 +26,9 @@ async function checkUserChecks(userId: string, currentCheckId: string) {
   const now = new Date();
 
   const userDoc = await getDoc(doc(db, "users", userId));
-  const userEmail = userDoc.exists() ? userDoc.data().email : null;
+  const userData = userDoc.exists() ? userDoc.data() : null;
+  const userEmail = userData?.email || null;
+  const telegramChatId = userData?.telegramChatId || null;
 
   for (const checkDoc of checksSnapshot.docs) {
     if (checkDoc.id === currentCheckId) continue;
@@ -42,8 +45,19 @@ async function checkUserChecks(userId: string, currentCheckId: string) {
 
     if (timeSinceLastPing > expectedInterval && check.status !== "down") {
       await updateDoc(doc(db, "checks", checkDoc.id), { status: "down" });
+
+      // Send email alert
       if (userEmail) {
         await sendDownAlert(userEmail, check.name);
+      }
+
+      // Send Telegram alert
+      if (telegramChatId) {
+        try {
+          await sendTelegramDownAlert(telegramChatId, check.name);
+        } catch (telegramError) {
+          console.error("Failed to send Telegram down alert:", telegramError);
+        }
       }
     }
   }
@@ -142,6 +156,15 @@ export async function GET(
             });
           } catch (pushError) {
             console.error("Failed to send push notification:", pushError);
+          }
+        }
+
+        // Send Telegram recovery alert if user has linked Telegram
+        if (user.telegramChatId) {
+          try {
+            await sendTelegramRecoveryAlert(user.telegramChatId, check.name);
+          } catch (telegramError) {
+            console.error("Failed to send Telegram notification:", telegramError);
           }
         }
       }

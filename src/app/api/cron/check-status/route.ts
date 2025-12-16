@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { sendDownAlert } from "@/lib/email";
 import { sendPushNotification } from "@/lib/firebase-admin";
+import { sendTelegramDownAlert } from "@/lib/telegram";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { collection, getDocs, updateDoc, doc, getDoc } from "firebase/firestore";
@@ -64,6 +65,15 @@ export async function GET(request: NextRequest) {
             });
           } catch (pushError) {
             console.error("Failed to send push notification:", pushError);
+          }
+        }
+
+        // Send Telegram alert if user has linked Telegram
+        if (user.telegramChatId) {
+          try {
+            await sendTelegramDownAlert(user.telegramChatId, check.name);
+          } catch (telegramError) {
+            console.error("Failed to send Telegram notification:", telegramError);
           }
         }
       }

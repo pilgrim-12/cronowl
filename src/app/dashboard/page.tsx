@@ -18,6 +18,7 @@ import {
 } from "@/lib/checks";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PushToggle } from "@/components/PushToggle";
+import TelegramLink from "@/components/TelegramLink";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -223,6 +224,7 @@ export default function DashboardPage() {
           <h1 className="text-lg sm:text-xl font-bold text-white flex-shrink-0">🦉 CronOwl</h1>
           <div className="flex items-center gap-2 sm:gap-4">
             <PushToggle userId={user.uid} />
+            <TelegramLink userId={user.uid} />
             <div className="hidden sm:flex items-center gap-2">
               {user.photoURL ? (
                 <Image
