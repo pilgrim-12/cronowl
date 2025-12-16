@@ -14,7 +14,7 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
   const [linkingCode, setLinkingCode] = useState<string | null>(null);
   const [codeExpiry, setCodeExpiry] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Listen to user document for telegram status
   useEffect(() => {
@@ -24,10 +24,11 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
         setIsLinked(!!data.telegramChatId);
         setTelegramUsername(data.telegramUsername || null);
 
-        // Clear code if linked
+        // Clear code and close modal if linked
         if (data.telegramChatId) {
           setLinkingCode(null);
           setCodeExpiry(null);
+          setShowModal(false);
         }
       }
     });
@@ -63,7 +64,7 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
         const data = await response.json();
         setLinkingCode(data.code);
         setCodeExpiry(Date.now() + data.expiresIn * 1000);
-        setShowInstructions(true);
+        setShowModal(true);
       }
     } catch (error) {
       console.error("Error generating code:", error);
@@ -97,88 +98,97 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
 
   const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "CronOwlBot";
 
+  // Telegram icon
+  const TelegramIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.37-.5 1.03-.78 4.03-1.76 6.72-2.91 8.06-3.47 3.84-1.6 4.64-1.88 5.16-1.89.11 0 .37.03.54.17.14.12.18.28.2.46-.01.06.01.24 0 .38z"/>
+    </svg>
+  );
+
   if (isLinked) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 text-sm">
-          <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.37-.5 1.03-.78 4.03-1.76 6.72-2.91 8.06-3.47 3.84-1.6 4.64-1.88 5.16-1.89.11 0 .37.03.54.17.14.12.18.28.2.46-.01.06.01.24 0 .38z"/>
-          </svg>
-          <span className="text-green-400">Linked</span>
-          {telegramUsername && (
-            <span className="text-gray-400">@{telegramUsername}</span>
-          )}
-        </div>
-        <button
-          onClick={unlinkTelegram}
-          disabled={loading}
-          className="text-xs text-red-400 hover:text-red-300 disabled:opacity-50"
-        >
-          Unlink
-        </button>
-      </div>
+      <button
+        onClick={unlinkTelegram}
+        disabled={loading}
+        className="p-2 rounded-lg hover:bg-gray-800 transition-colors group relative"
+        title={`Telegram: @${telegramUsername || "linked"} (click to unlink)`}
+      >
+        <TelegramIcon />
+        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950" />
+      </button>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <button
-          onClick={generateCode}
-          disabled={loading || !!linkingCode}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#0088cc] hover:bg-[#0077b5] disabled:opacity-50 rounded text-sm font-medium transition-colors"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.66-.52.36-1 .53-1.42.52-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.37-.5 1.03-.78 4.03-1.76 6.72-2.91 8.06-3.47 3.84-1.6 4.64-1.88 5.16-1.89.11 0 .37.03.54.17.14.12.18.28.2.46-.01.06.01.24 0 .38z"/>
-          </svg>
-          {loading ? "..." : "Link Telegram"}
-        </button>
-      </div>
+    <>
+      <button
+        onClick={generateCode}
+        disabled={loading}
+        className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-[#0088cc]"
+        title="Link Telegram"
+      >
+        <TelegramIcon />
+      </button>
 
-      {linkingCode && (
-        <div className="p-3 bg-gray-800 rounded-lg border border-gray-700">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400">Your linking code:</span>
-            <span className="text-xs text-gray-500">Expires in {formatTimeRemaining()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 text-2xl font-mono font-bold text-center text-yellow-400 tracking-widest">
-              {linkingCode}
-            </code>
-            <button
-              onClick={() => navigator.clipboard.writeText(linkingCode)}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
-              title="Copy code"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-          </div>
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 rounded-xl p-6 max-w-sm w-full border border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Link Telegram</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-          {showInstructions && (
-            <div className="mt-3 pt-3 border-t border-gray-700 text-sm text-gray-400">
-              <p className="mb-2">To link your account:</p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>
-                  Open{" "}
+            {linkingCode ? (
+              <>
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-400 mb-2">Your linking code:</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <code className="text-3xl font-mono font-bold text-yellow-400 tracking-widest">
+                      {linkingCode}
+                    </code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(linkingCode)}
+                      className="p-2 text-gray-400 hover:text-white transition-colors"
+                      title="Copy code"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">Expires in {formatTimeRemaining()}</p>
+                </div>
+
+                <div className="space-y-3 text-sm text-gray-400">
+                  <p>Send this code to our bot:</p>
                   <a
                     href={`https://t.me/${botUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#0088cc] hover:underline"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-lg font-medium transition-colors"
                   >
-                    @{botUsername}
+                    <TelegramIcon />
+                    Open @{botUsername}
                   </a>
-                  {" "}in Telegram
-                </li>
-                <li>Send the code above to the bot</li>
-                <li>Wait for confirmation</li>
-              </ol>
-            </div>
-          )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <div className="animate-spin w-8 h-8 border-2 border-gray-600 border-t-blue-500 rounded-full mx-auto mb-2" />
+                <p className="text-gray-400 text-sm">Generating code...</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
