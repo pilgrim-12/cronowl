@@ -3,6 +3,7 @@ import { db } from "@/lib/firebase";
 import { sendDownAlert } from "@/lib/email";
 import { sendPushNotification } from "@/lib/firebase-admin";
 import { sendTelegramDownAlert } from "@/lib/telegram";
+import { sendWebhookDownAlert } from "@/lib/webhook";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { collection, getDocs, updateDoc, doc, getDoc } from "firebase/firestore";
@@ -75,6 +76,20 @@ export async function GET(request: NextRequest) {
           } catch (telegramError) {
             console.error("Failed to send Telegram notification:", telegramError);
           }
+        }
+      }
+
+      // Send webhook alert if configured
+      if (check.webhookUrl) {
+        try {
+          await sendWebhookDownAlert(check.webhookUrl, {
+            id: checkDoc.id,
+            name: check.name,
+            slug: check.slug,
+            status: "down",
+          });
+        } catch (webhookError) {
+          console.error("Failed to send webhook notification:", webhookError);
         }
       }
 

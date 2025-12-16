@@ -14,6 +14,7 @@ import { db } from "@/lib/firebase";
 import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
 import { sendPushNotification } from "@/lib/firebase-admin";
 import { sendTelegramDownAlert, sendTelegramRecoveryAlert } from "@/lib/telegram";
+import { sendWebhookDownAlert, sendWebhookRecoveryAlert } from "@/lib/webhook";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 
@@ -57,6 +58,20 @@ async function checkUserChecks(userId: string, currentCheckId: string) {
           await sendTelegramDownAlert(telegramChatId, check.name);
         } catch (telegramError) {
           console.error("Failed to send Telegram down alert:", telegramError);
+        }
+      }
+
+      // Send webhook alert if configured
+      if (check.webhookUrl) {
+        try {
+          await sendWebhookDownAlert(check.webhookUrl, {
+            id: checkDoc.id,
+            name: check.name,
+            slug: check.slug,
+            status: "down",
+          });
+        } catch (webhookError) {
+          console.error("Failed to send webhook down alert:", webhookError);
         }
       }
     }
@@ -166,6 +181,20 @@ export async function GET(
           } catch (telegramError) {
             console.error("Failed to send Telegram notification:", telegramError);
           }
+        }
+      }
+
+      // Send webhook recovery alert if configured
+      if (check.webhookUrl) {
+        try {
+          await sendWebhookRecoveryAlert(check.webhookUrl, {
+            id: checkDoc.id,
+            name: check.name,
+            slug: check.slug,
+            status: "up",
+          });
+        } catch (webhookError) {
+          console.error("Failed to send webhook recovery alert:", webhookError);
         }
       }
     } else if (check.status === "new") {

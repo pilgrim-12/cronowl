@@ -25,6 +25,7 @@ export interface Check {
   lastPing: Timestamp | null;
   lastDuration?: number; // last execution duration in ms
   createdAt: Timestamp;
+  webhookUrl?: string; // optional webhook URL for notifications
 }
 
 export interface Ping {
@@ -77,9 +78,9 @@ export function calculateRealStatus(check: Check): "up" | "down" | "new" {
 
 export async function createCheck(
   userId: string,
-  data: { name: string; schedule: string; gracePeriod: number }
+  data: { name: string; schedule: string; gracePeriod: number; webhookUrl?: string }
 ): Promise<string> {
-  const checkData = {
+  const checkData: Record<string, unknown> = {
     userId,
     name: data.name,
     slug: generateSlug(),
@@ -89,6 +90,10 @@ export async function createCheck(
     lastPing: null,
     createdAt: Timestamp.now(),
   };
+
+  if (data.webhookUrl) {
+    checkData.webhookUrl = data.webhookUrl;
+  }
 
   const docRef = await addDoc(collection(db, "checks"), checkData);
   return docRef.id;

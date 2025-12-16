@@ -148,11 +148,12 @@ export default function DashboardPage() {
   const handleCreateCheck = async (
     name: string,
     schedule: string,
-    gracePeriod: number
+    gracePeriod: number,
+    webhookUrl?: string
   ) => {
     if (!user) return;
     try {
-      await createCheck(user.uid, { name, schedule, gracePeriod });
+      await createCheck(user.uid, { name, schedule, gracePeriod, webhookUrl });
       await loadChecks();
       setShowCreateModal(false);
     } catch (error) {
@@ -163,11 +164,12 @@ export default function DashboardPage() {
   const handleEditCheck = async (
     name: string,
     schedule: string,
-    gracePeriod: number
+    gracePeriod: number,
+    webhookUrl?: string
   ) => {
     if (!editingCheck) return;
     try {
-      await updateCheck(editingCheck.id, { name, schedule, gracePeriod });
+      await updateCheck(editingCheck.id, { name, schedule, gracePeriod, webhookUrl: webhookUrl || undefined });
       await loadChecks();
       setEditingCheck(null);
     } catch (error) {
@@ -806,6 +808,7 @@ export default function DashboardPage() {
           initialName={editingCheck.name}
           initialSchedule={editingCheck.schedule}
           initialGracePeriod={editingCheck.gracePeriod}
+          initialWebhookUrl={editingCheck.webhookUrl}
         />
       )}
 
@@ -836,21 +839,39 @@ function CheckModal({
   initialName = "",
   initialSchedule = "every 5 minutes",
   initialGracePeriod = 5,
+  initialWebhookUrl = "",
 }: {
   onClose: () => void;
-  onSave: (name: string, schedule: string, gracePeriod: number) => void;
+  onSave: (name: string, schedule: string, gracePeriod: number, webhookUrl?: string) => void;
   title: string;
   initialName?: string;
   initialSchedule?: string;
   initialGracePeriod?: number;
+  initialWebhookUrl?: string;
 }) {
   const [name, setName] = useState(initialName);
   const [schedule, setSchedule] = useState(initialSchedule);
   const [gracePeriod, setGracePeriod] = useState(initialGracePeriod);
+  const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl || "");
+  const [webhookError, setWebhookError] = useState("");
+
+  const validateWebhookUrl = (url: string): boolean => {
+    if (!url) return true; // empty is OK
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === "https:" || parsed.protocol === "http:";
+    } catch {
+      return false;
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(name, schedule, gracePeriod);
+    if (webhookUrl && !validateWebhookUrl(webhookUrl)) {
+      setWebhookError("Please enter a valid HTTP(S) URL");
+      return;
+    }
+    onSave(name, schedule, gracePeriod, webhookUrl || undefined);
   };
 
   const minuteOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "minutes");
@@ -950,6 +971,31 @@ function CheckModal({
             <p className="text-gray-500 text-xs mt-1">
               How long to wait before marking as down
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Webhook URL (optional)
+            </label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => {
+                setWebhookUrl(e.target.value);
+                setWebhookError("");
+              }}
+              placeholder="https://example.com/webhook"
+              className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                webhookError ? "border-red-500" : "border-gray-700"
+              }`}
+            />
+            {webhookError ? (
+              <p className="text-red-400 text-xs mt-1">{webhookError}</p>
+            ) : (
+              <p className="text-gray-500 text-xs mt-1">
+                Receive POST requests when status changes (down/recovery)
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2">

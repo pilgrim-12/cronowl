@@ -44,6 +44,7 @@ CronOwl monitors your scheduled tasks (cron jobs, backups, ETL pipelines, etc.) 
 - ✅ **Email Alerts** - Instant notification when jobs fail or recover
 - ✅ **Push Notifications** - Browser and mobile push via FCM
 - ✅ **Telegram Notifications** - Alerts via Telegram bot
+- ✅ **Webhook Notifications** - POST to any URL (Slack, Discord, custom)
 - ✅ **Recovery Alerts** - Know when services come back online
 
 ### Execution Metrics
@@ -127,7 +128,34 @@ To enable Telegram notifications:
    - Copy the 6-character code
    - Send it to your bot in Telegram
 
-### 5. Run Development Server
+### 5. Webhook Notifications (Optional)
+
+Add a webhook URL when creating or editing a check. CronOwl will POST to your URL when the check goes down or recovers.
+
+**Webhook payload:**
+```json
+{
+  "event": "check.down",  // or "check.recovery"
+  "check": {
+    "id": "abc123",
+    "name": "Daily Backup",
+    "slug": "xyz789",
+    "status": "down"
+  },
+  "timestamp": "2025-01-15T10:30:00.000Z",
+  "message": "Check \"Daily Backup\" is DOWN - missed expected ping"
+}
+```
+
+**Headers sent:**
+- `Content-Type: application/json`
+- `User-Agent: CronOwl/1.0`
+- `X-CronOwl-Event: check.down` or `check.recovery`
+
+**Slack integration example:**
+Use a Slack Incoming Webhook URL directly, or use a service like Zapier/Make to transform the payload.
+
+### 6. Run Development Server
 
 ```bash
 npm run dev
@@ -339,8 +367,7 @@ This checks all active jobs and sends alerts for any that are overdue.
 - [ ] Slow execution alerts (notify if job takes too long)
 - [ ] Public status page
 - [x] Telegram integration
-- [ ] Slack integration
-- [ ] Webhook notifications
+- [x] Webhook notifications
 - [ ] Multiple notification channels per check
 - [ ] Team/organization support
 
