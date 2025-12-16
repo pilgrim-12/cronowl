@@ -10,6 +10,7 @@ import {
   orderBy,
   limit,
   Timestamp,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { SCHEDULE_MINUTES } from "./constants";
@@ -122,6 +123,12 @@ export async function updateCheck(
   data: Partial<Check>
 ): Promise<void> {
   await updateDoc(doc(db, "checks", checkId), data);
+}
+
+export async function removeWebhookUrl(checkId: string): Promise<void> {
+  await updateDoc(doc(db, "checks", checkId), {
+    webhookUrl: deleteField(),
+  });
 }
 
 export async function getCheckPings(

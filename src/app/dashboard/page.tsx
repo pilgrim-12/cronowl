@@ -12,6 +12,7 @@ import {
   createCheck,
   deleteCheck,
   updateCheck,
+  removeWebhookUrl,
   getCheckPings,
   getStatusHistory,
   calculateRealStatus,
@@ -174,6 +175,10 @@ export default function DashboardPage() {
         updateData.webhookUrl = webhookUrl;
       }
       await updateCheck(editingCheck.id, updateData);
+      // Remove webhook URL if it was cleared
+      if (!webhookUrl && editingCheck.webhookUrl) {
+        await removeWebhookUrl(editingCheck.id);
+      }
       await loadChecks();
       setEditingCheck(null);
     } catch (error) {
@@ -398,7 +403,16 @@ export default function DashboardPage() {
                       )}`}
                     />
                     <div className="min-w-0">
-                      <h3 className="text-white font-medium truncate">{check.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-white font-medium truncate">{check.name}</h3>
+                        {check.webhookUrl && (
+                          <span title="Webhook configured" className="text-gray-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-400 text-sm">
                         {check.schedule} • {check.gracePeriod}min grace
                       </p>
@@ -641,6 +655,13 @@ export default function DashboardPage() {
                   <h3 className="text-white font-medium truncate flex-1">
                     {check.name}
                   </h3>
+                  {check.webhookUrl && (
+                    <span title="Webhook configured" className="text-gray-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                    </span>
+                  )}
                 </div>
 
                 <p className="text-gray-400 text-sm mb-2">

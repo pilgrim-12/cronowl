@@ -80,9 +80,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Send webhook alert if configured
-      console.log("Check webhookUrl:", check.name, check.webhookUrl);
       if (check.webhookUrl) {
-        console.log("Sending webhook to:", check.webhookUrl);
         try {
           await sendWebhookDownAlert(check.webhookUrl, {
             id: checkDoc.id,
