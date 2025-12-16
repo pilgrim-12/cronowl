@@ -169,7 +169,11 @@ export default function DashboardPage() {
   ) => {
     if (!editingCheck) return;
     try {
-      await updateCheck(editingCheck.id, { name, schedule, gracePeriod, webhookUrl: webhookUrl || undefined });
+      const updateData: Record<string, unknown> = { name, schedule, gracePeriod };
+      if (webhookUrl) {
+        updateData.webhookUrl = webhookUrl;
+      }
+      await updateCheck(editingCheck.id, updateData);
       await loadChecks();
       setEditingCheck(null);
     } catch (error) {

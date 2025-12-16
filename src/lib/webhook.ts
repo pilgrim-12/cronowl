@@ -14,6 +14,78 @@ export interface WebhookPayload {
 }
 
 /**
+ * Check if URL is a Slack webhook
+ */
+function isSlackWebhook(url: string): boolean {
+  return url.includes("hooks.slack.com");
+}
+
+/**
+ * Check if URL is a Discord webhook
+ */
+function isDiscordWebhook(url: string): boolean {
+  return url.includes("discord.com/api/webhooks");
+}
+
+/**
+ * Format payload for specific webhook service
+ */
+function formatPayloadForService(url: string, payload: WebhookPayload): unknown {
+  if (isSlackWebhook(url)) {
+    // Slack format with rich formatting
+    const emoji = payload.event === "check.down" ? "🔴" : "🟢";
+    const color = payload.event === "check.down" ? "#dc2626" : "#16a34a";
+    return {
+      attachments: [
+        {
+          color,
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: `${emoji} *${payload.message}*`,
+              },
+            },
+            {
+              type: "context",
+              elements: [
+                {
+                  type: "mrkdwn",
+                  text: `Check: \`${payload.check.name}\` | Status: \`${payload.check.status}\` | ${payload.timestamp}`,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (isDiscordWebhook(url)) {
+    // Discord format with embed
+    const color = payload.event === "check.down" ? 0xdc2626 : 0x16a34a;
+    return {
+      embeds: [
+        {
+          title: payload.message,
+          color,
+          fields: [
+            { name: "Check", value: payload.check.name, inline: true },
+            { name: "Status", value: payload.check.status, inline: true },
+          ],
+          timestamp: payload.timestamp,
+          footer: { text: "CronOwl" },
+        },
+      ],
+    };
+  }
+
+  // Default: send full payload
+  return payload;
+}
+
+/**
  * Send webhook notification to a URL
  * Returns true if successful, false otherwise
  */
@@ -25,6 +97,8 @@ export async function sendWebhook(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
+    const formattedPayload = formatPayloadForService(url, payload);
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -32,7 +106,7 @@ export async function sendWebhook(
         "User-Agent": "CronOwl/1.0",
         "X-CronOwl-Event": payload.event,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(formattedPayload),
       signal: controller.signal,
     });
 
