@@ -97,7 +97,8 @@ export async function verifyTelegramChat(chatId: string): Promise<boolean> {
  * Escape special characters for Telegram Markdown
  */
 function escapeMarkdown(text: string): string {
-  return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+  // Only escape characters that need escaping in Markdown (not MarkdownV2)
+  return text.replace(/[_*`\[]/g, "\\$&");
 }
 
 /**
