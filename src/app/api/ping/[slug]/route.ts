@@ -17,6 +17,7 @@ import { sendTelegramDownAlert, sendTelegramRecoveryAlert } from "@/lib/telegram
 import { sendWebhookDownAlert, sendWebhookRecoveryAlert } from "@/lib/webhook";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
+import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 
 async function checkUserChecks(userId: string, currentCheckId: string) {
   const checksQuery = query(
@@ -83,6 +84,22 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+
+  // Rate limiting
+  const clientIp = getClientIp(request);
+  const rateLimit = checkRateLimit(`ping:${clientIp}`, RATE_LIMITS.ping);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: "Too many requests", retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000) },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rateLimit.resetTime - Date.now()) / 1000)),
+          "X-RateLimit-Remaining": "0",
+        },
+      }
+    );
+  }
 
   try {
     // Parse query parameters for execution metrics

@@ -158,14 +158,88 @@ export async function sendWebhookRecoveryAlert(
   });
 }
 
+// Blocked hostnames for security
+const BLOCKED_HOSTNAMES = [
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "::1",
+  "[::1]",
+];
+
+// Blocked IP ranges (private/internal networks)
+const BLOCKED_IP_PATTERNS = [
+  /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, // 10.0.0.0/8
+  /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/, // 172.16.0.0/12
+  /^192\.168\.\d{1,3}\.\d{1,3}$/, // 192.168.0.0/16
+  /^169\.254\.\d{1,3}\.\d{1,3}$/, // Link-local
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}$/, // Carrier-grade NAT
+];
+
 /**
- * Validate webhook URL
+ * Check if hostname is blocked (internal/private)
  */
-export function isValidWebhookUrl(url: string): boolean {
+function isBlockedHost(hostname: string): boolean {
+  // Check exact matches
+  if (BLOCKED_HOSTNAMES.includes(hostname.toLowerCase())) {
+    return true;
+  }
+
+  // Check IP patterns
+  for (const pattern of BLOCKED_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      return true;
+    }
+  }
+
+  // Block .local and .internal domains
+  if (
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal") ||
+    hostname.endsWith(".localhost")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+export interface WebhookValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+/**
+ * Validate webhook URL with security checks
+ */
+export function validateWebhookUrl(url: string): WebhookValidationResult {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
+
+    // Must be HTTP or HTTPS
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return { valid: false, error: "URL must use HTTP or HTTPS protocol" };
+    }
+
+    // Block internal/private hosts
+    if (isBlockedHost(parsed.hostname)) {
+      return { valid: false, error: "Cannot use localhost or private IP addresses" };
+    }
+
+    // Must have a valid hostname
+    if (!parsed.hostname || parsed.hostname.length === 0) {
+      return { valid: false, error: "Invalid hostname" };
+    }
+
+    return { valid: true };
   } catch {
-    return false;
+    return { valid: false, error: "Invalid URL format" };
   }
+}
+
+/**
+ * Simple validation (backwards compatible)
+ */
+export function isValidWebhookUrl(url: string): boolean {
+  return validateWebhookUrl(url).valid;
 }
