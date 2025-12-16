@@ -1,51 +1,109 @@
 # 🦉 CronOwl
 
-A modern cron job monitoring service built with Next.js, Firebase, and Vercel.
+A modern cron job monitoring service ("Dead Man's Switch") built with Next.js, Firebase, and Vercel.
+
+**Live Demo**: [cronowl.vercel.app](https://cronowl.vercel.app)
+
+## What is CronOwl?
+
+CronOwl monitors your scheduled tasks (cron jobs, backups, ETL pipelines, etc.) by expecting regular "pings". If a ping doesn't arrive on time, CronOwl alerts you via email and push notifications.
+
+### How It Works
+
+```
+┌─────────────────┐     ping      ┌─────────────┐
+│   Your Cron Job │ ───────────▶  │   CronOwl   │
+│   (every 5 min) │               │   Server    │
+└─────────────────┘               └──────┬──────┘
+                                         │
+                           ┌─────────────┼─────────────┐
+                           │             │             │
+                           ▼             ▼             ▼
+                      ┌────────┐   ┌──────────┐  ┌───────────┐
+                      │ ✅ UP  │   │ 🔴 DOWN  │  │ Dashboard │
+                      │ (ping  │   │ (no ping │  │  (status  │
+                      │ on time│   │ received)│  │   view)   │
+                      └────────┘   └────┬─────┘  └───────────┘
+                                        │
+                                        ▼
+                              ┌─────────────────┐
+                              │  📧 Email Alert │
+                              │  🔔 Push Notif  │
+                              └─────────────────┘
+```
 
 ## Features
 
-- ✅ **Dead Man's Switch** - Monitor your cron jobs by expecting regular pings
-- ✅ **Email Alerts** - Get notified when jobs go down or recover
-- ✅ **Push Notifications** - Browser and mobile push notifications
-- ✅ **PWA Support** - Install as a mobile app
-- ✅ **Execution Metrics** - Track duration, exit codes, and output
-- ✅ **Status History** - Visual timeline of up/down events
-- ✅ **Execution Graphs** - See performance trends over time
+### Core Monitoring
+- ✅ **Dead Man's Switch** - Expects regular pings from your jobs
+- ✅ **Flexible Schedules** - 1min, 5min, 1hour, 1day, 1week intervals
+- ✅ **Grace Period** - Configurable buffer before alerting (1-60 min)
+- ✅ **Real-time Status** - See all checks at a glance
+
+### Alerting
+- ✅ **Email Alerts** - Instant notification when jobs fail or recover
+- ✅ **Push Notifications** - Browser and mobile push via FCM
+- ✅ **Recovery Alerts** - Know when services come back online
+
+### Execution Metrics
+- ✅ **Duration Tracking** - See how long each job takes
+- ✅ **Exit Codes** - Capture success/failure status
+- ✅ **Output Logging** - Store stdout/stderr (up to 1KB)
+- ✅ **Performance Graphs** - Visual execution time trends
+
+### User Experience
+- ✅ **PWA Support** - Install as mobile app
+- ✅ **Responsive Design** - Works on desktop and mobile
+- ✅ **Dark Mode** - Easy on the eyes
+- ✅ **Auto-Refresh** - Live updates (5s to 5min intervals)
 
 ## Quick Start
 
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/yourusername/cronowl.git
+git clone https://github.com/pilgrim-12/cronowl.git
 cd cronowl
 npm install
 ```
 
-### 2. Environment Variables
+### 2. Firebase Setup
 
-Create a `.env.local` file:
+1. Create a project at [Firebase Console](https://console.firebase.google.com)
+2. Enable **Firestore Database**
+3. Enable **Authentication** → Google Sign-In
+4. Enable **Cloud Messaging** for push notifications
+5. Generate a **Service Account Key** (Settings → Service Accounts)
+
+### 3. Environment Variables
+
+Create `.env.local`:
 
 ```env
-# Firebase Client SDK
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-NEXT_PUBLIC_FIREBASE_VAPID_KEY=your_vapid_key
+# Firebase Client SDK (from Firebase Console → Project Settings → Your Apps)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
 
-# Firebase Admin SDK (for push notifications)
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your_project.iam.gserviceaccount.com
+# Firebase VAPID Key (Cloud Messaging → Web Push certificates)
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=BObgnPP0Ao8...
+
+# Firebase Admin SDK (from Service Account JSON)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxx@your-project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-# Resend (email service)
-RESEND_API_KEY=re_your_api_key
+# Resend (for email alerts - get key at resend.com)
+RESEND_API_KEY=re_abc123...
+
+# Optional: Secret for cron endpoint
+CRON_SECRET=your-random-secret
 ```
 
-### 3. Run Development Server
+### 4. Run Development Server
 
 ```bash
 npm run dev
@@ -55,83 +113,61 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Ping API
 
-### Basic Ping
+Your ping URL looks like: `https://cronowl.vercel.app/api/ping/abc123xyz`
 
-Send a simple ping when your cron job runs:
+### Simple Ping
 
 ```bash
-# Simple ping
-curl https://your-domain.com/api/ping/YOUR_SLUG
-
-# Using wget
-wget -q -O /dev/null https://your-domain.com/api/ping/YOUR_SLUG
+# Just confirm the job ran
+curl https://cronowl.vercel.app/api/ping/YOUR_SLUG
 ```
 
-### With Execution Metrics (GET)
-
-Track execution time, exit codes, and output:
+### With Execution Metrics
 
 ```bash
-# With duration (in milliseconds)
-curl "https://your-domain.com/api/ping/YOUR_SLUG?duration=1500"
+# GET request with query params
+curl "https://cronowl.vercel.app/api/ping/YOUR_SLUG?duration=1500&status=success"
 
-# With exit code (0 = success, non-zero = failure)
-curl "https://your-domain.com/api/ping/YOUR_SLUG?exit_code=0"
-
-# With status
-curl "https://your-domain.com/api/ping/YOUR_SLUG?status=success"
-
-# With output (truncated to 1KB)
-curl "https://your-domain.com/api/ping/YOUR_SLUG?output=Backup%20completed"
-
-# All parameters combined
-curl "https://your-domain.com/api/ping/YOUR_SLUG?duration=1500&exit_code=0&status=success&output=Done"
-```
-
-### With Execution Metrics (POST)
-
-For longer output, use POST with JSON body:
-
-```bash
-curl -X POST https://your-domain.com/api/ping/YOUR_SLUG \
+# POST request with JSON (for longer output)
+curl -X POST https://cronowl.vercel.app/api/ping/YOUR_SLUG \
   -H "Content-Type: application/json" \
   -d '{
     "duration": 1500,
     "exit_code": 0,
     "status": "success",
-    "output": "Backup completed successfully\nFiles: 150\nSize: 2.3GB"
+    "output": "Backup completed: 150 files, 2.3GB"
   }'
 ```
 
+### API Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `duration` | number | Execution time in milliseconds |
+| `exit_code` | number | Exit code (0 = success, non-zero = failure) |
+| `status` | string | "success" or "failure" |
+| `output` | string | stdout/stderr (truncated to 1KB) |
+
 ### Bash Wrapper Script
 
-Create a wrapper script to track your cron jobs automatically:
+Automatically track all your cron jobs:
 
 ```bash
 #!/bin/bash
-# cronowl-wrapper.sh
+# /usr/local/bin/cronowl-wrap
 
-PING_URL="https://your-domain.com/api/ping/YOUR_SLUG"
+PING_URL="$1"
+shift
 
-# Record start time
 START=$(date +%s%N)
-
-# Run the actual command and capture output
 OUTPUT=$("$@" 2>&1)
 EXIT_CODE=$?
-
-# Calculate duration in milliseconds
 END=$(date +%s%N)
 DURATION=$(( (END - START) / 1000000 ))
 
-# Determine status
-if [ $EXIT_CODE -eq 0 ]; then
-  STATUS="success"
-else
-  STATUS="failure"
-fi
+STATUS="success"
+[ $EXIT_CODE -ne 0 ] && STATUS="failure"
 
-# Send ping with metrics
 curl -s -X POST "$PING_URL" \
   -H "Content-Type: application/json" \
   -d "{
@@ -141,66 +177,86 @@ curl -s -X POST "$PING_URL" \
     \"output\": $(echo "$OUTPUT" | head -c 1000 | jq -Rs .)
   }" > /dev/null
 
-# Exit with original exit code
 exit $EXIT_CODE
 ```
 
-Usage:
-```bash
-# In your crontab
-*/5 * * * * /path/to/cronowl-wrapper.sh /path/to/your-script.sh
+Usage in crontab:
+```cron
+# Every 5 minutes - backup database
+*/5 * * * * cronowl-wrap "https://cronowl.vercel.app/api/ping/abc123" /scripts/backup.sh
+
+# Every hour - sync files
+0 * * * * cronowl-wrap "https://cronowl.vercel.app/api/ping/def456" /scripts/sync.sh
 ```
 
-## API Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `duration` | number | Execution time in milliseconds |
-| `exit_code` / `exitCode` | number | Exit code (0 = success) |
-| `status` | string | "success" or "failure" |
-| `output` | string | stdout/stderr (max 1KB) |
-
-## Dashboard Features
+## Dashboard
 
 ### Status Indicators
-- 🟢 **UP** - Job is running as expected
-- 🔴 **DOWN** - Job hasn't pinged within expected interval + grace period
+- 🟢 **UP** - Received ping within expected interval
+- 🔴 **DOWN** - No ping received (missed deadline + grace period)
 - ⚪ **NEW** - Waiting for first ping
+
+### Check Card
+Each check displays:
+- Name and schedule (e.g., "Daily Backup - every day")
+- Ping URL (click to copy)
+- Last ping time and duration
+- Status indicator
 
 ### History View
 Click "History" on any check to see:
-- **Execution Time Graph** - Bar chart showing duration trends
-- **Status History** - Timeline of up/down events with durations
-- **Recent Pings** - Last 10 pings with timestamps and metrics
+- **Execution Time Graph** - Bar chart of recent durations
+- **Status History** - Timeline of UP/DOWN events with durations
+- **Recent Pings** - Last 10 pings with metrics
 
 ### View Modes
-- **List View** - Detailed view with inline metrics
-- **Grid View** - Compact cards for many checks
+- **List View** - Full details, better for few checks
+- **Grid View** - Compact cards, better for many checks
 
-### Auto-Refresh
-Configurable refresh interval: 5s, 10s, 15s, 30s, 1m, 2m, 5m
+## Firestore Structure
 
-## Notifications
+```
+/users/{userId}
+  - email: string
+  - pushTokens: string[]  // FCM tokens for push notifications
 
-### Email Alerts
-Automatically sent when:
-- A check goes **DOWN** (missed expected ping)
-- A check **RECOVERS** (starts pinging again)
+/checks/{checkId}
+  - userId: string
+  - name: string
+  - slug: string          // unique identifier for ping URL
+  - schedule: string      // "every 5 minutes", "every day", etc.
+  - gracePeriod: number   // minutes to wait before alerting
+  - status: "up" | "down" | "new"
+  - lastPing: timestamp
+  - lastDuration: number  // ms
+  - createdAt: timestamp
 
-### Push Notifications
-1. Click the bell icon 🔔 in the header to enable
-2. Allow browser notifications when prompted
-3. Receive alerts on desktop and mobile
+/checks/{checkId}/pings/{pingId}
+  - timestamp: timestamp
+  - ip: string
+  - userAgent: string
+  - duration?: number     // ms
+  - exitCode?: number
+  - output?: string
+  - status?: "success" | "failure" | "unknown"
+
+/checks/{checkId}/statusHistory/{eventId}
+  - status: "up" | "down"
+  - timestamp: timestamp
+  - duration?: number     // seconds in previous status
+```
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **Database**: Firebase Firestore
-- **Auth**: Firebase Authentication (Google Sign-In)
-- **Email**: Resend
-- **Push**: Firebase Cloud Messaging
-- **Hosting**: Vercel
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 15, React 19, TypeScript |
+| Styling | Tailwind CSS |
+| Database | Firebase Firestore |
+| Auth | Firebase Authentication (Google) |
+| Push | Firebase Cloud Messaging |
+| Email | Resend |
+| Hosting | Vercel |
 
 ## Project Structure
 
@@ -208,30 +264,72 @@ Automatically sent when:
 src/
 ├── app/
 │   ├── api/
-│   │   ├── ping/[slug]/    # Ping endpoint
-│   │   └── test-push/      # Test push notifications
-│   ├── dashboard/          # Main dashboard
-│   ├── login/              # Login page
-│   └── page.tsx            # Landing page
+│   │   ├── ping/[slug]/route.ts   # Ping endpoint
+│   │   ├── check-down/route.ts    # Cron to check for down jobs
+│   │   └── test-push/route.ts     # Test push notifications
+│   ├── dashboard/page.tsx         # Main dashboard
+│   ├── login/page.tsx             # Login page
+│   └── page.tsx                   # Landing page
 ├── components/
-│   ├── InstallPrompt.tsx   # PWA install prompt
-│   └── PushToggle.tsx      # Push notification toggle
+│   ├── InstallPrompt.tsx          # PWA install banner
+│   └── PushToggle.tsx             # Push notification toggle
 └── lib/
-    ├── auth-context.tsx    # Auth state management
-    ├── checks.ts           # Check CRUD operations
-    ├── constants.ts        # Schedule definitions
-    ├── email.ts            # Email sending
-    ├── firebase.ts         # Firebase client config
-    └── firebase-admin.ts   # Firebase admin for push
+    ├── auth-context.tsx           # Auth state provider
+    ├── checks.ts                  # Firestore CRUD for checks
+    ├── constants.ts               # Schedule definitions
+    ├── email.ts                   # Resend email functions
+    ├── firebase.ts                # Firebase client SDK
+    └── firebase-admin.ts          # Firebase Admin SDK
 ```
 
-## Deploy on Vercel
+## Deployment
 
-1. Push to GitHub
+### Vercel (Recommended)
+
+1. Push code to GitHub
 2. Import project on [Vercel](https://vercel.com)
-3. Add environment variables
+3. Add all environment variables
 4. Deploy!
+
+### Environment Variables on Vercel
+
+Add these in Vercel dashboard → Settings → Environment Variables:
+- All `NEXT_PUBLIC_*` variables
+- All Firebase Admin SDK variables
+- `RESEND_API_KEY`
+- `CRON_SECRET`
+
+### Cron Job for Down Detection
+
+Set up a Vercel Cron or external cron to call:
+```
+GET https://your-domain.com/api/check-down?secret=YOUR_CRON_SECRET
+```
+
+This checks all active jobs and sends alerts for any that are overdue.
+
+## Roadmap
+
+- [ ] Slow execution alerts (notify if job takes too long)
+- [ ] Public status page
+- [ ] Telegram integration
+- [ ] Slack integration
+- [ ] Webhook notifications
+- [ ] Multiple notification channels per check
+- [ ] Team/organization support
+
+## Contributing
+
+1. Fork the repo
+2. Create feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open a Pull Request
 
 ## License
 
-MIT
+MIT © 2025
+
+---
+
+Built with ❤️ by [pilgrim-12](https://github.com/pilgrim-12)
