@@ -23,6 +23,7 @@ export interface Check {
   gracePeriod: number;
   status: "up" | "down" | "new";
   lastPing: Timestamp | null;
+  lastDuration?: number; // last execution duration in ms
   createdAt: Timestamp;
 }
 
@@ -31,6 +32,11 @@ export interface Ping {
   timestamp: Timestamp;
   ip: string;
   userAgent: string;
+  // Execution metrics
+  duration?: number; // execution time in milliseconds
+  exitCode?: number; // 0 = success, non-zero = failure
+  output?: string; // stdout/stderr (truncated)
+  status?: "success" | "failure" | "unknown";
 }
 
 export interface StatusEvent {

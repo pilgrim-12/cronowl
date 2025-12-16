@@ -56,6 +56,13 @@ export async function GET(
   const { slug } = await params;
 
   try {
+    // Parse query parameters for execution metrics
+    const { searchParams } = new URL(request.url);
+    const duration = searchParams.get("duration"); // in ms
+    const exitCode = searchParams.get("exit_code") || searchParams.get("exitCode");
+    const output = searchParams.get("output");
+    const status = searchParams.get("status"); // success, failure
+
     const checksQuery = query(
       collection(db, "checks"),
       where("slug", "==", slug)
@@ -70,24 +77,42 @@ export async function GET(
     const check = checkDoc.data();
     const wasDown = check.status === "down";
 
-    // Update check status
+    // Determine ping status from exit code or explicit status
+    let pingStatus: "success" | "failure" | "unknown" = "unknown";
+    if (status === "success" || status === "fail" || status === "failure") {
+      pingStatus = status === "success" ? "success" : "failure";
+    } else if (exitCode !== null && exitCode !== undefined) {
+      pingStatus = exitCode === "0" ? "success" : "failure";
+    }
+
+    // Update check status (only mark as "up" if not explicitly failed)
+    const newStatus = pingStatus === "failure" ? check.status : "up";
     await updateDoc(doc(db, "checks", checkDoc.id), {
       lastPing: Timestamp.now(),
-      status: "up",
+      status: newStatus,
+      ...(duration && { lastDuration: parseInt(duration, 10) }),
     });
 
-    // Save ping to history
+    // Save ping to history with metrics
     const ip =
       request.headers.get("x-forwarded-for") ||
       request.headers.get("x-real-ip") ||
       "unknown";
     const userAgent = request.headers.get("user-agent") || "unknown";
 
-    await addDoc(collection(db, "checks", checkDoc.id, "pings"), {
+    const pingData: Record<string, unknown> = {
       timestamp: Timestamp.now(),
       ip: ip.split(",")[0].trim(),
       userAgent,
-    });
+    };
+
+    // Add optional execution metrics
+    if (duration) pingData.duration = parseInt(duration, 10);
+    if (exitCode !== null && exitCode !== undefined) pingData.exitCode = parseInt(exitCode, 10);
+    if (output) pingData.output = output.slice(0, 1000); // Truncate to 1KB
+    if (pingStatus !== "unknown") pingData.status = pingStatus;
+
+    await addDoc(collection(db, "checks", checkDoc.id, "pings"), pingData);
 
     // Record status change and send recovery alert if was down
     if (wasDown) {
@@ -142,5 +167,27 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  return GET(request, { params });
+  // For POST, also check body for metrics (allows longer output)
+  const { slug } = await params;
+
+  try {
+    const body = await request.json().catch(() => ({}));
+
+    // Build URL with body params as query string for GET handler
+    const url = new URL(request.url);
+    if (body.duration) url.searchParams.set("duration", String(body.duration));
+    if (body.exit_code !== undefined) url.searchParams.set("exit_code", String(body.exit_code));
+    if (body.exitCode !== undefined) url.searchParams.set("exitCode", String(body.exitCode));
+    if (body.status) url.searchParams.set("status", body.status);
+    if (body.output) url.searchParams.set("output", body.output);
+
+    // Create new request with updated URL
+    const newRequest = new NextRequest(url, {
+      headers: request.headers,
+    });
+
+    return GET(newRequest, { params: Promise.resolve({ slug }) });
+  } catch {
+    return GET(request, { params });
+  }
 }

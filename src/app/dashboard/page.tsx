@@ -407,16 +407,71 @@ export default function DashboardPage() {
                     {getPingUrl(check.slug)}
                   </code>
                 </div>
-                <p className="text-gray-500 text-xs mt-2">
-                  Last ping:{" "}
-                  {check.lastPing
-                    ? new Date(check.lastPing.toDate()).toLocaleString()
-                    : "Never"}
-                </p>
+                <div className="flex items-center gap-4 text-gray-500 text-xs mt-2">
+                  <span>
+                    Last ping:{" "}
+                    {check.lastPing
+                      ? new Date(check.lastPing.toDate()).toLocaleString()
+                      : "Never"}
+                  </span>
+                  {check.lastDuration !== undefined && (
+                    <span className="text-blue-400">
+                      {check.lastDuration < 1000
+                        ? `${check.lastDuration}ms`
+                        : `${(check.lastDuration / 1000).toFixed(1)}s`}
+                    </span>
+                  )}
+                </div>
 
                 {/* Expanded History Section */}
                 {expandedCheck === check.id && (
                   <div className="mt-4 border-t border-gray-800 pt-4">
+                    {/* Duration Graph */}
+                    {pings[check.id] && pings[check.id].some(p => p.duration !== undefined) && (
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                          Execution Time
+                        </h4>
+                        <div className="bg-gray-800/50 rounded-lg p-4">
+                          <div className="flex items-end gap-1 h-16">
+                            {pings[check.id]
+                              .filter(p => p.duration !== undefined)
+                              .slice(0, 20)
+                              .reverse()
+                              .map((ping, i, arr) => {
+                                const maxDuration = Math.max(...arr.map(p => p.duration || 0));
+                                const height = maxDuration > 0 ? ((ping.duration || 0) / maxDuration) * 100 : 0;
+                                return (
+                                  <div
+                                    key={ping.id}
+                                    className={`flex-1 rounded-t transition-all ${
+                                      ping.status === "failure" ? "bg-red-500" : "bg-blue-500"
+                                    }`}
+                                    style={{ height: `${Math.max(height, 4)}%` }}
+                                    title={`${ping.duration}ms - ${new Date(ping.timestamp.toDate()).toLocaleString()}`}
+                                  />
+                                );
+                              })}
+                          </div>
+                          <div className="flex justify-between text-gray-500 text-xs mt-2">
+                            <span>Older</span>
+                            <span>
+                              Avg: {Math.round(
+                                pings[check.id]
+                                  .filter(p => p.duration !== undefined)
+                                  .reduce((sum, p) => sum + (p.duration || 0), 0) /
+                                pings[check.id].filter(p => p.duration !== undefined).length
+                              )}ms
+                            </span>
+                            <span>Recent</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Status History Timeline */}
                     <div className="mb-6">
                       <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
@@ -500,14 +555,39 @@ export default function DashboardPage() {
                           {pings[check.id].slice(0, 10).map((ping) => (
                             <div
                               key={ping.id}
-                              className="bg-gray-800 rounded-lg px-3 py-2 text-center"
+                              className={`bg-gray-800 rounded-lg px-3 py-2 text-center border ${
+                                ping.status === "failure"
+                                  ? "border-red-500/30"
+                                  : ping.status === "success"
+                                    ? "border-green-500/30"
+                                    : "border-transparent"
+                              }`}
                             >
-                              <div className="text-gray-300 text-sm">
-                                {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              <div className="flex items-center justify-center gap-1.5">
+                                {ping.status && (
+                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                    ping.status === "failure" ? "bg-red-500" : "bg-green-500"
+                                  }`} />
+                                )}
+                                <span className="text-gray-300 text-sm">
+                                  {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                </span>
                               </div>
                               <div className="text-gray-500 text-xs">
                                 {new Date(ping.timestamp.toDate()).toLocaleDateString()}
                               </div>
+                              {ping.duration !== undefined && (
+                                <div className="text-blue-400 text-xs mt-1">
+                                  {ping.duration < 1000
+                                    ? `${ping.duration}ms`
+                                    : `${(ping.duration / 1000).toFixed(1)}s`}
+                                </div>
+                              )}
+                              {ping.exitCode !== undefined && ping.exitCode !== 0 && (
+                                <div className="text-red-400 text-xs">
+                                  exit: {ping.exitCode}
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
