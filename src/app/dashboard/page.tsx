@@ -125,12 +125,9 @@ export default function DashboardPage() {
       setExpandedCheck(null);
     } else {
       setExpandedCheck(checkId);
-      if (!pings[checkId]) {
-        loadPings(checkId);
-      }
-      if (!statusHistory[checkId]) {
-        loadStatusHistory(checkId);
-      }
+      // Always reload data when expanding to get fresh metrics
+      loadPings(checkId);
+      loadStatusHistory(checkId);
     }
   };
 
@@ -222,11 +219,11 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       <header className="border-b border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">🦉 CronOwl</h1>
-          <div className="flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <h1 className="text-lg sm:text-xl font-bold text-white flex-shrink-0">🦉 CronOwl</h1>
+          <div className="flex items-center gap-2 sm:gap-4">
             <PushToggle userId={user.uid} />
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               {user.photoURL ? (
                 <Image
                   src={user.photoURL}
@@ -240,11 +237,27 @@ export default function DashboardPage() {
                   {user.email?.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-gray-400 text-sm">{user.email}</span>
+              <span className="text-gray-400 text-sm hidden md:inline">{user.email}</span>
+            </div>
+            {/* Mobile avatar */}
+            <div className="sm:hidden">
+              {user.photoURL ? (
+                <Image
+                  src={user.photoURL}
+                  alt="Avatar"
+                  width={28}
+                  height={28}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs">
+                  {user.email?.charAt(0).toUpperCase()}
+                </div>
+              )}
             </div>
             <button
               onClick={() => signOut()}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-gray-400 hover:text-white text-xs sm:text-sm"
             >
               Sign out
             </button>
@@ -252,17 +265,18 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
+        {/* Header row */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Your Checks</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Your Checks</h2>
             {lastUpdated && (
               <div className="flex items-center gap-3 mt-1">
                 <p className="text-gray-500 text-xs">
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-12 sm:w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
                       style={{ width: `${(countdown / refreshInterval) * 100}%` }}
@@ -273,8 +287,11 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex bg-gray-800 rounded-lg p-1 gap-0.5">
+
+          {/* Controls */}
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Refresh interval - scrollable on mobile */}
+            <div className="flex bg-gray-800 rounded-lg p-1 gap-0.5 overflow-x-auto max-w-full">
               {[
                 { value: 5, label: "5s" },
                 { value: 10, label: "10s" },
@@ -290,7 +307,7 @@ export default function DashboardPage() {
                     setRefreshInterval(option.value);
                     setCountdown(option.value);
                   }}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium transition-colors flex-shrink-0 ${
                     refreshInterval === option.value
                       ? "bg-blue-600 text-white"
                       : "text-gray-400 hover:text-white hover:bg-gray-700"
@@ -300,10 +317,12 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
+
+            {/* View mode toggle */}
             <div className="flex bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
                   viewMode === "list"
                     ? "bg-gray-700 text-white"
                     : "text-gray-400 hover:text-white"
@@ -316,7 +335,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
                   viewMode === "grid"
                     ? "bg-gray-700 text-white"
                     : "text-gray-400 hover:text-white"
@@ -328,9 +347,11 @@ export default function DashboardPage() {
                 </svg>
               </button>
             </div>
+
+            {/* New Check button */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white rounded-lg px-4 py-2 font-medium hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
             >
               + New Check
             </button>
@@ -361,42 +382,42 @@ export default function DashboardPage() {
           <div className="space-y-4">
             {checks.map((check) => (
               <div key={check.id} className="bg-gray-900 rounded-lg p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-3 h-3 rounded-full ${getStatusColor(
+                      className={`w-3 h-3 rounded-full flex-shrink-0 ${getStatusColor(
                         check
                       )}`}
                     />
-                    <div>
-                      <h3 className="text-white font-medium">{check.name}</h3>
+                    <div className="min-w-0">
+                      <h3 className="text-white font-medium truncate">{check.name}</h3>
                       <p className="text-gray-400 text-sm">
                         {check.schedule} • {check.gracePeriod}min grace
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => copyToClipboard(getPingUrl(check.slug))}
-                      className="text-gray-400 hover:text-white text-sm px-3 py-1 bg-gray-800 rounded"
+                      className="text-gray-400 hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-800 rounded"
                     >
                       Copy URL
                     </button>
                     <button
                       onClick={() => toggleExpand(check.id)}
-                      className="text-gray-400 hover:text-white text-sm px-3 py-1"
+                      className="text-gray-400 hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       {expandedCheck === check.id ? "Hide" : "History"}
                     </button>
                     <button
                       onClick={() => setEditingCheck(check)}
-                      className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1"
+                      className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteCheck(check.id)}
-                      className="text-red-400 hover:text-red-300 text-sm px-3 py-1"
+                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       Delete
                     </button>
@@ -555,7 +576,7 @@ export default function DashboardPage() {
                           {pings[check.id].slice(0, 10).map((ping) => (
                             <div
                               key={ping.id}
-                              className={`bg-gray-800 rounded-lg px-3 py-2 text-center border ${
+                              className={`bg-gray-800 rounded-lg px-2 sm:px-3 py-2 text-center border ${
                                 ping.status === "failure"
                                   ? "border-red-500/30"
                                   : ping.status === "success"
@@ -563,13 +584,13 @@ export default function DashboardPage() {
                                     : "border-transparent"
                               }`}
                             >
-                              <div className="flex items-center justify-center gap-1.5">
+                              <div className="flex items-center justify-center gap-1">
                                 {ping.status && (
-                                  <div className={`w-1.5 h-1.5 rounded-full ${
+                                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                                     ping.status === "failure" ? "bg-red-500" : "bg-green-500"
                                   }`} />
                                 )}
-                                <span className="text-gray-300 text-sm">
+                                <span className="text-gray-300 text-xs sm:text-sm">
                                   {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                               </div>
@@ -664,6 +685,43 @@ export default function DashboardPage() {
                 {/* Expanded History Section for Grid View */}
                 {expandedCheck === check.id && (
                   <div className="mt-4 border-t border-gray-800 pt-4">
+                    {/* Duration Graph for Grid View */}
+                    {pings[check.id] && pings[check.id].some(p => p.duration !== undefined) && (
+                      <div className="mb-4">
+                        <h4 className="text-xs font-medium text-gray-400 mb-2">Execution Time</h4>
+                        <div className="bg-gray-800/50 rounded-lg p-2">
+                          <div className="flex items-end gap-0.5 h-12">
+                            {pings[check.id]
+                              .filter(p => p.duration !== undefined)
+                              .slice(0, 10)
+                              .reverse()
+                              .map((ping, i, arr) => {
+                                const maxDuration = Math.max(...arr.map(p => p.duration || 0));
+                                const height = maxDuration > 0 ? ((ping.duration || 0) / maxDuration) * 100 : 0;
+                                return (
+                                  <div
+                                    key={ping.id}
+                                    className={`flex-1 rounded-t transition-all ${
+                                      ping.status === "failure" ? "bg-red-500" : "bg-blue-500"
+                                    }`}
+                                    style={{ height: `${Math.max(height, 4)}%` }}
+                                    title={`${ping.duration}ms`}
+                                  />
+                                );
+                              })}
+                          </div>
+                          <div className="text-center text-gray-500 text-xs mt-1">
+                            Avg: {Math.round(
+                              pings[check.id]
+                                .filter(p => p.duration !== undefined)
+                                .reduce((sum, p) => sum + (p.duration || 0), 0) /
+                              pings[check.id].filter(p => p.duration !== undefined).length
+                            )}ms
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Status History */}
                     <div className="mb-4">
                       <h4 className="text-xs font-medium text-gray-400 mb-2">Status History</h4>
@@ -709,9 +767,14 @@ export default function DashboardPage() {
                           {pings[check.id].slice(0, 5).map((ping) => (
                             <div
                               key={ping.id}
-                              className="bg-gray-800 rounded px-2 py-1 text-xs text-gray-400"
+                              className={`bg-gray-800 rounded px-2 py-1 text-xs ${
+                                ping.status === "failure" ? "text-red-400 border border-red-500/30" : "text-gray-400"
+                              }`}
                             >
                               {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {ping.duration !== undefined && (
+                                <span className="text-blue-400 ml-1">{ping.duration}ms</span>
+                              )}
                             </div>
                           ))}
                         </div>
