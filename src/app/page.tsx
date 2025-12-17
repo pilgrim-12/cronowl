@@ -292,12 +292,9 @@ export default function Home() {
             <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy
             </Link>
-            <a
-              href="mailto:support@cronowl.com"
-              className="text-gray-400 hover:text-white"
-            >
-              Contact
-            </a>
+            <Link href="/refund" className="text-gray-400 hover:text-white">
+              Refund
+            </Link>
           </div>
         </div>
       </footer>

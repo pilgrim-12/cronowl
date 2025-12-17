@@ -111,6 +111,9 @@ export default function TermsPage() {
             <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy
             </Link>
+            <Link href="/refund" className="text-gray-400 hover:text-white">
+              Refund
+            </Link>
           </div>
         </div>
       </footer>

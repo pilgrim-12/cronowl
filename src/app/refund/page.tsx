@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export default function PrivacyPage() {
+export default function RefundPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
@@ -20,66 +20,42 @@ export default function PrivacyPage() {
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Refund Policy</h1>
         <p className="text-gray-500 mb-8">Last updated: December 17, 2025</p>
 
         <div className="prose prose-invert prose-gray max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">What We Collect</h2>
-            <ul className="list-disc list-inside text-gray-400 space-y-1">
-              <li>Email address (for account and notifications)</li>
-              <li>Check configurations and ping history</li>
-              <li>Basic usage data to improve the service</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">How We Use It</h2>
-            <ul className="list-disc list-inside text-gray-400 space-y-1">
-              <li>To provide the monitoring service</li>
-              <li>To send alerts when your jobs fail</li>
-              <li>To process payments</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Data Security</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">14-Day Money-Back Guarantee</h2>
             <p className="text-gray-400">
-              Your data is encrypted in transit and at rest. We use secure password hashing
-              and follow industry security practices.
+              We offer a full refund within 14 days of your purchase, no questions asked.
+              If you&apos;re not satisfied with CronOwl for any reason, contact us and we&apos;ll
+              process your refund.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Data Sharing</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">How to Request a Refund</h2>
             <p className="text-gray-400">
-              We don&apos;t sell your data. We only share data with service providers necessary
-              to operate CronOwl, or when required by law.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Your Rights</h2>
-            <p className="text-gray-400">
-              You can access, update, or delete your data at any time through your account settings,
-              or by contacting us at{" "}
+              Email us at{" "}
               <a href="mailto:support@cronowl.com" className="text-blue-400 hover:text-blue-300">
                 support@cronowl.com
-              </a>
+              </a>{" "}
+              with your account email and we&apos;ll process your refund within 5-10 business days.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Cookies</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">After 14 Days</h2>
             <p className="text-gray-400">
-              We use essential cookies only for authentication. No tracking or advertising cookies.
+              After the 14-day period, we don&apos;t offer refunds. However, you can cancel your
+              subscription anytime and continue using CronOwl until the end of your billing period.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">Contact</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Questions?</h2>
             <p className="text-gray-400">
-              Questions? Email us at{" "}
+              Contact us at{" "}
               <a href="mailto:support@cronowl.com" className="text-blue-400 hover:text-blue-300">
                 support@cronowl.com
               </a>
@@ -101,10 +77,10 @@ export default function PrivacyPage() {
             <Link href="/terms" className="text-gray-400 hover:text-white">
               Terms
             </Link>
-            <Link href="/privacy" className="text-white">
+            <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy
             </Link>
-            <Link href="/refund" className="text-gray-400 hover:text-white">
+            <Link href="/refund" className="text-white">
               Refund
             </Link>
           </div>
