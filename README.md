@@ -2,7 +2,7 @@
 
 A modern cron job monitoring service ("Dead Man's Switch") built with Next.js, Firebase, and Vercel.
 
-**Live Demo**: [cronowl.vercel.app](https://cronowl.vercel.app)
+**Live Demo**: [cronowl.com](https://cronowl.com)
 
 ## What is CronOwl?
 
@@ -165,23 +165,23 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Ping API
 
-Your ping URL looks like: `https://cronowl.vercel.app/api/ping/abc123xyz`
+Your ping URL looks like: `https://cronowl.com/api/ping/abc123xyz`
 
 ### Simple Ping
 
 ```bash
 # Just confirm the job ran
-curl https://cronowl.vercel.app/api/ping/YOUR_SLUG
+curl https://cronowl.com/api/ping/YOUR_SLUG
 ```
 
 ### With Execution Metrics
 
 ```bash
 # GET request with query params
-curl "https://cronowl.vercel.app/api/ping/YOUR_SLUG?duration=1500&status=success"
+curl "https://cronowl.com/api/ping/YOUR_SLUG?duration=1500&status=success"
 
 # POST request with JSON (for longer output)
-curl -X POST https://cronowl.vercel.app/api/ping/YOUR_SLUG \
+curl -X POST https://cronowl.com/api/ping/YOUR_SLUG \
   -H "Content-Type: application/json" \
   -d '{
     "duration": 1500,
@@ -235,10 +235,10 @@ exit $EXIT_CODE
 Usage in crontab:
 ```cron
 # Every 5 minutes - backup database
-*/5 * * * * cronowl-wrap "https://cronowl.vercel.app/api/ping/abc123" /scripts/backup.sh
+*/5 * * * * cronowl-wrap "https://cronowl.com/api/ping/abc123" /scripts/backup.sh
 
 # Every hour - sync files
-0 * * * * cronowl-wrap "https://cronowl.vercel.app/api/ping/def456" /scripts/sync.sh
+0 * * * * cronowl-wrap "https://cronowl.com/api/ping/def456" /scripts/sync.sh
 ```
 
 ## Dashboard

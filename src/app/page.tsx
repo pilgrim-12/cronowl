@@ -78,7 +78,7 @@ export default function Home() {
                 Add a curl request to the end of your cron script
               </p>
               <code className="text-green-400 text-sm mt-2 block">
-                curl https://cronowl.vercel.app/api/ping/abc123
+                curl https://cronowl.com/api/ping/abc123
               </code>
             </div>
             <div className="text-center">
