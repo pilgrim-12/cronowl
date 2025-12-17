@@ -245,12 +245,12 @@ export default function PricingPage() {
             <Link href="/pricing" className="text-gray-400 hover:text-white">
               Pricing
             </Link>
-            <a href="#" className="text-gray-400 hover:text-white">
+            <Link href="/terms" className="text-gray-400 hover:text-white">
               Terms
-            </a>
-            <a href="#" className="text-gray-400 hover:text-white">
+            </Link>
+            <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy
-            </a>
+            </Link>
             <a href="mailto:support@cronowl.com" className="text-gray-400 hover:text-white">
               Contact
             </a>
