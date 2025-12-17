@@ -11,9 +11,12 @@ import {
   limit,
   Timestamp,
   deleteField,
+  getDoc,
+  getCountFromServer,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { SCHEDULE_MINUTES } from "./constants";
+import { PLANS, PlanType } from "./plans";
 
 export interface Check {
   id: string;
@@ -55,6 +58,55 @@ function generateSlug(): string {
     slug += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return slug;
+}
+
+export interface CheckLimitResult {
+  allowed: boolean;
+  current: number;
+  limit: number;
+  plan: PlanType;
+  reason?: string;
+}
+
+export async function getUserPlan(userId: string): Promise<PlanType> {
+  const userDoc = await getDoc(doc(db, "users", userId));
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    return (data.plan as PlanType) || "free";
+  }
+  return "free";
+}
+
+export async function getUserChecksCount(userId: string): Promise<number> {
+  const checksQuery = query(
+    collection(db, "checks"),
+    where("userId", "==", userId)
+  );
+  const snapshot = await getCountFromServer(checksQuery);
+  return snapshot.data().count;
+}
+
+export async function canCreateCheck(userId: string): Promise<CheckLimitResult> {
+  const plan = await getUserPlan(userId);
+  const currentCount = await getUserChecksCount(userId);
+  const planLimits = PLANS[plan];
+
+  if (currentCount >= planLimits.checksLimit) {
+    return {
+      allowed: false,
+      current: currentCount,
+      limit: planLimits.checksLimit,
+      plan,
+      reason: `You've reached the limit of ${planLimits.checksLimit} checks on the ${planLimits.name} plan. Upgrade to add more.`,
+    };
+  }
+
+  return {
+    allowed: true,
+    current: currentCount,
+    limit: planLimits.checksLimit,
+    plan,
+  };
 }
 
 export function calculateRealStatus(check: Check): "up" | "down" | "new" {

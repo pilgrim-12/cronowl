@@ -164,57 +164,96 @@ export default function Home() {
           <p className="text-gray-400 text-center mb-12">
             Start free, upgrade when you need more
           </p>
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {/* Free */}
-            <div className="bg-gray-800 rounded-lg p-8">
+            <div className="bg-gray-800 rounded-lg p-6">
               <h4 className="text-xl font-semibold text-white mb-2">Free</h4>
-              <div className="text-4xl font-bold text-white mb-4">$0</div>
-              <ul className="space-y-3 mb-8">
+              <div className="text-3xl font-bold text-white mb-4">$0</div>
+              <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-gray-300 flex items-center gap-2">
-                  <span className="text-green-500">✓</span> 3 checks
+                  <span className="text-green-500">✓</span> 25 checks
                 </li>
                 <li className="text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Email alerts
                 </li>
                 <li className="text-gray-300 flex items-center gap-2">
-                  <span className="text-green-500">✓</span> 1 minute minimum
-                  interval
+                  <span className="text-green-500">✓</span> Push notifications
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Telegram alerts
                 </li>
               </ul>
               <Link
                 href="/signup"
-                className="block text-center border border-gray-600 text-white rounded-lg px-6 py-3 font-medium hover:bg-gray-700 transition-colors"
+                className="block text-center border border-gray-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 transition-colors"
               >
                 Get Started
               </Link>
             </div>
-            {/* Pro */}
-            <div className="bg-blue-600 rounded-lg p-8">
-              <h4 className="text-xl font-semibold text-white mb-2">Pro</h4>
-              <div className="text-4xl font-bold text-white mb-4">
-                $5<span className="text-lg font-normal">/month</span>
+            {/* Starter */}
+            <div className="bg-blue-600 rounded-lg p-6 relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span className="bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full">
+                  POPULAR
+                </span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <h4 className="text-xl font-semibold text-white mb-2">Starter</h4>
+              <div className="text-3xl font-bold text-white mb-4">
+                $4<span className="text-lg font-normal">/mo</span>
+              </div>
+              <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-white flex items-center gap-2">
-                  <span>✓</span> Unlimited checks
+                  <span>✓</span> 100 checks
                 </li>
                 <li className="text-white flex items-center gap-2">
-                  <span>✓</span> Email alerts
+                  <span>✓</span> Everything in Free
                 </li>
                 <li className="text-white flex items-center gap-2">
-                  <span>✓</span> Slack integration (soon)
+                  <span>✓</span> Webhooks
                 </li>
                 <li className="text-white flex items-center gap-2">
-                  <span>✓</span> Ping history
+                  <span>✓</span> 30 days history
                 </li>
               </ul>
               <Link
                 href="/signup"
-                className="block text-center bg-white text-blue-600 rounded-lg px-6 py-3 font-medium hover:bg-gray-100 transition-colors"
+                className="block text-center bg-white text-blue-600 rounded-lg px-4 py-2.5 font-medium hover:bg-gray-100 transition-colors"
               >
                 Start Free Trial
               </Link>
             </div>
+            {/* Pro */}
+            <div className="bg-gray-800 rounded-lg p-6">
+              <h4 className="text-xl font-semibold text-white mb-2">Pro</h4>
+              <div className="text-3xl font-bold text-white mb-4">
+                $9<span className="text-lg font-normal">/mo</span>
+              </div>
+              <ul className="space-y-2 mb-6 text-sm">
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Unlimited checks
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Everything in Starter
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> 90 days history
+                </li>
+                <li className="text-gray-300 flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Team (3 users)
+                </li>
+              </ul>
+              <Link
+                href="/signup"
+                className="block text-center border border-gray-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 transition-colors"
+              >
+                Start Free Trial
+              </Link>
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm">
+              View full pricing comparison →
+            </Link>
           </div>
         </div>
       </section>
@@ -244,6 +283,9 @@ export default function Home() {
             © 2025 CronOwl. Built with ☕ by indie developers.
           </div>
           <div className="flex gap-6 text-sm">
+            <Link href="/pricing" className="text-gray-400 hover:text-white">
+              Pricing
+            </Link>
             <a href="#" className="text-gray-400 hover:text-white">
               Terms
             </a>

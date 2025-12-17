@@ -16,7 +16,11 @@ import {
   getCheckPings,
   getStatusHistory,
   calculateRealStatus,
+  canCreateCheck,
+  CheckLimitResult,
 } from "@/lib/checks";
+import { PLANS } from "@/lib/plans";
+import Link from "next/link";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PushToggle } from "@/components/PushToggle";
 import TelegramLink from "@/components/TelegramLink";
@@ -47,6 +51,8 @@ export default function DashboardPage() {
   });
   const [countdown, setCountdown] = useState(30);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const [planUsage, setPlanUsage] = useState<CheckLimitResult | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   // Save preferences to localStorage
   useEffect(() => {
@@ -72,6 +78,9 @@ export default function DashboardPage() {
       const userChecks = await getUserChecks(user.uid);
       setChecks(userChecks);
       setLastUpdated(new Date());
+      // Load plan usage
+      const usage = await canCreateCheck(user.uid);
+      setPlanUsage(usage);
     } catch (error) {
       console.error("Failed to load checks:", error);
     } finally {
@@ -154,7 +163,14 @@ export default function DashboardPage() {
     webhookUrl?: string
   ) => {
     if (!user) return;
+    setLimitError(null);
     try {
+      // Check if user can create more checks
+      const limitCheck = await canCreateCheck(user.uid);
+      if (!limitCheck.allowed) {
+        setLimitError(limitCheck.reason || "Check limit reached");
+        return;
+      }
       await createCheck(user.uid, { name, schedule, gracePeriod, webhookUrl });
       await loadChecks();
       setShowCreateModal(false);
@@ -291,6 +307,83 @@ export default function DashboardPage() {
 
       <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
         <EmailVerificationBanner />
+
+        {/* Plan Usage Banner */}
+        {planUsage && (
+          <div className="bg-gray-900 rounded-lg p-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-white font-medium">
+                    {PLANS[planUsage.plan].name} Plan
+                  </span>
+                  {planUsage.plan === "free" && (
+                    <Link
+                      href="/pricing"
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded transition-colors"
+                    >
+                      Upgrade
+                    </Link>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 max-w-xs">
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          planUsage.current / planUsage.limit > 0.9
+                            ? "bg-red-500"
+                            : planUsage.current / planUsage.limit > 0.7
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                        style={{
+                          width: `${Math.min((planUsage.current / planUsage.limit) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-gray-400 text-sm whitespace-nowrap">
+                    {planUsage.current} / {planUsage.limit === Infinity ? "∞" : planUsage.limit} checks
+                  </span>
+                </div>
+              </div>
+              {planUsage.current / planUsage.limit > 0.8 && planUsage.plan === "free" && (
+                <div className="text-yellow-400 text-sm">
+                  Running low on checks!{" "}
+                  <Link href="/pricing" className="underline hover:text-yellow-300">
+                    Upgrade now
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Limit Error Alert */}
+        {limitError && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-400">{limitError}</p>
+                <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block">
+                  View pricing plans →
+                </Link>
+              </div>
+              <button
+                onClick={() => setLimitError(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

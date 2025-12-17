@@ -44,6 +44,10 @@ async function saveUserToFirestore(user: User) {
     await setDoc(userRef, {
       email: user.email,
       createdAt: new Date(),
+      plan: "free", // Default to free plan
+      emailNotifications: true,
+      pushNotifications: true,
+      telegramNotifications: true,
     });
   }
 }
