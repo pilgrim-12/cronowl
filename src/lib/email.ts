@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendDownAlert(to: string, checkName: string) {
   try {
     await resend.emails.send({
-      from: "CronOwl <onboarding@resend.dev>",
+      from: "CronOwl <noreply@cronowl.com>",
       to,
       subject: `🚨 Alert: ${checkName} is DOWN`,
       html: `
@@ -30,7 +30,7 @@ export async function sendDownAlert(to: string, checkName: string) {
 export async function sendRecoveryAlert(to: string, checkName: string) {
   try {
     await resend.emails.send({
-      from: "CronOwl <onboarding@resend.dev>",
+      from: "CronOwl <noreply@cronowl.com>",
       to,
       subject: `✅ Recovered: ${checkName} is back UP`,
       html: `
