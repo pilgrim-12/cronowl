@@ -70,57 +70,49 @@ function PricingCard({
   );
 }
 
-function ComparisonTable() {
+function WhyCronOwl() {
+  const benefits = [
+    {
+      icon: "🚀",
+      title: "Setup in 30 seconds",
+      description: "Create a check, add one curl to your script, done. No complex configuration needed.",
+    },
+    {
+      icon: "📱",
+      title: "Alerts everywhere",
+      description: "Email, push notifications, Telegram, webhooks — get notified however you prefer.",
+    },
+    {
+      icon: "💰",
+      title: "Affordable pricing",
+      description: "Generous free tier and paid plans that won't break the bank. Built for indie developers.",
+    },
+    {
+      icon: "📲",
+      title: "Mobile-ready PWA",
+      description: "Install on your phone and get instant push notifications when jobs fail.",
+    },
+    {
+      icon: "⚡",
+      title: "Real-time monitoring",
+      description: "Know immediately when your cron jobs stop running. Don't wait for users to report issues.",
+    },
+    {
+      icon: "🔒",
+      title: "Simple & secure",
+      description: "No agents to install. Just a simple HTTP ping from your existing scripts.",
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-gray-800">
-            <th className="text-left py-4 px-4 text-gray-400 font-medium">Feature</th>
-            <th className="text-center py-4 px-4 text-gray-400 font-medium">Healthchecks.io</th>
-            <th className="text-center py-4 px-4 text-gray-400 font-medium">Cronitor</th>
-            <th className="text-center py-4 px-4 text-blue-400 font-medium">CronOwl</th>
-          </tr>
-        </thead>
-        <tbody className="text-sm">
-          <tr className="border-b border-gray-800">
-            <td className="py-4 px-4 text-gray-300">Free checks</td>
-            <td className="py-4 px-4 text-center text-gray-400">20</td>
-            <td className="py-4 px-4 text-center text-gray-400">5</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">25</td>
-          </tr>
-          <tr className="border-b border-gray-800">
-            <td className="py-4 px-4 text-gray-300">100 checks price</td>
-            <td className="py-4 px-4 text-center text-gray-400">$20/mo</td>
-            <td className="py-4 px-4 text-center text-gray-400">$200/mo</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">$4/mo</td>
-          </tr>
-          <tr className="border-b border-gray-800">
-            <td className="py-4 px-4 text-gray-300">Unlimited checks</td>
-            <td className="py-4 px-4 text-center text-gray-400">$80/mo</td>
-            <td className="py-4 px-4 text-center text-gray-400">Custom</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">$9/mo</td>
-          </tr>
-          <tr className="border-b border-gray-800">
-            <td className="py-4 px-4 text-gray-300">Telegram alerts</td>
-            <td className="py-4 px-4 text-center text-gray-400">Paid</td>
-            <td className="py-4 px-4 text-center text-gray-400">No</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">Free</td>
-          </tr>
-          <tr className="border-b border-gray-800">
-            <td className="py-4 px-4 text-gray-300">Push notifications</td>
-            <td className="py-4 px-4 text-center text-gray-400">No</td>
-            <td className="py-4 px-4 text-center text-gray-400">No</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">Free</td>
-          </tr>
-          <tr>
-            <td className="py-4 px-4 text-gray-300">PWA / Mobile app</td>
-            <td className="py-4 px-4 text-center text-gray-400">No</td>
-            <td className="py-4 px-4 text-center text-gray-400">No</td>
-            <td className="py-4 px-4 text-center text-green-400 font-medium">Yes</td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {benefits.map((benefit, index) => (
+        <div key={index} className="bg-gray-800 rounded-lg p-6">
+          <div className="text-3xl mb-3">{benefit.icon}</div>
+          <h4 className="text-white font-medium mb-2">{benefit.title}</h4>
+          <p className="text-gray-400 text-sm">{benefit.description}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -202,16 +194,16 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Comparison */}
+      {/* Why CronOwl */}
       <section className="bg-gray-900 py-20">
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-5xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-white text-center mb-4">
             Why CronOwl?
           </h2>
           <p className="text-gray-400 text-center mb-12">
-            See how we compare to other cron monitoring services
+            Everything you need to monitor your scheduled tasks
           </p>
-          <ComparisonTable />
+          <WhyCronOwl />
         </div>
       </section>
 
