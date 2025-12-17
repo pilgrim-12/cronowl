@@ -49,11 +49,13 @@ export async function GET(request: NextRequest) {
       if (userDoc.exists()) {
         const user = userDoc.data();
 
-        // Send email alert
-        await sendDownAlert(user.email, check.name);
+        // Send email alert (if enabled)
+        if (user.email && user.emailNotifications !== false) {
+          await sendDownAlert(user.email, check.name);
+        }
 
-        // Send push notification if user has push tokens
-        if (user.pushTokens && user.pushTokens.length > 0) {
+        // Send push notification if user has push tokens (if enabled)
+        if (user.pushTokens && user.pushTokens.length > 0 && user.pushNotifications !== false) {
           try {
             await sendPushNotification(user.pushTokens, {
               title: `🔴 ${check.name} is DOWN`,
@@ -69,8 +71,8 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Send Telegram alert if user has linked Telegram
-        if (user.telegramChatId) {
+        // Send Telegram alert if user has linked Telegram (if enabled)
+        if (user.telegramChatId && user.telegramNotifications !== false) {
           try {
             await sendTelegramDownAlert(user.telegramChatId, check.name);
           } catch (telegramError) {

@@ -169,13 +169,13 @@ export async function GET(
       if (userDoc.exists()) {
         const user = userDoc.data();
 
-        // Send email recovery alert
-        if (user.email) {
+        // Send email recovery alert (if enabled)
+        if (user.email && user.emailNotifications !== false) {
           await sendRecoveryAlert(user.email, check.name);
         }
 
-        // Send push notification if user has push tokens
-        if (user.pushTokens && user.pushTokens.length > 0) {
+        // Send push notification if user has push tokens (if enabled)
+        if (user.pushTokens && user.pushTokens.length > 0 && user.pushNotifications !== false) {
           try {
             await sendPushNotification(user.pushTokens, {
               title: `🟢 ${check.name} is BACK UP`,
@@ -191,8 +191,8 @@ export async function GET(
           }
         }
 
-        // Send Telegram recovery alert if user has linked Telegram
-        if (user.telegramChatId) {
+        // Send Telegram recovery alert if user has linked Telegram (if enabled)
+        if (user.telegramChatId && user.telegramNotifications !== false) {
           try {
             await sendTelegramRecoveryAlert(user.telegramChatId, check.name);
           } catch (telegramError) {
