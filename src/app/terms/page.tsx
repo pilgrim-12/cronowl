@@ -25,102 +25,68 @@ export default function TermsPage() {
 
         <div className="prose prose-invert prose-gray max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">1. Acceptance of Terms</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">The Service</h2>
             <p className="text-gray-400">
-              By accessing or using CronOwl (&quot;Service&quot;), you agree to be bound by these Terms of Service.
-              If you do not agree to these terms, please do not use the Service.
+              CronOwl is a cron job monitoring service. You create checks, ping them from your scripts,
+              and we alert you when pings stop arriving on schedule.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">2. Description of Service</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Your Account</h2>
             <p className="text-gray-400">
-              CronOwl is a cron job monitoring service that allows you to monitor scheduled tasks by receiving
-              HTTP pings and alerting you when jobs fail to run on schedule. The Service includes web-based
-              dashboard, email notifications, push notifications, Telegram alerts, and webhook integrations.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">3. Account Registration</h2>
-            <p className="text-gray-400">
-              To use the Service, you must create an account. You agree to provide accurate information
-              and keep your account credentials secure. You are responsible for all activities that occur
+              You&apos;re responsible for keeping your account credentials secure and for all activity
               under your account.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">4. Acceptable Use</h2>
-            <p className="text-gray-400 mb-3">You agree not to:</p>
+            <h2 className="text-xl font-semibold text-white mb-3">Acceptable Use</h2>
+            <p className="text-gray-400 mb-3">Don&apos;t use CronOwl to:</p>
             <ul className="list-disc list-inside text-gray-400 space-y-1">
-              <li>Use the Service for any illegal purpose</li>
-              <li>Attempt to gain unauthorized access to the Service</li>
-              <li>Interfere with or disrupt the Service</li>
-              <li>Send excessive requests that could overload our systems</li>
-              <li>Use the Service to send spam or malicious content</li>
-              <li>Resell or redistribute the Service without permission</li>
+              <li>Do anything illegal</li>
+              <li>Send spam or malicious content</li>
+              <li>Overload our systems with excessive requests</li>
+              <li>Attempt to access other users&apos; data</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">5. Service Availability</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Payments</h2>
             <p className="text-gray-400">
-              We strive to maintain high availability but do not guarantee uninterrupted service.
-              The Service may be temporarily unavailable due to maintenance, updates, or circumstances
-              beyond our control. We are not liable for any damages resulting from service interruptions.
+              Paid plans are billed monthly. Cancel anytime — your plan stays active until the end
+              of the billing period. We may change prices with 30 days notice.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">6. Pricing and Payment</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Service Availability</h2>
             <p className="text-gray-400">
-              CronOwl offers free and paid plans. Paid subscriptions are billed monthly. You may cancel
-              at any time, and your subscription will remain active until the end of the billing period.
-              Refunds are provided at our discretion. We reserve the right to change pricing with 30 days notice.
+              We aim for high uptime but don&apos;t guarantee uninterrupted service. We&apos;re not liable
+              for damages from service interruptions.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">7. Intellectual Property</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Limitation of Liability</h2>
             <p className="text-gray-400">
-              The Service and its original content, features, and functionality are owned by CronOwl
-              and are protected by international copyright, trademark, and other intellectual property laws.
+              CronOwl is provided &quot;as is&quot;. We&apos;re not liable for indirect damages or lost profits.
+              Our total liability is limited to what you paid us in the past 12 months.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">8. Limitation of Liability</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Termination</h2>
             <p className="text-gray-400">
-              CronOwl is provided &quot;as is&quot; without warranties of any kind. We are not liable for any
-              indirect, incidental, special, or consequential damages, including lost profits, data loss,
-              or business interruption, even if we have been advised of the possibility of such damages.
-              Our total liability shall not exceed the amount paid by you in the past 12 months.
+              We may terminate accounts that violate these terms. You can delete your account anytime
+              in settings.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-white mb-3">9. Termination</h2>
+            <h2 className="text-xl font-semibold text-white mb-3">Contact</h2>
             <p className="text-gray-400">
-              We may terminate or suspend your account at any time for violations of these terms.
-              You may delete your account at any time through the settings page. Upon termination,
-              your data will be deleted in accordance with our Privacy Policy.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">10. Changes to Terms</h2>
-            <p className="text-gray-400">
-              We reserve the right to modify these terms at any time. We will notify users of significant
-              changes via email or through the Service. Continued use of the Service after changes
-              constitutes acceptance of the new terms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold text-white mb-3">11. Contact</h2>
-            <p className="text-gray-400">
-              If you have questions about these Terms of Service, please contact us at{" "}
+              Questions? Email us at{" "}
               <a href="mailto:support@cronowl.com" className="text-blue-400 hover:text-blue-300">
                 support@cronowl.com
               </a>
