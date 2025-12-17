@@ -77,8 +77,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-xl font-semibold text-white mb-3">4. Data Storage and Security</h2>
             <p className="text-gray-400">
-              Your data is stored securely using Firebase/Google Cloud infrastructure with encryption
-              at rest and in transit. We implement industry-standard security measures including:
+              Your data is stored securely with encryption at rest and in transit.
+              We implement industry-standard security measures including:
             </p>
             <ul className="list-disc list-inside text-gray-400 space-y-1 mt-3">
               <li>TLS/SSL encryption for all data transmission</li>
@@ -94,8 +94,8 @@ export default function PrivacyPage() {
               We do not sell your personal data. We may share data with:
             </p>
             <ul className="list-disc list-inside text-gray-400 space-y-1">
-              <li><strong className="text-gray-300">Service Providers:</strong> Firebase (database), Vercel (hosting),
-                Resend (email), payment processors</li>
+              <li><strong className="text-gray-300">Service Providers:</strong> Third-party services that help us
+                operate the Service (hosting, email delivery, payment processing)</li>
               <li><strong className="text-gray-300">Legal Requirements:</strong> When required by law or to protect our rights</li>
               <li><strong className="text-gray-300">Business Transfers:</strong> In case of merger, acquisition, or asset sale</li>
             </ul>
