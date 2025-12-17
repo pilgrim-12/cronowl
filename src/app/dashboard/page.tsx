@@ -20,6 +20,7 @@ import {
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { PushToggle } from "@/components/PushToggle";
 import TelegramLink from "@/components/TelegramLink";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -289,6 +290,8 @@ export default function DashboardPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
+        <EmailVerificationBanner />
+
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>

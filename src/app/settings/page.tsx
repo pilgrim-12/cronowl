@@ -16,7 +16,7 @@ interface UserSettings {
 }
 
 export default function SettingsPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>({
     emailNotifications: true,
@@ -26,6 +26,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [hasTelegram, setHasTelegram] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -246,6 +248,42 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-2">
               <span className="text-gray-400">Email</span>
               <span className="text-white">{user.email}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-gray-400">Email Status</span>
+              {user.emailVerified ? (
+                <span className="flex items-center gap-1.5 text-green-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Verified
+                </span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-400">Not verified</span>
+                  {verificationSent ? (
+                    <span className="text-green-400 text-sm">Sent!</span>
+                  ) : (
+                    <button
+                      onClick={async () => {
+                        setSendingVerification(true);
+                        try {
+                          await resendVerificationEmail();
+                          setVerificationSent(true);
+                        } catch (e) {
+                          console.error("Failed to send verification:", e);
+                        } finally {
+                          setSendingVerification(false);
+                        }
+                      }}
+                      disabled={sendingVerification}
+                      className="text-blue-400 hover:text-blue-300 text-sm disabled:opacity-50"
+                    >
+                      {sendingVerification ? "Sending..." : "Resend"}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-gray-400">User ID</span>

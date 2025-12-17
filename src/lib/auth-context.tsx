@@ -17,6 +17,7 @@ import {
   GoogleAuthProvider,
   GithubAuthProvider,
   sendPasswordResetEmail,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
@@ -30,6 +31,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signInWithGithub: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  resendVerificationEmail: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -66,7 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Send verification email
+    await sendEmailVerification(userCredential.user);
+  };
+
+  const resendVerificationEmail = async () => {
+    if (user && !user.emailVerified) {
+      await sendEmailVerification(user);
+    }
   };
 
   const signOut = async () => {
@@ -98,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithGoogle,
         signInWithGithub,
         resetPassword,
+        resendVerificationEmail,
       }}
     >
       {children}

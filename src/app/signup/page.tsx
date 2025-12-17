@@ -11,6 +11,7 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const { signUp, signInWithGoogle, signInWithGithub } = useAuth();
   const router = useRouter();
 
@@ -31,7 +32,7 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       await signUp(email, password);
-      router.push("/dashboard");
+      setVerificationSent(true);
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to create account";
@@ -64,6 +65,47 @@ export default function SignUpPage() {
       setError(errorMessage);
     }
   };
+
+  // Show verification sent message
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-white">🦉 CronOwl</h1>
+          </div>
+
+          <div className="bg-gray-900 rounded-lg p-8 space-y-6 text-center">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-white">Check your email</h2>
+            <p className="text-gray-400">
+              We&apos;ve sent a verification link to <span className="text-white font-medium">{email}</span>.
+              Please click the link to verify your account.
+            </p>
+            <div className="pt-4 space-y-3">
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="w-full bg-blue-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-blue-700 transition-colors"
+              >
+                Continue to Dashboard
+              </button>
+              <p className="text-gray-500 text-sm">
+                Didn&apos;t receive the email? Check your spam folder or{" "}
+                <Link href="/login" className="text-blue-400 hover:text-blue-300">
+                  sign in
+                </Link>{" "}
+                to resend.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
