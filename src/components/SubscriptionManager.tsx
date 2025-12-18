@@ -124,15 +124,33 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
     }
   };
 
-  const handleManageSubscription = () => {
-    // Open Paddle customer portal
-    // In sandbox, this would be: https://sandbox-customer-portal.paddle.com
-    // In production: https://customer-portal.paddle.com
-    const portalUrl = process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === "production"
-      ? "https://customer-portal.paddle.com"
-      : "https://sandbox-customer-portal.paddle.com";
+  const [openingPortal, setOpeningPortal] = useState(false);
 
-    window.open(portalUrl, "_blank");
+  const handleManageSubscription = async () => {
+    setOpeningPortal(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/subscription/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to open customer portal");
+      }
+
+      // Open portal in new tab
+      window.open(data.url, "_blank");
+    } catch (err) {
+      console.error("Failed to open portal:", err);
+      setError(err instanceof Error ? err.message : "Failed to open customer portal");
+    } finally {
+      setOpeningPortal(false);
+    }
   };
 
   if (loading) {
@@ -334,12 +352,13 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
         <div className="mt-4 pt-4 border-t border-gray-800">
           <button
             onClick={handleManageSubscription}
-            className="text-gray-400 hover:text-white text-sm flex items-center gap-1"
+            disabled={openingPortal}
+            className="text-gray-400 hover:text-white text-sm flex items-center gap-1 disabled:opacity-50"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Manage subscription on Paddle
+            {openingPortal ? "Opening..." : "Manage subscription on Paddle"}
           </button>
           <p className="text-gray-500 text-xs mt-1">
             Update payment method, cancel, or view invoices
