@@ -1,8 +1,10 @@
 import { initializeApp, getApps, cert, App } from "firebase-admin/app";
 import { getMessaging, Messaging } from "firebase-admin/messaging";
+import { getFirestore, Firestore } from "firebase-admin/firestore";
 
 let adminApp: App | null = null;
 let adminMessaging: Messaging | null = null;
+let adminFirestore: Firestore | null = null;
 
 function getAdminApp(): App {
   if (adminApp) return adminApp;
@@ -37,6 +39,16 @@ export function getAdminMessaging(): Messaging {
   adminMessaging = getMessaging(getAdminApp());
   return adminMessaging;
 }
+
+function getAdminFirestore(): Firestore {
+  if (adminFirestore) return adminFirestore;
+  adminFirestore = getFirestore(getAdminApp());
+  return adminFirestore;
+}
+
+export const adminDb = {
+  collection: (collectionPath: string) => getAdminFirestore().collection(collectionPath),
+};
 
 export interface PushNotificationPayload {
   title: string;

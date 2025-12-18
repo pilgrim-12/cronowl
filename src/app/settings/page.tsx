@@ -8,6 +8,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import TelegramLink from "@/components/TelegramLink";
 import { PushToggle } from "@/components/PushToggle";
+import { SubscriptionManager } from "@/components/SubscriptionManager";
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -104,6 +105,11 @@ export default function SettingsPage() {
             </Link>
             <h1 className="text-2xl font-bold text-white">Settings</h1>
           </div>
+        </div>
+
+        {/* Subscription Management */}
+        <div className="mb-6">
+          <SubscriptionManager userId={user.uid} userEmail={user.email || ""} />
         </div>
 
         {/* Notification Settings */}

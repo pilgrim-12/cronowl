@@ -108,6 +108,14 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=YourBotName
 
 # Optional: Secret for cron endpoint
 CRON_SECRET=your-random-secret
+
+# Paddle Billing (for payments - get from paddle.com)
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN=test_xxx...
+NEXT_PUBLIC_PADDLE_ENVIRONMENT=sandbox  # or "production"
+NEXT_PUBLIC_PADDLE_PRICE_STARTER=pri_xxx...
+NEXT_PUBLIC_PADDLE_PRICE_PRO=pri_xxx...
+PADDLE_API_KEY=pdl_sbox_apikey_xxx...
+PADDLE_WEBHOOK_SECRET=pdl_ntfset_xxx...
 ```
 
 ### 4. Telegram Bot Setup (Optional)
@@ -352,6 +360,8 @@ Add these in Vercel dashboard → Settings → Environment Variables:
 - `CRON_SECRET`
 - `TELEGRAM_BOT_TOKEN` (if using Telegram)
 - `TELEGRAM_WEBHOOK_SECRET` (if using Telegram)
+- `PADDLE_API_KEY` (if using Paddle payments)
+- `PADDLE_WEBHOOK_SECRET` (if using Paddle payments)
 
 ### Cron Job for Down Detection
 

@@ -72,7 +72,18 @@ export async function getUserPlan(userId: string): Promise<PlanType> {
   const userDoc = await getDoc(doc(db, "users", userId));
   if (userDoc.exists()) {
     const data = userDoc.data();
-    return (data.plan as PlanType) || "free";
+    const plan = (data.plan as PlanType) || "free";
+
+    // Check if subscription is canceled but still within grace period
+    if (data.subscription?.status === "canceled" && data.subscription?.effectiveEndDate) {
+      const effectiveEnd = data.subscription.effectiveEndDate.toDate?.() || new Date(data.subscription.effectiveEndDate);
+      if (effectiveEnd > new Date()) {
+        // Still within access period, use subscription plan
+        return (data.subscription.plan as PlanType) || plan;
+      }
+    }
+
+    return plan;
   }
   return "free";
 }
