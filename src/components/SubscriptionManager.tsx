@@ -27,38 +27,65 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   const [currentPlan, setCurrentPlan] = useState<"free" | "starter" | "pro">("free");
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<PaddlePlan | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const loadSubscription = async () => {
+    try {
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setCurrentPlan(data.plan || "free");
+        if (data.subscription) {
+          setSubscription({
+            ...data.subscription,
+            currentPeriodEnd: data.subscription.currentPeriodEnd?.toDate?.() || null,
+            canceledAt: data.subscription.canceledAt?.toDate?.() || null,
+            effectiveEndDate: data.subscription.effectiveEndDate?.toDate?.() || null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load subscription:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadSubscription() {
-      try {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setCurrentPlan(data.plan || "free");
-          if (data.subscription) {
-            setSubscription({
-              ...data.subscription,
-              currentPeriodEnd: data.subscription.currentPeriodEnd?.toDate?.() || null,
-              canceledAt: data.subscription.canceledAt?.toDate?.() || null,
-              effectiveEndDate: data.subscription.effectiveEndDate?.toDate?.() || null,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load subscription:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadSubscription();
   }, [userId]);
 
   const handleUpgrade = async (plan: PaddlePlan) => {
     setUpgrading(plan);
+    setError(null);
+    setSuccess(null);
+
     try {
-      await openCheckout(plan, userId, userEmail);
-    } catch (error) {
-      console.error("Failed to open checkout:", error);
+      // If user has an active subscription, use API to upgrade
+      if (subscription?.paddleSubscriptionId && subscription.status === "active") {
+        const response = await fetch("/api/subscription/upgrade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, targetPlan: plan }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to upgrade subscription");
+        }
+
+        setSuccess(`Successfully upgraded to ${plan}! Changes will apply shortly.`);
+        // Reload subscription data after a short delay
+        setTimeout(() => loadSubscription(), 2000);
+      } else {
+        // No active subscription, open checkout for new subscription
+        await openCheckout(plan, userId, userEmail);
+      }
+    } catch (err) {
+      console.error("Failed to upgrade:", err);
+      setError(err instanceof Error ? err.message : "Failed to upgrade subscription");
     } finally {
       setUpgrading(null);
     }
@@ -120,6 +147,18 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
         </svg>
         Subscription
       </h2>
+
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-4">
+          <p className="text-green-400 text-sm">{success}</p>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-4">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Current Plan */}
       <div className="bg-gray-800 rounded-lg p-4 mb-4">
