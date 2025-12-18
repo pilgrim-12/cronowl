@@ -27,6 +27,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   const [currentPlan, setCurrentPlan] = useState<"free" | "starter" | "pro">("free");
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<PaddlePlan | null>(null);
+  const [downgrading, setDowngrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -88,6 +89,38 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       setError(err instanceof Error ? err.message : "Failed to upgrade subscription");
     } finally {
       setUpgrading(null);
+    }
+  };
+
+  const handleDowngrade = async () => {
+    if (!confirm("Are you sure you want to downgrade to Starter? You will keep Pro features until the end of your billing period.")) {
+      return;
+    }
+
+    setDowngrading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/subscription/downgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, targetPlan: "starter" }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to downgrade subscription");
+      }
+
+      setSuccess("Your plan will be downgraded to Starter at the end of the current billing period.");
+      setTimeout(() => loadSubscription(), 2000);
+    } catch (err) {
+      console.error("Failed to downgrade:", err);
+      setError(err instanceof Error ? err.message : "Failed to downgrade subscription");
+    } finally {
+      setDowngrading(false);
     }
   };
 
@@ -267,6 +300,31 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
               <li>• Team members (3 users)</li>
               <li>• Priority support</li>
             </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Downgrade from Pro to Starter */}
+      {currentPlan === "pro" && subscription?.status === "active" && (
+        <div className="space-y-3">
+          <p className="text-gray-400 text-sm">You&apos;re on the highest plan!</p>
+          <div className="border border-gray-700 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <span className="text-gray-300 font-medium">Downgrade to Starter</span>
+                <span className="text-gray-500 text-sm ml-2">${PLANS.starter.price}/month</span>
+              </div>
+              <button
+                onClick={handleDowngrade}
+                disabled={downgrading}
+                className="bg-gray-700 text-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
+              >
+                {downgrading ? "Processing..." : "Downgrade"}
+              </button>
+            </div>
+            <p className="text-gray-500 text-sm">
+              You&apos;ll keep Pro features until the end of your billing period.
+            </p>
           </div>
         </div>
       )}
