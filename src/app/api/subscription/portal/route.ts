@@ -28,25 +28,34 @@ export async function POST(req: NextRequest) {
     }
 
     const userData = userDoc.data();
+    const customerId = userData?.subscription?.paddleCustomerId;
     const subscriptionId = userData?.subscription?.paddleSubscriptionId;
 
-    if (!subscriptionId) {
+    console.log("Portal session request:", { userId, customerId, subscriptionId });
+
+    if (!customerId) {
       return NextResponse.json(
-        { error: "No active subscription found" },
+        { error: "No customer ID found" },
         { status: 400 }
       );
     }
 
     // Create portal session via Paddle API
+    // Use /customers/{customer_id}/portal-sessions endpoint
+    const apiUrl = `${PADDLE_API_URL}/customers/${customerId}/portal-sessions`;
+    console.log("Calling Paddle API:", apiUrl);
+
     const response = await fetch(
-      `${PADDLE_API_URL}/subscriptions/${subscriptionId}/portal-sessions`,
+      apiUrl,
       {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${PADDLE_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          subscription_ids: subscriptionId ? [subscriptionId] : [],
+        }),
       }
     );
 
