@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
+import { sendPaymentFailedAlert } from "@/lib/email";
 
 const WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET!;
 
@@ -297,6 +298,7 @@ async function handleSubscriptionPastDue(data: any) {
   }
 
   const userDoc = usersSnapshot.docs[0];
+  const userData = userDoc.data();
 
   await adminDb
     .collection("users")
@@ -305,6 +307,13 @@ async function handleSubscriptionPastDue(data: any) {
       "subscription.status": "past_due",
       "subscription.pastDueAt": FieldValue.serverTimestamp(),
     });
+
+  // Send email notification
+  if (userData.email) {
+    const planName = userData.plan === "pro" ? "Pro" : "Starter";
+    await sendPaymentFailedAlert(userData.email, planName);
+    console.log(`Payment failed email sent to ${userData.email}`);
+  }
 
   console.log(`Subscription past_due for user ${userDoc.id}`);
 }
