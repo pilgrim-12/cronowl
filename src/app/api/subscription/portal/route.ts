@@ -31,8 +31,6 @@ export async function POST(req: NextRequest) {
     const customerId = userData?.subscription?.paddleCustomerId;
     const subscriptionId = userData?.subscription?.paddleSubscriptionId;
 
-    console.log("Portal session request:", { userId, customerId, subscriptionId });
-
     if (!customerId) {
       return NextResponse.json(
         { error: "No customer ID found" },
@@ -41,12 +39,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Create portal session via Paddle API
-    // Use /customers/{customer_id}/portal-sessions endpoint
-    const apiUrl = `${PADDLE_API_URL}/customers/${customerId}/portal-sessions`;
-    console.log("Calling Paddle API:", apiUrl);
-
     const response = await fetch(
-      apiUrl,
+      `${PADDLE_API_URL}/customers/${customerId}/portal-sessions`,
       {
         method: "POST",
         headers: {
