@@ -23,6 +23,7 @@ import Link from "next/link";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Header } from "@/components/Header";
+import { OwlLogo } from "@/components/OwlLogo";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
@@ -426,18 +427,7 @@ export default function DashboardPage() {
         ) : checks.length === 0 ? (
           <div className="bg-gray-900 rounded-lg p-8 text-center">
             <div className="flex justify-center mb-4">
-              <svg className="w-20 h-20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="40" fill="#0ea5e9"/>
-                <circle cx="35" cy="45" r="14" fill="#f8fafc"/>
-                <circle cx="35" cy="45" r="7" fill="#0c4a6e"/>
-                <circle cx="32" cy="42" r="2" fill="#f8fafc"/>
-                <circle cx="65" cy="45" r="14" fill="#f8fafc"/>
-                <circle cx="65" cy="45" r="7" fill="#0c4a6e"/>
-                <circle cx="62" cy="42" r="2" fill="#f8fafc"/>
-                <polygon points="50,55 45,65 55,65" fill="#06b6d4"/>
-                <polygon points="25,20 30,35 20,35" fill="#0ea5e9"/>
-                <polygon points="75,20 80,35 70,35" fill="#0ea5e9"/>
-              </svg>
+              <OwlLogo className="w-20 h-20" />
             </div>
             <h3 className="text-xl font-medium text-white mb-2">
               No checks yet

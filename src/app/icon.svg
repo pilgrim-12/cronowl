@@ -1,25 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-  <!-- Owl body/head - sky blue -->
-  <circle cx="50" cy="50" r="40" fill="#0ea5e9"/>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="#0c4a6e"/>
 
-  <!-- Left eye white -->
-  <circle cx="35" cy="45" r="14" fill="#f8fafc"/>
-  <!-- Left pupil - dark cyan -->
-  <circle cx="35" cy="45" r="7" fill="#0c4a6e"/>
-  <!-- Left eye shine -->
-  <circle cx="32" cy="42" r="2" fill="#f8fafc"/>
+  <!-- Owl body - darker blue -->
+  <ellipse cx="50" cy="58" rx="32" ry="35" fill="#0369a1"/>
 
-  <!-- Right eye white -->
-  <circle cx="65" cy="45" r="14" fill="#f8fafc"/>
-  <!-- Right pupil - dark cyan -->
-  <circle cx="65" cy="45" r="7" fill="#0c4a6e"/>
-  <!-- Right eye shine -->
-  <circle cx="62" cy="42" r="2" fill="#f8fafc"/>
+  <!-- Owl head -->
+  <circle cx="50" cy="42" r="28" fill="#0ea5e9"/>
 
-  <!-- Beak - cyan -->
-  <polygon points="50,55 45,65 55,65" fill="#06b6d4"/>
+  <!-- Ear tufts -->
+  <path d="M25 25 L32 42 L22 38 Z" fill="#0ea5e9"/>
+  <path d="M75 25 L68 42 L78 38 Z" fill="#0ea5e9"/>
 
-  <!-- Ears/tufts - sky blue -->
-  <polygon points="25,20 30,35 20,35" fill="#0ea5e9"/>
-  <polygon points="75,20 80,35 70,35" fill="#0ea5e9"/>
+  <!-- Face disc - lighter -->
+  <ellipse cx="50" cy="45" rx="22" ry="20" fill="#38bdf8"/>
+
+  <!-- Left eye -->
+  <circle cx="40" cy="42" r="10" fill="#f8fafc"/>
+  <circle cx="40" cy="42" r="6" fill="#0c4a6e"/>
+  <circle cx="38" cy="40" r="2" fill="#f8fafc"/>
+
+  <!-- Right eye -->
+  <circle cx="60" cy="42" r="10" fill="#f8fafc"/>
+  <circle cx="60" cy="42" r="6" fill="#0c4a6e"/>
+  <circle cx="58" cy="40" r="2" fill="#f8fafc"/>
+
+  <!-- Eyebrows - alert look -->
+  <path d="M30 34 Q35 32 42 35" stroke="#0369a1" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M70 34 Q65 32 58 35" stroke="#0369a1" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Beak -->
+  <path d="M50 50 L46 58 L50 56 L54 58 Z" fill="#fbbf24"/>
+
+  <!-- Chest feathers pattern -->
+  <ellipse cx="50" cy="72" rx="14" ry="12" fill="#7dd3fc" opacity="0.6"/>
+  <ellipse cx="50" cy="75" rx="10" ry="8" fill="#bae6fd" opacity="0.4"/>
 </svg>
