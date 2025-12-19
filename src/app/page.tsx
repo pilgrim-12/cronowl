@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OwlLogo } from "@/components/OwlLogo";
 
 export default function Home() {
   return (
@@ -6,7 +7,10 @@ export default function Home() {
       {/* Header */}
       <header className="border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-white">🦉 CronOwl</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <OwlLogo className="w-8 h-8" />
+            <span className="text-xl font-bold text-white">CronOwl</span>
+          </Link>
           <div className="flex items-center gap-4">
             <Link
               href="/login"
@@ -26,7 +30,9 @@ export default function Home() {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 py-24 text-center">
-        <div className="text-6xl mb-6">🦉</div>
+        <div className="flex justify-center mb-6">
+          <OwlLogo className="w-24 h-24" />
+        </div>
         <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
           Know when your cron jobs
           <br />

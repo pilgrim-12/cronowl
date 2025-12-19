@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { OwlLogo } from "@/components/OwlLogo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,10 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">🦉 CronOwl</h1>
+          <Link href="/" className="inline-flex items-center gap-2 justify-center">
+            <OwlLogo className="w-10 h-10" />
+            <span className="text-3xl font-bold text-white">CronOwl</span>
+          </Link>
           <p className="mt-2 text-gray-400">Reset your password</p>
         </div>
 

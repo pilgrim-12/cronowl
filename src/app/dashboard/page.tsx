@@ -248,59 +248,80 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950">
       <header className="border-b border-gray-800">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
-          <h1 className="text-lg sm:text-xl font-bold text-white flex-shrink-0">🦉 CronOwl</h1>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <PushToggle userId={user.uid} />
-            <TelegramLink userId={user.uid} />
-            <div className="hidden sm:flex items-center gap-2">
-              {user.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt="Avatar"
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm">
-                  {user.email?.charAt(0).toUpperCase()}
-                </div>
-              )}
-              <span className="text-gray-400 text-sm hidden md:inline">{user.email}</span>
-            </div>
-            {/* Mobile avatar */}
-            <div className="sm:hidden">
-              {user.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt="Avatar"
-                  width={28}
-                  height={28}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-white text-xs">
-                  {user.email?.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => router.push("/settings")}
-              className="text-gray-400 hover:text-white p-1"
-              title="Settings"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
+              <svg className="w-8 h-8" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" fill="#0ea5e9"/>
+                <circle cx="35" cy="45" r="14" fill="#f8fafc"/>
+                <circle cx="35" cy="45" r="7" fill="#0c4a6e"/>
+                <circle cx="32" cy="42" r="2" fill="#f8fafc"/>
+                <circle cx="65" cy="45" r="14" fill="#f8fafc"/>
+                <circle cx="65" cy="45" r="7" fill="#0c4a6e"/>
+                <circle cx="62" cy="42" r="2" fill="#f8fafc"/>
+                <polygon points="50,55 45,65 55,65" fill="#06b6d4"/>
+                <polygon points="25,20 30,35 20,35" fill="#0ea5e9"/>
+                <polygon points="75,20 80,35 70,35" fill="#0ea5e9"/>
               </svg>
-            </button>
-            <button
-              onClick={() => signOut()}
-              className="text-gray-400 hover:text-white text-xs sm:text-sm"
-            >
-              Sign out
-            </button>
+              <span className="text-xl font-bold text-white">CronOwl</span>
+            </Link>
+
+            {/* Center - Notification toggles (hidden on mobile) */}
+            <div className="hidden md:flex items-center gap-3">
+              <PushToggle userId={user.uid} />
+              <TelegramLink userId={user.uid} />
+            </div>
+
+            {/* Right side - User menu */}
+            <div className="flex items-center gap-4">
+              {/* Mobile notification toggles */}
+              <div className="flex md:hidden items-center gap-2">
+                <PushToggle userId={user.uid} />
+                <TelegramLink userId={user.uid} />
+              </div>
+
+              {/* User info - desktop only */}
+              <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 bg-gray-800/50 rounded-full">
+                {user.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt="Avatar"
+                    width={28}
+                    height={28}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-white text-sm">
+                    {user.email?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="text-gray-300 text-sm max-w-[150px] truncate">{user.email}</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => router.push("/settings")}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Settings"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => signOut()}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Sign out"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -483,7 +504,20 @@ export default function DashboardPage() {
           </div>
         ) : checks.length === 0 ? (
           <div className="bg-gray-900 rounded-lg p-8 text-center">
-            <div className="text-6xl mb-4">🦉</div>
+            <div className="flex justify-center mb-4">
+              <svg className="w-20 h-20" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="40" fill="#0ea5e9"/>
+                <circle cx="35" cy="45" r="14" fill="#f8fafc"/>
+                <circle cx="35" cy="45" r="7" fill="#0c4a6e"/>
+                <circle cx="32" cy="42" r="2" fill="#f8fafc"/>
+                <circle cx="65" cy="45" r="14" fill="#f8fafc"/>
+                <circle cx="65" cy="45" r="7" fill="#0c4a6e"/>
+                <circle cx="62" cy="42" r="2" fill="#f8fafc"/>
+                <polygon points="50,55 45,65 55,65" fill="#06b6d4"/>
+                <polygon points="25,20 30,35 20,35" fill="#0ea5e9"/>
+                <polygon points="75,20 80,35 70,35" fill="#0ea5e9"/>
+              </svg>
+            </div>
             <h3 className="text-xl font-medium text-white mb-2">
               No checks yet
             </h3>

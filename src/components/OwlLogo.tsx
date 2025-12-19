@@ -1,0 +1,29 @@
+export function OwlLogo({ className = "w-8 h-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Owl body/head - sky blue */}
+      <circle cx="50" cy="50" r="40" fill="#0ea5e9"/>
+
+      {/* Left eye white */}
+      <circle cx="35" cy="45" r="14" fill="#f8fafc"/>
+      {/* Left pupil - dark cyan */}
+      <circle cx="35" cy="45" r="7" fill="#0c4a6e"/>
+      {/* Left eye shine */}
+      <circle cx="32" cy="42" r="2" fill="#f8fafc"/>
+
+      {/* Right eye white */}
+      <circle cx="65" cy="45" r="14" fill="#f8fafc"/>
+      {/* Right pupil - dark cyan */}
+      <circle cx="65" cy="45" r="7" fill="#0c4a6e"/>
+      {/* Right eye shine */}
+      <circle cx="62" cy="42" r="2" fill="#f8fafc"/>
+
+      {/* Beak - cyan */}
+      <polygon points="50,55 45,65 55,65" fill="#06b6d4"/>
+
+      {/* Ears/tufts - sky blue */}
+      <polygon points="25,20 30,35 20,35" fill="#0ea5e9"/>
+      <polygon points="75,20 80,35 70,35" fill="#0ea5e9"/>
+    </svg>
+  );
+}
