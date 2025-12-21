@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
   for (const checkDoc of checksSnapshot.docs) {
     const check = checkDoc.data();
 
-    if (check.status === "new" || !check.lastPing) {
+    // Skip new checks, checks without pings, and paused checks
+    if (check.status === "new" || !check.lastPing || check.paused) {
       continue;
     }
 

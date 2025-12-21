@@ -1,10 +1,12 @@
 import { initializeApp, getApps, cert, App } from "firebase-admin/app";
 import { getMessaging, Messaging } from "firebase-admin/messaging";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getAuth, Auth } from "firebase-admin/auth";
 
 let adminApp: App | null = null;
 let adminMessaging: Messaging | null = null;
 let adminFirestore: Firestore | null = null;
+let adminAuthInstance: Auth | null = null;
 
 function getAdminApp(): App {
   if (adminApp) return adminApp;
@@ -39,6 +41,16 @@ export function getAdminMessaging(): Messaging {
   adminMessaging = getMessaging(getAdminApp());
   return adminMessaging;
 }
+
+function getAdminAuth(): Auth {
+  if (adminAuthInstance) return adminAuthInstance;
+  adminAuthInstance = getAuth(getAdminApp());
+  return adminAuthInstance;
+}
+
+export const adminAuth = {
+  verifyIdToken: (token: string) => getAdminAuth().verifyIdToken(token),
+};
 
 function getAdminFirestore(): Firestore {
   if (adminFirestore) return adminFirestore;

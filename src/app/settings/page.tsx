@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase";
 import TelegramLink from "@/components/TelegramLink";
 import { PushToggle } from "@/components/PushToggle";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
+import { ApiKeysManager } from "@/components/ApiKeysManager";
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -239,6 +240,11 @@ export default function SettingsPage() {
               <PushToggle userId={user.uid} />
             </div>
           </div>
+        </div>
+
+        {/* API Keys */}
+        <div className="mb-6">
+          <ApiKeysManager user={user} />
         </div>
 
         {/* Account Info */}

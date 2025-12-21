@@ -39,6 +39,7 @@ export interface Check {
   webhookUrl?: string; // optional webhook URL for notifications
   tags?: string[]; // optional tags for organizing checks
   maxDuration?: number; // max allowed duration in ms, alert if exceeded
+  paused?: boolean; // if true, skip status checking
 }
 
 // Helper to get next run time from cron expression
