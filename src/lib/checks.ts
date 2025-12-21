@@ -440,3 +440,163 @@ export async function getLastStatusEvent(
     ...doc.data(),
   } as StatusEvent;
 }
+
+// ==================== Status Pages ====================
+
+export interface StatusPage {
+  id: string;
+  userId: string;
+  slug: string; // unique public URL slug
+  title: string;
+  description?: string;
+  checkIds: string[]; // IDs of checks to display
+  isPublic: boolean;
+  showTags: boolean; // whether to show tags on public page
+  customDomain?: string; // optional custom domain
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface StatusPageCheck {
+  id: string;
+  name: string;
+  status: "up" | "down" | "new";
+  lastPing: Timestamp | null;
+  tags?: string[];
+}
+
+export interface PublicStatusPage {
+  title: string;
+  description?: string;
+  checks: StatusPageCheck[];
+  overallStatus: "operational" | "degraded" | "down";
+  updatedAt: string;
+}
+
+function generateStatusPageSlug(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let slug = "";
+  for (let i = 0; i < 8; i++) {
+    slug += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return slug;
+}
+
+export interface CreateStatusPageData {
+  title: string;
+  description?: string;
+  checkIds: string[];
+  isPublic: boolean;
+  showTags?: boolean;
+}
+
+export async function createStatusPage(
+  userId: string,
+  data: CreateStatusPageData
+): Promise<string> {
+  const now = Timestamp.now();
+  const pageData = {
+    userId,
+    slug: generateStatusPageSlug(),
+    title: data.title,
+    description: data.description || "",
+    checkIds: data.checkIds,
+    isPublic: data.isPublic,
+    showTags: data.showTags ?? true,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const docRef = await addDoc(collection(db, "statusPages"), pageData);
+  return docRef.id;
+}
+
+export async function getUserStatusPages(userId: string): Promise<StatusPage[]> {
+  const pagesQuery = query(
+    collection(db, "statusPages"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+
+  const snapshot = await getDocs(pagesQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as StatusPage[];
+}
+
+export async function getStatusPageBySlug(slug: string): Promise<StatusPage | null> {
+  const pagesQuery = query(
+    collection(db, "statusPages"),
+    where("slug", "==", slug),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(pagesQuery);
+  if (snapshot.empty) return null;
+
+  const doc = snapshot.docs[0];
+  return {
+    id: doc.id,
+    ...doc.data(),
+  } as StatusPage;
+}
+
+export async function updateStatusPage(
+  pageId: string,
+  data: Partial<Omit<StatusPage, "id" | "userId" | "createdAt">>
+): Promise<void> {
+  await updateDoc(doc(db, "statusPages", pageId), {
+    ...data,
+    updatedAt: Timestamp.now(),
+  });
+}
+
+export async function deleteStatusPage(pageId: string): Promise<void> {
+  await deleteDoc(doc(db, "statusPages", pageId));
+}
+
+export async function getPublicStatusPageData(slug: string): Promise<PublicStatusPage | null> {
+  const page = await getStatusPageBySlug(slug);
+  if (!page || !page.isPublic) return null;
+
+  // Fetch all checks for this page
+  const checks: StatusPageCheck[] = [];
+  let upCount = 0;
+  let downCount = 0;
+
+  for (const checkId of page.checkIds) {
+    const checkDoc = await getDoc(doc(db, "checks", checkId));
+    if (checkDoc.exists()) {
+      const checkData = checkDoc.data() as Omit<Check, "id">;
+      const realStatus = calculateRealStatus({ id: checkId, ...checkData } as Check);
+
+      checks.push({
+        id: checkId,
+        name: checkData.name,
+        status: realStatus,
+        lastPing: checkData.lastPing,
+        tags: page.showTags ? checkData.tags : undefined,
+      });
+
+      if (realStatus === "up") upCount++;
+      else if (realStatus === "down") downCount++;
+    }
+  }
+
+  // Calculate overall status
+  let overallStatus: "operational" | "degraded" | "down" = "operational";
+  if (downCount > 0 && upCount > 0) {
+    overallStatus = "degraded";
+  } else if (downCount > 0 && upCount === 0) {
+    overallStatus = "down";
+  }
+
+  return {
+    title: page.title,
+    description: page.description,
+    checks,
+    overallStatus,
+    updatedAt: new Date().toISOString(),
+  };
+}
