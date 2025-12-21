@@ -7,7 +7,7 @@ export interface TelegramMessage {
   title: string;
   body: string;
   checkName?: string;
-  type?: "down" | "recovery";
+  type?: "down" | "recovery" | "slow";
 }
 
 /**
@@ -24,7 +24,7 @@ export async function sendTelegramMessage(
     return false;
   }
 
-  const emoji = message.type === "down" ? "🔴" : message.type === "recovery" ? "🟢" : "📢";
+  const emoji = message.type === "down" ? "🔴" : message.type === "recovery" ? "🟢" : message.type === "slow" ? "🟡" : "📢";
   const text = `${emoji} *${escapeMarkdown(message.title)}*\n\n${escapeMarkdown(message.body)}`;
 
   try {
@@ -80,6 +80,25 @@ export async function sendTelegramRecoveryAlert(
     body: `Your cron job "${checkName}" has recovered and is now running normally.`,
     checkName,
     type: "recovery",
+  });
+}
+
+/**
+ * Send slow job alert via Telegram
+ */
+export async function sendTelegramSlowJobAlert(
+  chatId: string,
+  checkName: string,
+  duration: number,
+  maxDuration: number
+): Promise<boolean> {
+  const durationSec = (duration / 1000).toFixed(1);
+  const maxDurationSec = (maxDuration / 1000).toFixed(1);
+  return sendTelegramMessage(chatId, {
+    title: `${checkName} is SLOW`,
+    body: `Your job "${checkName}" took ${durationSec}s (threshold: ${maxDurationSec}s)`,
+    checkName,
+    type: "slow",
   });
 }
 

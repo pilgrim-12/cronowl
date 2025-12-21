@@ -11,10 +11,10 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { sendDownAlert, sendRecoveryAlert } from "@/lib/email";
+import { sendDownAlert, sendRecoveryAlert, sendSlowJobAlert } from "@/lib/email";
 import { sendPushNotification } from "@/lib/firebase-admin";
-import { sendTelegramDownAlert, sendTelegramRecoveryAlert } from "@/lib/telegram";
-import { sendWebhookDownAlert, sendWebhookRecoveryAlert } from "@/lib/webhook";
+import { sendTelegramDownAlert, sendTelegramRecoveryAlert, sendTelegramSlowJobAlert } from "@/lib/telegram";
+import { sendWebhookDownAlert, sendWebhookRecoveryAlert, sendWebhookSlowJobAlert } from "@/lib/webhook";
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
@@ -237,6 +237,74 @@ export async function GET(
     } else if (check.status === "new") {
       // First ping - record initial "up" status
       await addStatusEvent(checkDoc.id, "up");
+    }
+
+    // Check for slow job alert
+    if (duration && check.maxDuration) {
+      const durationMs = parseInt(duration, 10);
+      if (durationMs > check.maxDuration) {
+        // Job took longer than allowed - send slow job alerts
+        const userDoc = await getDoc(doc(db, "users", check.userId));
+        if (userDoc.exists()) {
+          const user = userDoc.data();
+
+          // Send email alert (if enabled)
+          if (user.email && user.emailNotifications !== false) {
+            try {
+              await sendSlowJobAlert(user.email, check.name, durationMs, check.maxDuration);
+            } catch (emailError) {
+              console.error("Failed to send slow job email:", emailError);
+            }
+          }
+
+          // Send push notification (if enabled)
+          if (user.pushTokens && user.pushTokens.length > 0 && user.pushNotifications !== false) {
+            try {
+              const durationSec = (durationMs / 1000).toFixed(1);
+              const maxDurationSec = (check.maxDuration / 1000).toFixed(1);
+              await sendPushNotification(user.pushTokens, {
+                title: `⏱️ ${check.name} is SLOW`,
+                body: `Job took ${durationSec}s (threshold: ${maxDurationSec}s)`,
+                data: {
+                  checkId: checkDoc.id,
+                  checkName: check.name,
+                  type: "slow",
+                },
+              });
+            } catch (pushError) {
+              console.error("Failed to send slow job push notification:", pushError);
+            }
+          }
+
+          // Send Telegram alert (if enabled)
+          if (user.telegramChatId && user.telegramNotifications !== false) {
+            try {
+              await sendTelegramSlowJobAlert(user.telegramChatId, check.name, durationMs, check.maxDuration);
+            } catch (telegramError) {
+              console.error("Failed to send slow job Telegram notification:", telegramError);
+            }
+          }
+        }
+
+        // Send webhook alert if configured
+        if (check.webhookUrl) {
+          try {
+            await sendWebhookSlowJobAlert(
+              check.webhookUrl,
+              {
+                id: checkDoc.id,
+                name: check.name,
+                slug: check.slug,
+                status: newStatus,
+              },
+              durationMs,
+              check.maxDuration
+            );
+          } catch (webhookError) {
+            console.error("Failed to send slow job webhook alert:", webhookError);
+          }
+        }
+      }
     }
 
     // Check other user's checks

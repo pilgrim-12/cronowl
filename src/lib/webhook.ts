@@ -2,7 +2,7 @@
 // Sends POST requests to user-configured URLs when check status changes
 
 export interface WebhookPayload {
-  event: "check.down" | "check.up" | "check.recovery";
+  event: "check.down" | "check.up" | "check.recovery" | "check.slow";
   check: {
     id: string;
     name: string;
@@ -11,6 +11,8 @@ export interface WebhookPayload {
   };
   timestamp: string;
   message: string;
+  duration?: number;
+  maxDuration?: number;
 }
 
 /**
@@ -33,8 +35,8 @@ function isDiscordWebhook(url: string): boolean {
 function formatPayloadForService(url: string, payload: WebhookPayload): unknown {
   if (isSlackWebhook(url)) {
     // Slack format with rich formatting
-    const emoji = payload.event === "check.down" ? "🔴" : "🟢";
-    const color = payload.event === "check.down" ? "#dc2626" : "#16a34a";
+    const emoji = payload.event === "check.down" ? "🔴" : payload.event === "check.slow" ? "🟡" : "🟢";
+    const color = payload.event === "check.down" ? "#dc2626" : payload.event === "check.slow" ? "#f97316" : "#16a34a";
     return {
       attachments: [
         {
@@ -64,7 +66,7 @@ function formatPayloadForService(url: string, payload: WebhookPayload): unknown 
 
   if (isDiscordWebhook(url)) {
     // Discord format with embed
-    const color = payload.event === "check.down" ? 0xdc2626 : 0x16a34a;
+    const color = payload.event === "check.down" ? 0xdc2626 : payload.event === "check.slow" ? 0xf97316 : 0x16a34a;
     return {
       embeds: [
         {
@@ -155,6 +157,27 @@ export async function sendWebhookRecoveryAlert(
     check,
     timestamp: new Date().toISOString(),
     message: `Check "${check.name}" is BACK UP - recovered and running normally`,
+  });
+}
+
+/**
+ * Send slow job alert webhook
+ */
+export async function sendWebhookSlowJobAlert(
+  webhookUrl: string,
+  check: { id: string; name: string; slug: string; status: "up" | "down" | "new" },
+  duration: number,
+  maxDuration: number
+): Promise<boolean> {
+  const durationSec = (duration / 1000).toFixed(1);
+  const maxDurationSec = (maxDuration / 1000).toFixed(1);
+  return sendWebhook(webhookUrl, {
+    event: "check.slow",
+    check,
+    timestamp: new Date().toISOString(),
+    message: `Check "${check.name}" is SLOW - took ${durationSec}s (threshold: ${maxDurationSec}s)`,
+    duration,
+    maxDuration,
   });
 }
 

@@ -38,6 +38,7 @@ export interface Check {
   createdAt: Timestamp;
   webhookUrl?: string; // optional webhook URL for notifications
   tags?: string[]; // optional tags for organizing checks
+  maxDuration?: number; // max allowed duration in ms, alert if exceeded
 }
 
 // Helper to get next run time from cron expression
@@ -284,6 +285,7 @@ export interface CreateCheckData {
   gracePeriod: number;
   webhookUrl?: string;
   tags?: string[]; // optional tags
+  maxDuration?: number; // max allowed duration in ms
 }
 
 export async function createCheck(
@@ -313,6 +315,10 @@ export async function createCheck(
 
   if (data.tags && data.tags.length > 0) {
     checkData.tags = data.tags;
+  }
+
+  if (data.maxDuration && data.maxDuration > 0) {
+    checkData.maxDuration = data.maxDuration;
   }
 
   const docRef = await addDoc(collection(db, "checks"), checkData);

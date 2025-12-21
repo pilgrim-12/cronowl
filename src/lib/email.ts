@@ -52,6 +52,37 @@ export async function sendRecoveryAlert(to: string, checkName: string) {
   }
 }
 
+export async function sendSlowJobAlert(to: string, checkName: string, duration: number, maxDuration: number) {
+  const durationSec = (duration / 1000).toFixed(1);
+  const maxDurationSec = (maxDuration / 1000).toFixed(1);
+  try {
+    await resend.emails.send({
+      from: "CronOwl <noreply@cronowl.com>",
+      to,
+      subject: `⏱️ Slow Job: ${checkName} took ${durationSec}s`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #f97316;">🦉 CronOwl Slow Job Alert</h1>
+          <p style="font-size: 18px;">Your job <strong>${checkName}</strong> completed, but took longer than expected.</p>
+          <div style="background: #fef3c7; border-left: 4px solid #f97316; padding: 16px; margin: 24px 0;">
+            <p style="margin: 0;"><strong>Duration:</strong> ${durationSec} seconds</p>
+            <p style="margin: 8px 0 0 0;"><strong>Threshold:</strong> ${maxDurationSec} seconds</p>
+          </div>
+          <p style="color: #666;">This may indicate performance issues or an overloaded system.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #999; font-size: 14px;">
+            <a href="https://cronowl.com/dashboard" style="color: #3b82f6;">View Dashboard</a>
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to send slow job email:", error);
+    return false;
+  }
+}
+
 export async function sendPaymentFailedAlert(to: string, planName: string) {
   try {
     await resend.emails.send({

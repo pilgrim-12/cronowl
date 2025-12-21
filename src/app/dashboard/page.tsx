@@ -997,6 +997,7 @@ export default function DashboardPage() {
             gracePeriod: editingCheck.gracePeriod,
             webhookUrl: editingCheck.webhookUrl,
             tags: editingCheck.tags,
+            maxDuration: editingCheck.maxDuration,
           }}
         />
       )}
@@ -1025,6 +1026,7 @@ function CheckModal({
     gracePeriod?: number;
     webhookUrl?: string;
     tags?: string[];
+    maxDuration?: number;
   };
   existingTags?: string[];
 }) {
@@ -1043,6 +1045,7 @@ function CheckModal({
   const [cronError, setCronError] = useState("");
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState("");
+  const [maxDuration, setMaxDuration] = useState<number | "">(initialData?.maxDuration || "");
 
   const addTag = (tag: string) => {
     const normalizedTag = tag.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "-");
@@ -1136,6 +1139,7 @@ function CheckModal({
       gracePeriod,
       webhookUrl: webhookUrl || undefined,
       tags: tags.length > 0 ? tags : undefined,
+      maxDuration: maxDuration ? Number(maxDuration) : undefined,
     });
   };
 
@@ -1417,6 +1421,32 @@ function CheckModal({
             <p className="text-gray-500 text-xs mt-1">
               Organize checks with tags (max 10)
             </p>
+          </div>
+
+          {/* Max Duration (Slow Job Alert) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Slow Job Alert (optional)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={maxDuration}
+                onChange={(e) => setMaxDuration(e.target.value ? Number(e.target.value) : "")}
+                min={1}
+                placeholder="e.g., 60000"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <span className="text-gray-400 text-sm">ms</span>
+            </div>
+            <p className="text-gray-500 text-xs mt-1">
+              Alert if job duration exceeds this threshold (in milliseconds). Leave empty to disable.
+            </p>
+            {maxDuration && (
+              <p className="text-blue-400 text-xs mt-1">
+                Alert if job takes longer than {(Number(maxDuration) / 1000).toFixed(1)}s
+              </p>
+            )}
           </div>
 
           {/* Webhook */}
