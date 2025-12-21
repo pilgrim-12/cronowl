@@ -58,6 +58,17 @@ export default function DashboardPage() {
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const [planUsage, setPlanUsage] = useState<CheckLimitResult | null>(null);
   const [limitError, setLimitError] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  // Get all unique tags from checks
+  const allTags = Array.from(
+    new Set(checks.flatMap(check => check.tags || []))
+  ).sort();
+
+  // Filter checks by selected tag
+  const filteredChecks = selectedTag
+    ? checks.filter(check => check.tags?.includes(selectedTag))
+    : checks;
 
   // Save preferences to localStorage
   useEffect(() => {
@@ -204,6 +215,12 @@ export default function DashboardPage() {
 
       if (data.webhookUrl) {
         updateData.webhookUrl = data.webhookUrl;
+      }
+
+      if (data.tags && data.tags.length > 0) {
+        updateData.tags = data.tags;
+      } else {
+        updateData.tags = [];
       }
 
       await updateCheck(editingCheck.id, updateData);
@@ -438,6 +455,39 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Tag Filter */}
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-gray-500 text-sm">Filter:</span>
+            <button
+              onClick={() => setSelectedTag(null)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedTag === null
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+              }`}
+            >
+              All ({checks.length})
+            </button>
+            {allTags.map((tag) => {
+              const count = checks.filter(c => c.tags?.includes(tag)).length;
+              return (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedTag === tag
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  }`}
+                >
+                  {tag} ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {loadingChecks ? (
           <div className="text-gray-400 text-center py-8">
             Loading checks...
@@ -462,7 +512,7 @@ export default function DashboardPage() {
           </div>
         ) : viewMode === "list" ? (
           <div className="space-y-4">
-            {checks.map((check) => (
+            {filteredChecks.map((check) => (
               <div key={check.id} className="bg-gray-900 rounded-lg p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -490,6 +540,19 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </p>
+                      {check.tags && check.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {check.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              onClick={() => setSelectedTag(tag)}
+                              className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-700 hover:text-white"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -717,7 +780,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {checks.map((check) => (
+            {filteredChecks.map((check) => (
               <div
                 key={check.id}
                 className="bg-gray-900 rounded-lg p-4 flex flex-col"
@@ -746,9 +809,23 @@ export default function DashboardPage() {
                     {check.cronExpression}
                   </p>
                 )}
-                <p className="text-gray-500 text-xs mb-3">
+                <p className="text-gray-500 text-xs mb-2">
                   Grace: {check.gracePeriod}min
                 </p>
+
+                {check.tags && check.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {check.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        onClick={() => setSelectedTag(tag)}
+                        className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-700 hover:text-white"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="bg-gray-800 rounded p-2 mb-3">
                   <code className="text-green-400 text-xs break-all line-clamp-2">
@@ -901,6 +978,7 @@ export default function DashboardPage() {
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreateCheck}
           title="Create New Check"
+          existingTags={allTags}
         />
       )}
 
@@ -909,6 +987,7 @@ export default function DashboardPage() {
           onClose={() => setEditingCheck(null)}
           onSave={handleEditCheck}
           title="Edit Check"
+          existingTags={allTags}
           initialData={{
             name: editingCheck.name,
             scheduleType: editingCheck.scheduleType || "preset",
@@ -917,6 +996,7 @@ export default function DashboardPage() {
             timezone: editingCheck.timezone || "UTC",
             gracePeriod: editingCheck.gracePeriod,
             webhookUrl: editingCheck.webhookUrl,
+            tags: editingCheck.tags,
           }}
         />
       )}
@@ -931,6 +1011,7 @@ function CheckModal({
   onSave,
   title,
   initialData,
+  existingTags = [],
 }: {
   onClose: () => void;
   onSave: (data: CreateCheckData) => void;
@@ -943,7 +1024,9 @@ function CheckModal({
     timezone?: string;
     gracePeriod?: number;
     webhookUrl?: string;
+    tags?: string[];
   };
+  existingTags?: string[];
 }) {
   const [name, setName] = useState(initialData?.name || "");
   const [scheduleType, setScheduleType] = useState<ScheduleType>(
@@ -958,6 +1041,29 @@ function CheckModal({
   const [webhookUrl, setWebhookUrl] = useState(initialData?.webhookUrl || "");
   const [webhookError, setWebhookError] = useState("");
   const [cronError, setCronError] = useState("");
+  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = (tag: string) => {
+    const normalizedTag = tag.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "-");
+    if (normalizedTag && !tags.includes(normalizedTag) && tags.length < 10) {
+      setTags([...tags, normalizedTag]);
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(tagInput);
+    } else if (e.key === "Backspace" && !tagInput && tags.length > 0) {
+      removeTag(tags[tags.length - 1]);
+    }
+  };
 
   // Calculate next run time for cron expression
   const nextRunTime = scheduleType === "cron" && cronExpression && isValidCronExpression(cronExpression)
@@ -1029,6 +1135,7 @@ function CheckModal({
       timezone,
       gracePeriod,
       webhookUrl: webhookUrl || undefined,
+      tags: tags.length > 0 ? tags : undefined,
     });
   };
 
@@ -1253,6 +1360,62 @@ function CheckModal({
             />
             <p className="text-gray-500 text-xs mt-1">
               How long to wait before marking as down
+            </p>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Tags (optional)
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-blue-200"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={() => tagInput && addTag(tagInput)}
+                placeholder="Add tag and press Enter"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                disabled={tags.length >= 10}
+              />
+            </div>
+            {existingTags.length > 0 && (
+              <div className="mt-2">
+                <span className="text-xs text-gray-500">Suggestions: </span>
+                {existingTags.filter(t => !tags.includes(t)).slice(0, 5).map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => addTag(tag)}
+                    className="text-xs text-gray-400 hover:text-white bg-gray-800 px-2 py-0.5 rounded ml-1"
+                  >
+                    +{tag}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-gray-500 text-xs mt-1">
+              Organize checks with tags (max 10)
             </p>
           </div>
 

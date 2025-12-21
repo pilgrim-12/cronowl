@@ -37,6 +37,7 @@ export interface Check {
   lastDuration?: number; // last execution duration in ms
   createdAt: Timestamp;
   webhookUrl?: string; // optional webhook URL for notifications
+  tags?: string[]; // optional tags for organizing checks
 }
 
 // Helper to get next run time from cron expression
@@ -282,6 +283,7 @@ export interface CreateCheckData {
   timezone: string;
   gracePeriod: number;
   webhookUrl?: string;
+  tags?: string[]; // optional tags
 }
 
 export async function createCheck(
@@ -309,8 +311,26 @@ export async function createCheck(
     checkData.webhookUrl = data.webhookUrl;
   }
 
+  if (data.tags && data.tags.length > 0) {
+    checkData.tags = data.tags;
+  }
+
   const docRef = await addDoc(collection(db, "checks"), checkData);
   return docRef.id;
+}
+
+// Get all unique tags for a user
+export async function getUserTags(userId: string): Promise<string[]> {
+  const checks = await getUserChecks(userId);
+  const tagsSet = new Set<string>();
+
+  for (const check of checks) {
+    if (check.tags) {
+      check.tags.forEach(tag => tagsSet.add(tag));
+    }
+  }
+
+  return Array.from(tagsSet).sort();
 }
 
 export async function getUserChecks(userId: string): Promise<Check[]> {
