@@ -17,19 +17,150 @@ import {
 import { db } from "./firebase";
 import { SCHEDULE_MINUTES } from "./constants";
 import { PLANS, PlanType } from "./plans";
+import cronParser from "cron-parser";
+
+// Schedule can be either a preset ("every 5 minutes") or cron expression ("*/5 * * * *")
+export type ScheduleType = "preset" | "cron";
 
 export interface Check {
   id: string;
   userId: string;
   name: string;
   slug: string;
-  schedule: string;
+  schedule: string; // preset value like "every 5 minutes"
+  scheduleType: ScheduleType; // "preset" or "cron"
+  cronExpression?: string; // cron expression like "*/5 * * * *"
+  timezone: string; // timezone like "UTC", "Europe/Moscow"
   gracePeriod: number;
   status: "up" | "down" | "new";
   lastPing: Timestamp | null;
   lastDuration?: number; // last execution duration in ms
   createdAt: Timestamp;
   webhookUrl?: string; // optional webhook URL for notifications
+}
+
+// Helper to get next run time from cron expression
+export function getNextRunTime(cronExpression: string, timezone: string): Date | null {
+  try {
+    const interval = cronParser.parse(cronExpression, {
+      tz: timezone,
+      currentDate: new Date(),
+    });
+    return interval.next().toDate();
+  } catch {
+    return null;
+  }
+}
+
+// Helper to get previous run time from cron expression
+export function getPreviousRunTime(cronExpression: string, timezone: string): Date | null {
+  try {
+    const interval = cronParser.parse(cronExpression, {
+      tz: timezone,
+      currentDate: new Date(),
+    });
+    return interval.prev().toDate();
+  } catch {
+    return null;
+  }
+}
+
+// Validate cron expression
+export function isValidCronExpression(expression: string): boolean {
+  try {
+    cronParser.parse(expression);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Get human-readable description of cron expression
+export function describeCronExpression(expression: string): string {
+  try {
+    const parts = expression.trim().split(/\s+/);
+    if (parts.length !== 5) return expression;
+
+    const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
+    // Common patterns
+    if (expression === "* * * * *") return "Every minute";
+    if (expression === "*/5 * * * *") return "Every 5 minutes";
+    if (expression === "*/10 * * * *") return "Every 10 minutes";
+    if (expression === "*/15 * * * *") return "Every 15 minutes";
+    if (expression === "*/30 * * * *") return "Every 30 minutes";
+    if (expression === "0 * * * *") return "Every hour";
+    if (expression === "0 */2 * * *") return "Every 2 hours";
+    if (expression === "0 */6 * * *") return "Every 6 hours";
+    if (expression === "0 */12 * * *") return "Every 12 hours";
+    if (expression === "0 0 * * *") return "Every day at midnight";
+    if (expression === "0 0 * * 0") return "Every Sunday at midnight";
+    if (expression === "0 0 1 * *") return "First day of every month";
+
+    // Build description for other patterns
+    let desc = "";
+
+    // Minutes
+    if (minute === "*") {
+      desc = "Every minute";
+    } else if (minute.startsWith("*/")) {
+      desc = `Every ${minute.slice(2)} minutes`;
+    } else {
+      desc = `At minute ${minute}`;
+    }
+
+    // Hours
+    if (hour !== "*") {
+      if (hour.startsWith("*/")) {
+        desc += ` every ${hour.slice(2)} hours`;
+      } else {
+        desc += ` at ${hour.padStart(2, "0")}:${minute === "*" ? "00" : minute.padStart(2, "0")}`;
+      }
+    }
+
+    // Day of month
+    if (dayOfMonth !== "*") {
+      desc += ` on day ${dayOfMonth}`;
+    }
+
+    // Month
+    if (month !== "*") {
+      const months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      desc += ` in ${months[parseInt(month)] || month}`;
+    }
+
+    // Day of week
+    if (dayOfWeek !== "*") {
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      desc += ` on ${days[parseInt(dayOfWeek)] || dayOfWeek}`;
+    }
+
+    return desc || expression;
+  } catch {
+    return expression;
+  }
+}
+
+// Get expected interval in milliseconds for a check
+export function getExpectedIntervalMs(check: Check): number {
+  if (check.scheduleType === "cron" && check.cronExpression) {
+    try {
+      const interval = cronParser.parse(check.cronExpression, {
+        tz: check.timezone || "UTC",
+        currentDate: new Date(),
+      });
+      const next1 = interval.next().toDate();
+      const next2 = interval.next().toDate();
+      return next2.getTime() - next1.getTime();
+    } catch {
+      // Fallback to 1 hour if parsing fails
+      return 60 * 60 * 1000;
+    }
+  }
+
+  // Preset schedule
+  const scheduleMinutes = SCHEDULE_MINUTES[check.schedule] || 60;
+  return scheduleMinutes * 60 * 1000;
 }
 
 export interface Ping {
@@ -127,33 +258,52 @@ export function calculateRealStatus(check: Check): "up" | "down" | "new" {
 
   const now = new Date();
   const lastPing = check.lastPing.toDate();
-  const scheduleMinutes = SCHEDULE_MINUTES[check.schedule] || 60;
   const gracePeriod = check.gracePeriod || 5;
-  const expectedInterval = (scheduleMinutes + gracePeriod) * 60 * 1000;
+
+  // Get expected interval based on schedule type
+  const expectedIntervalMs = getExpectedIntervalMs(check);
+  const graceMs = gracePeriod * 60 * 1000;
+  const totalAllowedMs = expectedIntervalMs + graceMs;
 
   const timeSinceLastPing = now.getTime() - lastPing.getTime();
 
-  if (timeSinceLastPing > expectedInterval) {
+  if (timeSinceLastPing > totalAllowedMs) {
     return "down";
   }
 
   return "up";
 }
 
+export interface CreateCheckData {
+  name: string;
+  scheduleType: ScheduleType;
+  schedule?: string; // preset schedule
+  cronExpression?: string; // cron expression
+  timezone: string;
+  gracePeriod: number;
+  webhookUrl?: string;
+}
+
 export async function createCheck(
   userId: string,
-  data: { name: string; schedule: string; gracePeriod: number; webhookUrl?: string }
+  data: CreateCheckData
 ): Promise<string> {
   const checkData: Record<string, unknown> = {
     userId,
     name: data.name,
     slug: generateSlug(),
-    schedule: data.schedule,
+    scheduleType: data.scheduleType,
+    schedule: data.schedule || "",
+    timezone: data.timezone,
     gracePeriod: data.gracePeriod,
     status: "new",
     lastPing: null,
     createdAt: Timestamp.now(),
   };
+
+  if (data.scheduleType === "cron" && data.cronExpression) {
+    checkData.cronExpression = data.cronExpression;
+  }
 
   if (data.webhookUrl) {
     checkData.webhookUrl = data.webhookUrl;

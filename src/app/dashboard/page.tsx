@@ -7,6 +7,7 @@ import {
   Check,
   Ping,
   StatusEvent,
+  ScheduleType,
   getUserChecks,
   createCheck,
   deleteCheck,
@@ -17,8 +18,13 @@ import {
   calculateRealStatus,
   canCreateCheck,
   CheckLimitResult,
+  CreateCheckData,
+  describeCronExpression,
+  isValidCronExpression,
+  getNextRunTime,
 } from "@/lib/checks";
 import { PLANS } from "@/lib/plans";
+import { SCHEDULE_OPTIONS, CRON_PRESETS, TIMEZONE_OPTIONS } from "@/lib/constants";
 import Link from "next/link";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
@@ -155,12 +161,15 @@ export default function DashboardPage() {
     return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
   };
 
-  const handleCreateCheck = async (
-    name: string,
-    schedule: string,
-    gracePeriod: number,
-    webhookUrl?: string
-  ) => {
+  // Helper to display schedule info
+  const getScheduleDisplay = (check: Check): string => {
+    if (check.scheduleType === "cron" && check.cronExpression) {
+      return describeCronExpression(check.cronExpression);
+    }
+    return check.schedule || "Unknown";
+  };
+
+  const handleCreateCheck = async (data: CreateCheckData) => {
     if (!user) return;
     setLimitError(null);
     try {
@@ -170,7 +179,7 @@ export default function DashboardPage() {
         setLimitError(limitCheck.reason || "Check limit reached");
         return;
       }
-      await createCheck(user.uid, { name, schedule, gracePeriod, webhookUrl });
+      await createCheck(user.uid, data);
       await loadChecks();
       setShowCreateModal(false);
     } catch (error) {
@@ -178,23 +187,32 @@ export default function DashboardPage() {
     }
   };
 
-  const handleEditCheck = async (
-    name: string,
-    schedule: string,
-    gracePeriod: number,
-    webhookUrl?: string
-  ) => {
+  const handleEditCheck = async (data: CreateCheckData) => {
     if (!editingCheck) return;
     try {
-      const updateData: Record<string, unknown> = { name, schedule, gracePeriod };
-      if (webhookUrl) {
-        updateData.webhookUrl = webhookUrl;
+      const updateData: Record<string, unknown> = {
+        name: data.name,
+        scheduleType: data.scheduleType,
+        schedule: data.schedule || "",
+        timezone: data.timezone,
+        gracePeriod: data.gracePeriod,
+      };
+
+      if (data.scheduleType === "cron" && data.cronExpression) {
+        updateData.cronExpression = data.cronExpression;
       }
+
+      if (data.webhookUrl) {
+        updateData.webhookUrl = data.webhookUrl;
+      }
+
       await updateCheck(editingCheck.id, updateData);
+
       // Remove webhook URL if it was cleared
-      if (!webhookUrl && editingCheck.webhookUrl) {
+      if (!data.webhookUrl && editingCheck.webhookUrl) {
         await removeWebhookUrl(editingCheck.id);
       }
+
       await loadChecks();
       setEditingCheck(null);
     } catch (error) {
@@ -465,7 +483,12 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="text-gray-400 text-sm">
-                        {check.schedule} • {check.gracePeriod}min grace
+                        {getScheduleDisplay(check)} • {check.gracePeriod}min grace
+                        {check.scheduleType === "cron" && (
+                          <span className="ml-2 text-xs text-blue-400 font-mono">
+                            ({check.cronExpression})
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -715,9 +738,14 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <p className="text-gray-400 text-sm mb-2">
-                  {check.schedule}
+                <p className="text-gray-400 text-sm mb-1">
+                  {getScheduleDisplay(check)}
                 </p>
+                {check.scheduleType === "cron" && (
+                  <p className="text-blue-400 text-xs font-mono mb-1">
+                    {check.cronExpression}
+                  </p>
+                )}
                 <p className="text-gray-500 text-xs mb-3">
                   Grace: {check.gracePeriod}min
                 </p>
@@ -881,10 +909,15 @@ export default function DashboardPage() {
           onClose={() => setEditingCheck(null)}
           onSave={handleEditCheck}
           title="Edit Check"
-          initialName={editingCheck.name}
-          initialSchedule={editingCheck.schedule}
-          initialGracePeriod={editingCheck.gracePeriod}
-          initialWebhookUrl={editingCheck.webhookUrl}
+          initialData={{
+            name: editingCheck.name,
+            scheduleType: editingCheck.scheduleType || "preset",
+            schedule: editingCheck.schedule,
+            cronExpression: editingCheck.cronExpression,
+            timezone: editingCheck.timezone || "UTC",
+            gracePeriod: editingCheck.gracePeriod,
+            webhookUrl: editingCheck.webhookUrl,
+          }}
         />
       )}
 
@@ -893,52 +926,51 @@ export default function DashboardPage() {
   );
 }
 
-const SCHEDULE_OPTIONS = [
-  { value: "every 1 minute", label: "1m", group: "minutes" },
-  { value: "every 2 minutes", label: "2m", group: "minutes" },
-  { value: "every 5 minutes", label: "5m", group: "minutes" },
-  { value: "every 10 minutes", label: "10m", group: "minutes" },
-  { value: "every 15 minutes", label: "15m", group: "minutes" },
-  { value: "every 30 minutes", label: "30m", group: "minutes" },
-  { value: "every hour", label: "1h", group: "hours" },
-  { value: "every 2 hours", label: "2h", group: "hours" },
-  { value: "every 6 hours", label: "6h", group: "hours" },
-  { value: "every 12 hours", label: "12h", group: "hours" },
-  { value: "every day", label: "1d", group: "days" },
-  { value: "every week", label: "1w", group: "days" },
-];
-
 function CheckModal({
   onClose,
   onSave,
   title,
-  initialName = "",
-  initialSchedule = "every 5 minutes",
-  initialGracePeriod = 5,
-  initialWebhookUrl = "",
+  initialData,
 }: {
   onClose: () => void;
-  onSave: (name: string, schedule: string, gracePeriod: number, webhookUrl?: string) => void;
+  onSave: (data: CreateCheckData) => void;
   title: string;
-  initialName?: string;
-  initialSchedule?: string;
-  initialGracePeriod?: number;
-  initialWebhookUrl?: string;
+  initialData?: {
+    name?: string;
+    scheduleType?: ScheduleType;
+    schedule?: string;
+    cronExpression?: string;
+    timezone?: string;
+    gracePeriod?: number;
+    webhookUrl?: string;
+  };
 }) {
-  const [name, setName] = useState(initialName);
-  const [schedule, setSchedule] = useState(initialSchedule);
-  const [gracePeriod, setGracePeriod] = useState(initialGracePeriod);
-  const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl || "");
+  const [name, setName] = useState(initialData?.name || "");
+  const [scheduleType, setScheduleType] = useState<ScheduleType>(
+    initialData?.scheduleType || "preset"
+  );
+  const [schedule, setSchedule] = useState(initialData?.schedule || "every 5 minutes");
+  const [cronExpression, setCronExpression] = useState(initialData?.cronExpression || "");
+  const [timezone, setTimezone] = useState(
+    initialData?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  );
+  const [gracePeriod, setGracePeriod] = useState(initialData?.gracePeriod || 5);
+  const [webhookUrl, setWebhookUrl] = useState(initialData?.webhookUrl || "");
   const [webhookError, setWebhookError] = useState("");
+  const [cronError, setCronError] = useState("");
+
+  // Calculate next run time for cron expression
+  const nextRunTime = scheduleType === "cron" && cronExpression && isValidCronExpression(cronExpression)
+    ? getNextRunTime(cronExpression, timezone)
+    : null;
 
   const validateWebhookUrl = (url: string): { valid: boolean; error?: string } => {
-    if (!url) return { valid: true }; // empty is OK
+    if (!url) return { valid: true };
     try {
       const parsed = new URL(url);
       if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
         return { valid: false, error: "URL must use HTTP or HTTPS" };
       }
-      // Block localhost and private IPs
       const hostname = parsed.hostname.toLowerCase();
       if (
         hostname === "localhost" ||
@@ -958,25 +990,65 @@ function CheckModal({
     }
   };
 
+  const handleCronChange = (value: string) => {
+    setCronExpression(value);
+    if (value && !isValidCronExpression(value)) {
+      setCronError("Invalid cron expression");
+    } else {
+      setCronError("");
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validateWebhookUrl(webhookUrl);
-    if (!validation.valid) {
-      setWebhookError(validation.error || "Invalid URL");
+
+    // Validate webhook
+    const webhookValidation = validateWebhookUrl(webhookUrl);
+    if (!webhookValidation.valid) {
+      setWebhookError(webhookValidation.error || "Invalid URL");
       return;
     }
-    onSave(name, schedule, gracePeriod, webhookUrl || undefined);
+
+    // Validate cron expression
+    if (scheduleType === "cron") {
+      if (!cronExpression) {
+        setCronError("Cron expression is required");
+        return;
+      }
+      if (!isValidCronExpression(cronExpression)) {
+        setCronError("Invalid cron expression");
+        return;
+      }
+    }
+
+    onSave({
+      name,
+      scheduleType,
+      schedule: scheduleType === "preset" ? schedule : undefined,
+      cronExpression: scheduleType === "cron" ? cronExpression : undefined,
+      timezone,
+      gracePeriod,
+      webhookUrl: webhookUrl || undefined,
+    });
   };
 
   const minuteOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "minutes");
   const hourOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "hours");
   const dayOptions = SCHEDULE_OPTIONS.filter((o) => o.group === "days");
 
+  // Group timezones
+  const timezoneGroups = TIMEZONE_OPTIONS.reduce((acc, tz) => {
+    if (!acc[tz.group]) acc[tz.group] = [];
+    acc[tz.group].push(tz);
+    return acc;
+  }, {} as Record<string, typeof TIMEZONE_OPTIONS>);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-lg">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-lg my-8">
         <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Name
@@ -991,65 +1063,182 @@ function CheckModal({
             />
           </div>
 
+          {/* Schedule Type Toggle */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Expected Schedule
+              Schedule Type
             </label>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 w-12 py-1.5">Min:</span>
-                {minuteOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSchedule(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      schedule === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 w-12 py-1.5">Hour:</span>
-                {hourOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSchedule(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      schedule === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs text-gray-500 w-12 py-1.5">Day:</span>
-                {dayOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSchedule(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      schedule === option.value
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex bg-gray-800 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setScheduleType("preset")}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  scheduleType === "preset"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduleType("cron")}
+                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  scheduleType === "cron"
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Cron Expression
+              </button>
             </div>
           </div>
 
+          {/* Preset Schedule */}
+          {scheduleType === "preset" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Expected Schedule
+              </label>
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500 w-12 py-1.5">Min:</span>
+                  {minuteOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSchedule(option.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        schedule === option.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500 w-12 py-1.5">Hour:</span>
+                  {hourOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSchedule(option.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        schedule === option.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-gray-500 w-12 py-1.5">Day:</span>
+                  {dayOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSchedule(option.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        schedule === option.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cron Expression */}
+          {scheduleType === "cron" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Cron Expression
+              </label>
+              {/* Quick presets */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {CRON_PRESETS.slice(0, 6).map((preset) => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => {
+                      setCronExpression(preset.value);
+                      setCronError("");
+                    }}
+                    className={`px-2 py-1 rounded text-xs transition-colors ${
+                      cronExpression === preset.value
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={cronExpression}
+                onChange={(e) => handleCronChange(e.target.value)}
+                placeholder="*/5 * * * *"
+                className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white font-mono placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  cronError ? "border-red-500" : "border-gray-700"
+                }`}
+              />
+              {cronError ? (
+                <p className="text-red-400 text-xs mt-1">{cronError}</p>
+              ) : cronExpression && isValidCronExpression(cronExpression) ? (
+                <div className="mt-2 space-y-1">
+                  <p className="text-green-400 text-xs">
+                    {describeCronExpression(cronExpression)}
+                  </p>
+                  {nextRunTime && (
+                    <p className="text-gray-400 text-xs">
+                      Next run: {nextRunTime.toLocaleString(undefined, {
+                        timeZone: timezone,
+                        dateStyle: "medium",
+                        timeStyle: "short"
+                      })}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-xs mt-1">
+                  Format: minute hour day month weekday (e.g., 0 3 * * 1 = 3:00 AM every Monday)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Timezone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Timezone
+            </label>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Object.entries(timezoneGroups).map(([group, zones]) => (
+                <optgroup key={group} label={group}>
+                  {zones.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {/* Grace Period */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Grace Period (minutes)
@@ -1067,6 +1256,7 @@ function CheckModal({
             </p>
           </div>
 
+          {/* Webhook */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Webhook URL (optional)
@@ -1092,6 +1282,7 @@ function CheckModal({
             )}
           </div>
 
+          {/* Buttons */}
           <div className="flex gap-3 pt-2">
             <button
               type="button"
