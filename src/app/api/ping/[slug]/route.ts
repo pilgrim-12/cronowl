@@ -108,6 +108,7 @@ export async function GET(
     const exitCode = searchParams.get("exit_code") || searchParams.get("exitCode");
     const output = searchParams.get("output");
     const status = searchParams.get("status"); // success, failure
+    const isStart = searchParams.get("start") === "1"; // Signal job start (no status update)
 
     const checksQuery = query(
       collection(db, "checks"),
@@ -122,6 +123,25 @@ export async function GET(
     const checkDoc = checksSnapshot.docs[0];
     const check = checkDoc.data();
     const wasDown = check.status === "down";
+
+    // Handle start signal - just record the start, don't change status
+    if (isStart) {
+      // Record start ping without changing status
+      const ip =
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip") ||
+        "unknown";
+      const userAgent = request.headers.get("user-agent") || "unknown";
+
+      await addDoc(collection(db, "checks", checkDoc.id, "pings"), {
+        timestamp: Timestamp.now(),
+        ip: ip.split(",")[0].trim(),
+        userAgent,
+        status: "start",
+      });
+
+      return NextResponse.json({ ok: true, message: "Start signal recorded" });
+    }
 
     // Determine ping status from exit code or explicit status
     let pingStatus: "success" | "failure" | "unknown" = "unknown";
@@ -249,6 +269,7 @@ export async function POST(
     if (body.exitCode !== undefined) url.searchParams.set("exitCode", String(body.exitCode));
     if (body.status) url.searchParams.set("status", body.status);
     if (body.output) url.searchParams.set("output", body.output);
+    if (body.start) url.searchParams.set("start", "1");
 
     // Create new request with updated URL
     const newRequest = new NextRequest(url, {

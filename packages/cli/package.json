@@ -1,0 +1,44 @@
+{
+  "name": "cronowl",
+  "version": "1.0.0",
+  "description": "CLI tool for CronOwl - cron job monitoring made simple",
+  "keywords": [
+    "cron",
+    "monitoring",
+    "heartbeat",
+    "dead-man-switch",
+    "cronjob",
+    "scheduler",
+    "alerting"
+  ],
+  "author": "CronOwl",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pilgrim-12/cronowl.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://cronowl.com",
+  "bin": {
+    "cronowl": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
