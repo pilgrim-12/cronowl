@@ -79,6 +79,124 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Features */}
+      <section className="py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <h3 className="text-3xl font-bold text-white text-center mb-4">
+            Everything you need
+          </h3>
+          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+            From simple pings to full API automation
+          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Cron Expressions</h4>
+              <p className="text-gray-400 text-sm">
+                Full cron syntax support with timezone awareness
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Status Pages</h4>
+              <p className="text-gray-400 text-sm">
+                Public status pages with embeddable badges
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">Slow Job Alerts</h4>
+              <p className="text-gray-400 text-sm">
+                Get notified when jobs take longer than expected
+              </p>
+            </div>
+            <div className="bg-gray-900 rounded-lg p-6">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              </div>
+              <h4 className="text-lg font-semibold text-white mb-2">REST API</h4>
+              <p className="text-gray-400 text-sm">
+                Full API for automation and integrations
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* API Section */}
+      <section className="bg-gray-900 py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h3 className="text-3xl font-bold text-white mb-4">
+                Powerful REST API
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Automate everything with our API. Create checks, manage monitoring,
+                and integrate with your CI/CD pipelines.
+              </p>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-center gap-3 text-gray-300">
+                  <span className="text-green-500">✓</span>
+                  Bearer token authentication
+                </li>
+                <li className="flex items-center gap-3 text-gray-300">
+                  <span className="text-green-500">✓</span>
+                  Full CRUD for checks
+                </li>
+                <li className="flex items-center gap-3 text-gray-300">
+                  <span className="text-green-500">✓</span>
+                  Ping history & status events
+                </li>
+                <li className="flex items-center gap-3 text-gray-300">
+                  <span className="text-green-500">✓</span>
+                  Pause/resume monitoring
+                </li>
+              </ul>
+              <Link
+                href="/docs/api"
+                className="text-blue-400 hover:text-blue-300 font-medium"
+              >
+                View API Documentation →
+              </Link>
+            </div>
+            <div className="bg-gray-950 rounded-xl p-6 font-mono text-sm overflow-x-auto">
+              <div className="text-gray-500 mb-2"># List all checks</div>
+              <div className="text-green-400 mb-4">
+                curl -H &quot;Authorization: Bearer sk_live_xxx&quot; \<br />
+                &nbsp;&nbsp;https://cronowl.com/api/v1/checks
+              </div>
+              <div className="text-gray-500 mb-2"># Create a check</div>
+              <div className="text-green-400 mb-4">
+                curl -X POST \<br />
+                &nbsp;&nbsp;-H &quot;Authorization: Bearer sk_live_xxx&quot; \<br />
+                &nbsp;&nbsp;-H &quot;Content-Type: application/json&quot; \<br />
+                &nbsp;&nbsp;-d &apos;&#123;&quot;name&quot;:&quot;Backup&quot;,&quot;schedule&quot;:&quot;every hour&quot;&#125;&apos; \<br />
+                &nbsp;&nbsp;https://cronowl.com/api/v1/checks
+              </div>
+              <div className="text-gray-500 mb-2"># Ping with duration</div>
+              <div className="text-green-400">
+                curl &quot;https://cronowl.com/api/ping/abc123?duration=5000&quot;
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Use cases */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4">
