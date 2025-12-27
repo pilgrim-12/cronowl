@@ -89,6 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
+    // Force account selection to avoid caching issues
+    provider.setCustomParameters({
+      prompt: "select_account",
+    });
     await signInWithPopup(auth, provider);
   };
 
