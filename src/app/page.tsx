@@ -372,24 +372,70 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Comparison Section */}
+      <section className="bg-gray-900 py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h3 className="text-2xl font-bold text-white mb-4">
+            How we compare to alternatives
+          </h3>
+          <p className="text-gray-400 mb-8">
+            See why developers are switching to CronOwl
+          </p>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link
+              href="/compare/healthchecks"
+              className="bg-gray-800 hover:bg-gray-750 rounded-lg p-6 text-left transition-colors group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white font-medium">vs Healthchecks.io</span>
+                <span className="text-gray-500 group-hover:text-gray-400 transition-colors">→</span>
+              </div>
+              <p className="text-gray-400 text-sm mb-3">
+                Same features, 80% cheaper. Plus push notifications and status pages.
+              </p>
+              <div className="text-green-400 text-sm font-medium">Save $192/year</div>
+            </Link>
+            <Link
+              href="/compare/cronitor"
+              className="bg-gray-800 hover:bg-gray-750 rounded-lg p-6 text-left transition-colors group"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-white font-medium">vs Cronitor</span>
+                <span className="text-gray-500 group-hover:text-gray-400 transition-colors">→</span>
+              </div>
+              <p className="text-gray-400 text-sm mb-3">
+                98% cost savings. $4/mo vs $200/mo for 100 cron jobs.
+              </p>
+              <div className="text-green-400 text-sm font-medium">Save $2,352/year</div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-gray-800 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-gray-400 text-sm">
             © 2025 CronOwl. Built with ☕ by indie developers.
           </div>
-          <div className="flex gap-6 text-sm">
+          <div className="flex flex-wrap justify-center md:justify-end gap-6 text-sm">
             <Link href="/pricing" className="text-gray-400 hover:text-white">
               Pricing
+            </Link>
+            <Link href="/compare/healthchecks" className="text-gray-400 hover:text-white">
+              vs Healthchecks
+            </Link>
+            <Link href="/compare/cronitor" className="text-gray-400 hover:text-white">
+              vs Cronitor
+            </Link>
+            <Link href="/docs/api" className="text-gray-400 hover:text-white">
+              API
             </Link>
             <Link href="/terms" className="text-gray-400 hover:text-white">
               Terms
             </Link>
             <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy
-            </Link>
-            <Link href="/refund" className="text-gray-400 hover:text-white">
-              Refund
             </Link>
           </div>
         </div>
