@@ -4,7 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { OwlLogo } from "./OwlLogo";
+
+type PlanType = "free" | "starter" | "pro";
 
 interface HeaderProps {
   user: User;
@@ -13,7 +17,42 @@ interface HeaderProps {
 
 export function Header({ user, signOut }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [plan, setPlan] = useState<PlanType>("free");
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Fetch user's plan
+  useEffect(() => {
+    async function fetchPlan() {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setPlan(data.plan || "free");
+        }
+      } catch (err) {
+        console.error("Failed to fetch user plan:", err);
+      }
+    }
+    fetchPlan();
+  }, [user.uid]);
+
+  const getPlanBadge = () => {
+    const badges: Record<PlanType, { label: string; className: string }> = {
+      free: {
+        label: "Free",
+        className: "bg-gray-700 text-gray-300",
+      },
+      starter: {
+        label: "Starter",
+        className: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+      },
+      pro: {
+        label: "Pro",
+        className: "bg-purple-500/20 text-purple-400 border border-purple-500/30",
+      },
+    };
+    return badges[plan];
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -46,34 +85,40 @@ export function Header({ user, signOut }: HeaderProps) {
           <span className="text-lg font-semibold text-white">CronOwl</span>
         </Link>
 
-        {/* Right side - User dropdown */}
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            {user.photoURL ? (
-              <Image
-                src={user.photoURL}
-                alt="Avatar"
-                width={32}
-                height={32}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
-                {user.email?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <svg
-              className={`w-4 h-4 text-gray-400 transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Right side - Plan badge and User dropdown */}
+        <div className="flex items-center gap-3">
+          {/* Plan badge - always visible */}
+          <span className={`px-2 py-1 text-xs font-medium rounded ${getPlanBadge().className}`}>
+            {getPlanBadge().label}
+          </span>
+
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-800 transition-colors"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
+              {user.photoURL ? (
+                <Image
+                  src={user.photoURL}
+                  alt="Avatar"
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-medium">
+                  {user.email?.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
 
           {/* Dropdown menu */}
           {isMenuOpen && (
@@ -95,9 +140,14 @@ export function Header({ user, signOut }: HeaderProps) {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {user.displayName || "User"}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-white truncate">
+                        {user.displayName || "User"}
+                      </p>
+                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${getPlanBadge().className}`}>
+                        {getPlanBadge().label}
+                      </span>
+                    </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
                 </div>
@@ -155,6 +205,7 @@ export function Header({ user, signOut }: HeaderProps) {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </header>

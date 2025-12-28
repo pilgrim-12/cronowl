@@ -28,6 +28,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<PaddlePlan | null>(null);
   const [downgrading, setDowngrading] = useState(false);
+  const [canceling, setCanceling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -121,6 +122,38 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       setError(err instanceof Error ? err.message : "Failed to downgrade subscription");
     } finally {
       setDowngrading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm("Are you sure you want to cancel your subscription? You will keep access until the end of your current billing period.")) {
+      return;
+    }
+
+    setCanceling(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch("/api/subscription/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to cancel subscription");
+      }
+
+      setSuccess("Your subscription has been canceled. You will keep access until the end of your billing period.");
+      setTimeout(() => loadSubscription(), 2000);
+    } catch (err) {
+      console.error("Failed to cancel:", err);
+      setError(err instanceof Error ? err.message : "Failed to cancel subscription");
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -350,18 +383,27 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       {/* Manage Subscription */}
       {subscription && (subscription.status === "active" || subscription.status === "past_due") && (
         <div className="mt-4 pt-4 border-t border-gray-800">
-          <button
-            onClick={handleManageSubscription}
-            disabled={openingPortal}
-            className="text-gray-400 hover:text-white text-sm flex items-center gap-1 disabled:opacity-50"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            {openingPortal ? "Opening..." : "Manage subscription on Paddle"}
-          </button>
-          <p className="text-gray-500 text-xs mt-1">
-            Update payment method, cancel, or view invoices
+          <div className="flex items-center justify-between">
+            <button
+              onClick={handleManageSubscription}
+              disabled={openingPortal}
+              className="text-gray-400 hover:text-white text-sm flex items-center gap-1 disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              {openingPortal ? "Opening..." : "Manage on Paddle"}
+            </button>
+            <button
+              onClick={handleCancelSubscription}
+              disabled={canceling}
+              className="text-red-400 hover:text-red-300 text-sm disabled:opacity-50"
+            >
+              {canceling ? "Canceling..." : "Cancel subscription"}
+            </button>
+          </div>
+          <p className="text-gray-500 text-xs mt-2">
+            Update payment method or view invoices on Paddle
           </p>
         </div>
       )}

@@ -37,8 +37,11 @@ CronOwl monitors your scheduled tasks (cron jobs, backups, ETL pipelines, etc.) 
 ### Core Monitoring
 - ✅ **Dead Man's Switch** - Expects regular pings from your jobs
 - ✅ **Flexible Schedules** - 1min, 5min, 1hour, 1day, 1week intervals
+- ✅ **Cron Expressions** - Full cron syntax support (e.g., `*/5 * * * *`, `0 3 * * 1-5`)
+- ✅ **Timezone Support** - Schedule checks in any timezone (UTC, America/New_York, etc.)
 - ✅ **Grace Period** - Configurable buffer before alerting (1-60 min)
 - ✅ **Real-time Status** - See all checks at a glance
+- ✅ **Tags/Groups** - Organize checks with tags for easy filtering
 
 ### Alerting
 - ✅ **Email Alerts** - Instant notification when jobs fail or recover
@@ -58,6 +61,12 @@ CronOwl monitors your scheduled tasks (cron jobs, backups, ETL pipelines, etc.) 
 - ✅ **Responsive Design** - Works on desktop and mobile
 - ✅ **Dark Mode** - Easy on the eyes
 - ✅ **Auto-Refresh** - Live updates (5s to 5min intervals)
+
+### CLI Tool
+- ✅ **Official CLI** - `npm install -g cronowl` for easy pinging
+- ✅ **Wrap Commands** - Automatically measure duration and capture output
+- ✅ **Start/End Signals** - Signal job start and completion separately
+- ✅ **Cross-platform** - Works on Linux, macOS, Windows
 
 ## Quick Start
 
@@ -203,10 +212,27 @@ curl -X POST https://cronowl.com/api/ping/YOUR_SLUG \
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
+| `start` | boolean | Signal job start (use `?start=1`) |
 | `duration` | number | Execution time in milliseconds |
 | `exit_code` | number | Exit code (0 = success, non-zero = failure) |
 | `status` | string | "success" or "failure" |
 | `output` | string | stdout/stderr (truncated to 1KB) |
+
+### Signal Job Start and End
+
+For long-running jobs, signal the start and end separately:
+
+```bash
+# Signal start (the job just began)
+curl "https://cronowl.com/api/ping/YOUR_SLUG?start=1"
+
+# ... your job runs ...
+
+# Signal completion with metrics
+curl -X POST https://cronowl.com/api/ping/YOUR_SLUG \
+  -H "Content-Type: application/json" \
+  -d '{"duration": 12345, "exit_code": 0, "status": "success"}'
+```
 
 ### Bash Wrapper Script
 
@@ -249,6 +275,125 @@ Usage in crontab:
 0 * * * * cronowl-wrap "https://cronowl.com/api/ping/def456" /scripts/sync.sh
 ```
 
+## CLI Tool
+
+Install the official CronOwl CLI for easier integration:
+
+### Installation
+
+```bash
+# Install globally
+npm install -g cronowl
+
+# Or use with npx (no install needed)
+npx cronowl <slug>
+```
+
+### Simple Ping
+
+```bash
+# Send a ping when your job completes
+cronowl ping abc123def
+
+# Or simply (ping is the default command)
+cronowl abc123def
+```
+
+### Wrap a Command
+
+Automatically measure execution time, capture output, and report status:
+
+```bash
+# Wrap any command
+cronowl wrap abc123def -- ./backup.sh
+cronowl wrap abc123def -- python process_data.py
+cronowl wrap abc123def -- npm run build
+```
+
+This will:
+1. Signal job start to CronOwl
+2. Execute your command
+3. Capture duration, exit code, and output
+4. Send results to CronOwl
+5. Exit with the same code as your command
+
+### Signal Start/End Separately
+
+For long-running jobs:
+
+```bash
+# At the start
+cronowl ping abc123def --start
+
+# Your job runs...
+
+# At the end
+cronowl ping abc123def --duration 12345 --exit-code 0
+```
+
+### Report Failures
+
+```bash
+# Mark as failed
+cronowl ping abc123def --fail
+
+# With specific exit code and message
+cronowl ping abc123def --exit-code 1 --output "Error: disk full"
+```
+
+### CLI Options
+
+#### `cronowl ping <slug>`
+
+| Option | Description |
+|--------|-------------|
+| `-d, --duration <ms>` | Execution duration in milliseconds |
+| `-e, --exit-code <code>` | Exit code (0 = success, non-zero = failure) |
+| `-o, --output <text>` | Output/log message (max 10KB) |
+| `--fail` | Mark this ping as a failure |
+| `--start` | Signal the start of a job |
+| `-q, --quiet` | Suppress output |
+| `--base-url <url>` | Custom API base URL (for self-hosted) |
+
+#### `cronowl wrap <slug> -- <command>`
+
+| Option | Description |
+|--------|-------------|
+| `-q, --quiet` | Suppress cronowl output (command output still shown) |
+| `--no-output` | Don't send command output to CronOwl |
+| `--base-url <url>` | Custom API base URL |
+
+### Crontab Examples
+
+```crontab
+# Simple ping at the end
+0 3 * * * /usr/local/bin/backup.sh && cronowl abc123def
+
+# Full wrapping with metrics
+0 3 * * * cronowl wrap abc123def -- /usr/local/bin/backup.sh
+
+# Quiet mode (no cronowl output)
+0 * * * * cronowl wrap abc123def -q -- /path/to/hourly-job.sh
+```
+
+### Docker Usage
+
+```dockerfile
+FROM node:20-alpine
+
+RUN npm install -g cronowl
+
+# Your app setup...
+
+CMD ["cronowl", "wrap", "abc123def", "--", "node", "server.js"]
+```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CRONOWL_BASE_URL` | Override the default API URL (for self-hosted) |
+
 ## Dashboard
 
 ### Status Indicators
@@ -258,10 +403,37 @@ Usage in crontab:
 
 ### Check Card
 Each check displays:
-- Name and schedule (e.g., "Daily Backup - every day")
+- Name and schedule (e.g., "Daily Backup - every day" or "*/5 * * * *")
+- Tags (colored badges for organization)
 - Ping URL (click to copy)
 - Last ping time and duration
 - Status indicator
+
+### Scheduling Options
+
+**Simple schedules:**
+- Every 1, 5, 15, 30, 60 minutes
+- Every day, week
+
+**Cron expressions:**
+- Full 5-field cron syntax: `minute hour day-of-month month day-of-week`
+- Examples:
+  - `*/5 * * * *` - Every 5 minutes
+  - `0 3 * * *` - Daily at 3:00 AM
+  - `0 9 * * 1-5` - Weekdays at 9:00 AM
+  - `0 0 1 * *` - First day of every month at midnight
+
+**Timezone support:**
+- All checks can be configured with a timezone
+- Default: UTC
+- Examples: America/New_York, Europe/London, Asia/Tokyo
+
+### Tags
+
+Organize your checks with tags:
+- Create tags when adding/editing checks
+- Filter checks by tag in the dashboard
+- Tag badges are color-coded for quick identification
 
 ### History View
 Click "History" on any check to see:
@@ -283,13 +455,18 @@ Click "History" on any check to see:
 /checks/{checkId}
   - userId: string
   - name: string
-  - slug: string          // unique identifier for ping URL
-  - schedule: string      // "every 5 minutes", "every day", etc.
-  - gracePeriod: number   // minutes to wait before alerting
+  - slug: string              // unique identifier for ping URL
+  - schedule: string          // "every 5 minutes", "every day", etc.
+  - scheduleType: "simple" | "cron"  // schedule type
+  - cronExpression?: string   // cron expression (e.g., "*/5 * * * *")
+  - timezone?: string         // timezone (e.g., "America/New_York")
+  - gracePeriod: number       // minutes to wait before alerting
   - status: "up" | "down" | "new"
   - lastPing: timestamp
-  - lastDuration: number  // ms
+  - lastDuration: number      // ms
   - createdAt: timestamp
+  - tags?: string[]           // tags for organization
+  - webhookUrl?: string       // webhook URL for notifications
 
 /checks/{checkId}/pings/{pingId}
   - timestamp: timestamp
@@ -298,7 +475,7 @@ Click "History" on any check to see:
   - duration?: number     // ms
   - exitCode?: number
   - output?: string
-  - status?: "success" | "failure" | "unknown"
+  - status?: "success" | "failure" | "start" | "unknown"  // "start" = job started signal
 
 /checks/{checkId}/statusHistory/{eventId}
   - status: "up" | "down"
@@ -374,10 +551,14 @@ This checks all active jobs and sends alerts for any that are overdue.
 
 ## Roadmap
 
-- [ ] Slow execution alerts (notify if job takes too long)
-- [ ] Public status page
+- [x] Cron expression support
+- [x] Timezone support
+- [x] Tags/groups for organizing checks
+- [x] CLI tool (`npm install -g cronowl`)
 - [x] Telegram integration
 - [x] Webhook notifications
+- [ ] Slow execution alerts (notify if job takes too long)
+- [ ] Public status page
 - [ ] Multiple notification channels per check
 - [ ] Team/organization support
 

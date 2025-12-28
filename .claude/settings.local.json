@@ -6,7 +6,16 @@
       "Bash(git push)",
       "Bash(npm install:*)",
       "Bash(curl:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(npm show:*)",
+      "Bash(node:*)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(timeout:*)",
+      "Bash(ls:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

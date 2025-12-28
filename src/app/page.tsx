@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { OwlLogo } from "@/components/OwlLogo";
 import { PublicHeader } from "@/components/PublicHeader";
+import { SmartCTAButton } from "@/components/SmartCTAButton";
 
 export default function Home() {
   return (
@@ -22,12 +23,7 @@ export default function Home() {
           users notice something is broken.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            href="/signup"
-            className="bg-blue-600 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            Start Monitoring — Free
-          </Link>
+          <SmartCTAButton>Start Monitoring — Free</SmartCTAButton>
           <a
             href="#how-it-works"
             className="border border-gray-700 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-gray-800 transition-colors"
@@ -370,12 +366,9 @@ export default function Home() {
           <p className="text-gray-400 mb-8">
             Join developers who trust CronOwl to watch their scheduled tasks
           </p>
-          <Link
-            href="/signup"
-            className="inline-block bg-blue-600 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-blue-700 transition-colors"
-          >
+          <SmartCTAButton className="inline-block">
             Start Monitoring — It&apos;s Free
-          </Link>
+          </SmartCTAButton>
         </div>
       </section>
 
