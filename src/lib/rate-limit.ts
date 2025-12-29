@@ -1,6 +1,6 @@
-// Rate limiter using Firestore for serverless compatibility
-import { doc, runTransaction, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+// Rate limiter using Firebase Admin SDK for serverless compatibility
+import { adminDb } from "@/lib/firebase-admin";
+import { FieldValue } from "firebase-admin/firestore";
 
 export interface RateLimitConfig {
   maxRequests: number; // Maximum requests allowed
@@ -15,70 +15,69 @@ export interface RateLimitResult {
 
 /**
  * Check rate limit for a given key (usually user ID)
- * Uses Firestore transaction for atomic increment
+ * Uses Firebase Admin SDK with transactions for atomic operations
  */
 export async function checkRateLimit(
   key: string,
   config: RateLimitConfig
 ): Promise<RateLimitResult> {
   const now = Date.now();
-  const docRef = doc(db, "rateLimits", key.replace(/[\/]/g, "_"));
+  const sanitizedKey = key.replace(/[\/]/g, "_");
+  const docRef = adminDb.collection("rateLimits").doc(sanitizedKey);
 
   try {
-    const result = await runTransaction(db, async (transaction) => {
-      const docSnap = await transaction.get(docRef);
+    const docSnap = await docRef.get();
 
-      if (!docSnap.exists()) {
-        // First request - create new entry
-        transaction.set(docRef, {
-          count: 1,
-          resetTime: Timestamp.fromMillis(now + config.windowMs),
-        });
-        return {
-          success: true,
-          remaining: config.maxRequests - 1,
-          resetTime: now + config.windowMs,
-        };
-      }
-
-      const data = docSnap.data();
-      const resetTime = data.resetTime.toMillis();
-
-      // Window expired - reset counter
-      if (resetTime < now) {
-        transaction.set(docRef, {
-          count: 1,
-          resetTime: Timestamp.fromMillis(now + config.windowMs),
-        });
-        return {
-          success: true,
-          remaining: config.maxRequests - 1,
-          resetTime: now + config.windowMs,
-        };
-      }
-
-      // Check if limit exceeded
-      if (data.count >= config.maxRequests) {
-        return {
-          success: false,
-          remaining: 0,
-          resetTime: resetTime,
-        };
-      }
-
-      // Atomic increment
-      transaction.update(docRef, {
-        count: data.count + 1,
+    if (!docSnap.exists) {
+      // First request - create new entry
+      await docRef.set({
+        count: 1,
+        resetTime: now + config.windowMs,
       });
-
       return {
         success: true,
-        remaining: config.maxRequests - data.count - 1,
+        remaining: config.maxRequests - 1,
+        resetTime: now + config.windowMs,
+      };
+    }
+
+    const data = docSnap.data()!;
+    const resetTime = data.resetTime as number;
+
+    // Window expired - reset counter
+    if (resetTime < now) {
+      await docRef.set({
+        count: 1,
+        resetTime: now + config.windowMs,
+      });
+      return {
+        success: true,
+        remaining: config.maxRequests - 1,
+        resetTime: now + config.windowMs,
+      };
+    }
+
+    const currentCount = data.count as number;
+
+    // Check if limit exceeded
+    if (currentCount >= config.maxRequests) {
+      return {
+        success: false,
+        remaining: 0,
         resetTime: resetTime,
       };
+    }
+
+    // Atomic increment using FieldValue
+    await docRef.update({
+      count: FieldValue.increment(1),
     });
 
-    return result;
+    return {
+      success: true,
+      remaining: config.maxRequests - currentCount - 1,
+      resetTime: resetTime,
+    };
   } catch (error) {
     console.error("Rate limit check failed:", error);
     // On error, allow the request (fail open)
