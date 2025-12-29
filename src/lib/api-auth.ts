@@ -226,7 +226,7 @@ export async function withApiAuth(
   const planLimits = PLANS[plan];
 
   // Rate limiting by user ID with plan-based limits
-  const rateLimit = checkRateLimit(`api:user:${validation.userId}`, {
+  const rateLimit = await checkRateLimit(`api:user:${validation.userId}`, {
     maxRequests: planLimits.apiRequestsPerMin,
     windowMs: 60000, // 1 minute
   });
@@ -243,22 +243,6 @@ export async function withApiAuth(
         remaining: 0,
         plan: plan,
       }
-    );
-  }
-
-  // Also apply IP-based rate limit as fallback (higher limit)
-  const clientIp = getClientIp(request);
-  const ipRateLimit = checkRateLimit(`api:ip:${clientIp}`, {
-    maxRequests: 500, // Generous IP limit
-    windowMs: 60000,
-  });
-
-  if (!ipRateLimit.success) {
-    return apiError(
-      "RATE_LIMIT_EXCEEDED",
-      "Too many requests from this IP",
-      429,
-      { retryAfter: Math.ceil((ipRateLimit.resetTime - Date.now()) / 1000) }
     );
   }
 

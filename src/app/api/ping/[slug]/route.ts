@@ -88,7 +88,7 @@ export async function GET(
 
   // Rate limiting
   const clientIp = getClientIp(request);
-  const rateLimit = checkRateLimit(`ping:${clientIp}`, RATE_LIMITS.ping);
+  const rateLimit = await checkRateLimit(`ping:${clientIp}`, RATE_LIMITS.ping);
   if (!rateLimit.success) {
     return NextResponse.json(
       { error: "Too many requests", retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000) },

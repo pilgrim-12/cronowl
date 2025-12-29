@@ -1,22 +1,6 @@
-// Simple in-memory rate limiter for API endpoints
-// For production, consider using Redis or Upstash
-
-interface RateLimitEntry {
-  count: number;
-  resetTime: number;
-}
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000); // Clean every minute
+// Rate limiter using Firestore for serverless compatibility
+import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export interface RateLimitConfig {
   maxRequests: number; // Maximum requests allowed
@@ -30,44 +14,77 @@ export interface RateLimitResult {
 }
 
 /**
- * Check rate limit for a given key (usually IP or user ID)
+ * Check rate limit for a given key (usually user ID)
+ * Uses Firestore for persistence across serverless instances
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   config: RateLimitConfig
-): RateLimitResult {
+): Promise<RateLimitResult> {
   const now = Date.now();
-  const entry = rateLimitStore.get(key);
+  const docRef = doc(db, "rateLimits", key.replace(/[\/]/g, "_")); // Sanitize key for Firestore
 
-  // If no entry or expired, create new one
-  if (!entry || entry.resetTime < now) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + config.windowMs,
+  try {
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      // First request - create new entry
+      await setDoc(docRef, {
+        count: 1,
+        resetTime: Timestamp.fromMillis(now + config.windowMs),
+      });
+      return {
+        success: true,
+        remaining: config.maxRequests - 1,
+        resetTime: now + config.windowMs,
+      };
+    }
+
+    const data = docSnap.data();
+    const resetTime = data.resetTime.toMillis();
+
+    // Window expired - reset counter
+    if (resetTime < now) {
+      await setDoc(docRef, {
+        count: 1,
+        resetTime: Timestamp.fromMillis(now + config.windowMs),
+      });
+      return {
+        success: true,
+        remaining: config.maxRequests - 1,
+        resetTime: now + config.windowMs,
+      };
+    }
+
+    // Check if limit exceeded
+    if (data.count >= config.maxRequests) {
+      return {
+        success: false,
+        remaining: 0,
+        resetTime: resetTime,
+      };
+    }
+
+    // Increment count
+    await setDoc(docRef, {
+      count: data.count + 1,
+      resetTime: data.resetTime,
     });
+
     return {
       success: true,
-      remaining: config.maxRequests - 1,
+      remaining: config.maxRequests - data.count - 1,
+      resetTime: resetTime,
+    };
+  } catch (error) {
+    console.error("Rate limit check failed:", error);
+    // On error, allow the request (fail open)
+    return {
+      success: true,
+      remaining: config.maxRequests,
       resetTime: now + config.windowMs,
     };
   }
-
-  // Check if limit exceeded
-  if (entry.count >= config.maxRequests) {
-    return {
-      success: false,
-      remaining: 0,
-      resetTime: entry.resetTime,
-    };
-  }
-
-  // Increment count
-  entry.count++;
-  return {
-    success: true,
-    remaining: config.maxRequests - entry.count,
-    resetTime: entry.resetTime,
-  };
 }
 
 /**
