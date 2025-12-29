@@ -10,6 +10,8 @@ import TelegramLink from "@/components/TelegramLink";
 import { PushToggle } from "@/components/PushToggle";
 import { SubscriptionManager } from "@/components/SubscriptionManager";
 import { ApiKeysManager } from "@/components/ApiKeysManager";
+import { TeamManager } from "@/components/TeamManager";
+import { PlanType } from "@/lib/plans";
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -30,6 +32,7 @@ export default function SettingsPage() {
   const [hasTelegram, setHasTelegram] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [userPlan, setUserPlan] = useState<PlanType>("free");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,6 +53,7 @@ export default function SettingsPage() {
             telegramNotifications: data.telegramNotifications !== false,
           });
           setHasTelegram(!!data.telegramChatId);
+          setUserPlan((data.plan as PlanType) || "free");
         }
       } catch (error) {
         console.error("Failed to load settings:", error);
@@ -245,6 +249,11 @@ export default function SettingsPage() {
         {/* API Keys */}
         <div className="mb-6">
           <ApiKeysManager user={user} />
+        </div>
+
+        {/* Team Members */}
+        <div className="mb-6">
+          <TeamManager userId={user.uid} userEmail={user.email || ""} userPlan={userPlan} />
         </div>
 
         {/* Account Info */}

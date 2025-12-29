@@ -6,7 +6,7 @@ export const PLANS = {
     historyDays: 7,
     apiRequestsPerMin: 30,
     apiKeysLimit: 1,
-    webhooksPerCheck: 1,
+    webhooksPerCheck: 0, // Webhooks only for paid plans
     statusPagesLimit: 1,
     logOutputSize: 1024, // 1KB
     teamMembers: 0,

@@ -18,6 +18,7 @@ import { sendWebhookDownAlert, sendWebhookRecoveryAlert, sendWebhookSlowJobAlert
 import { SCHEDULE_MINUTES } from "@/lib/constants";
 import { addStatusEvent, getLastStatusEvent } from "@/lib/checks";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
+import { PLANS, PlanType } from "@/lib/plans";
 
 async function checkUserChecks(userId: string, currentCheckId: string) {
   const checksQuery = query(
@@ -124,6 +125,12 @@ export async function GET(
     const check = checkDoc.data();
     const wasDown = check.status === "down";
 
+    // Get user's plan for log output limit
+    const userDoc = await getDoc(doc(db, "users", check.userId));
+    const userData = userDoc.exists() ? userDoc.data() : null;
+    const userPlan = (userData?.plan as PlanType) || "free";
+    const planLimits = PLANS[userPlan];
+
     // Handle start signal - just record the start, don't change status
     if (isStart) {
       // Record start ping without changing status
@@ -175,7 +182,7 @@ export async function GET(
     // Add optional execution metrics
     if (duration) pingData.duration = parseInt(duration, 10);
     if (exitCode !== null && exitCode !== undefined) pingData.exitCode = parseInt(exitCode, 10);
-    if (output) pingData.output = output.slice(0, 1000); // Truncate to 1KB
+    if (output) pingData.output = output.slice(0, planLimits.logOutputSize); // Truncate to plan limit
     if (pingStatus !== "unknown") pingData.status = pingStatus;
 
     await addDoc(collection(db, "checks", checkDoc.id, "pings"), pingData);
@@ -185,9 +192,8 @@ export async function GET(
       const lastEvent = await getLastStatusEvent(checkDoc.id);
       await addStatusEvent(checkDoc.id, "up", lastEvent?.timestamp);
 
-      const userDoc = await getDoc(doc(db, "users", check.userId));
-      if (userDoc.exists()) {
-        const user = userDoc.data();
+      if (userData) {
+        const user = userData;
 
         // Send email recovery alert (if enabled)
         if (user.email && user.emailNotifications !== false) {
@@ -244,9 +250,8 @@ export async function GET(
       const durationMs = parseInt(duration, 10);
       if (durationMs > check.maxDuration) {
         // Job took longer than allowed - send slow job alerts
-        const userDoc = await getDoc(doc(db, "users", check.userId));
-        if (userDoc.exists()) {
-          const user = userDoc.data();
+        if (userData) {
+          const user = userData;
 
           // Send email alert (if enabled)
           if (user.email && user.emailNotifications !== false) {

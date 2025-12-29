@@ -13,7 +13,10 @@ import {
   createStatusPage,
   updateStatusPage,
   deleteStatusPage,
+  canCreateStatusPage,
+  StatusPageLimitResult,
 } from "@/lib/checks";
+import { PLANS } from "@/lib/plans";
 
 interface StatusPageModalProps {
   isOpen: boolean;
@@ -236,6 +239,8 @@ export default function StatusPagesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPage, setEditingPage] = useState<StatusPage | undefined>();
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+  const [planUsage, setPlanUsage] = useState<StatusPageLimitResult | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -248,12 +253,14 @@ export default function StatusPagesPage() {
       if (!user) return;
 
       try {
-        const [pages, userChecks] = await Promise.all([
+        const [pages, userChecks, usage] = await Promise.all([
           getUserStatusPages(user.uid),
           getUserChecks(user.uid),
+          canCreateStatusPage(user.uid),
         ]);
         setStatusPages(pages);
         setChecks(userChecks);
+        setPlanUsage(usage);
       } catch (error) {
         console.error("Failed to load status pages:", error);
       } finally {
@@ -274,12 +281,24 @@ export default function StatusPagesPage() {
     showTags: boolean;
   }) => {
     if (!user) return;
+    setLimitError(null);
 
-    await createStatusPage(user.uid, data);
+    try {
+      await createStatusPage(user.uid, data);
 
-    // Reload pages
-    const pages = await getUserStatusPages(user.uid);
-    setStatusPages(pages);
+      // Reload pages and usage
+      const [pages, usage] = await Promise.all([
+        getUserStatusPages(user.uid),
+        canCreateStatusPage(user.uid),
+      ]);
+      setStatusPages(pages);
+      setPlanUsage(usage);
+    } catch (error) {
+      if (error instanceof Error) {
+        setLimitError(error.message);
+      }
+      throw error;
+    }
   };
 
   const handleUpdate = async (data: {
@@ -334,6 +353,75 @@ export default function StatusPagesPage() {
       <Header user={user} signOut={signOut} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {/* Plan Usage Banner */}
+        {planUsage && (
+          <div className="bg-gray-900 rounded-lg p-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-white font-medium">
+                    {PLANS[planUsage.plan].name} Plan
+                  </span>
+                  {planUsage.plan === "free" && (
+                    <Link
+                      href="/pricing"
+                      className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded transition-colors"
+                    >
+                      Upgrade
+                    </Link>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 max-w-xs">
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          planUsage.current / planUsage.limit > 0.9
+                            ? "bg-red-500"
+                            : planUsage.current / planUsage.limit > 0.7
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                        style={{
+                          width: `${Math.min((planUsage.current / planUsage.limit) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-gray-400 text-sm whitespace-nowrap">
+                    {planUsage.current} / {planUsage.limit} status pages
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Limit Error Alert */}
+        {limitError && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-red-400">{limitError}</p>
+                <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block">
+                  View pricing plans
+                </Link>
+              </div>
+              <button
+                onClick={() => setLimitError(null)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -354,7 +442,8 @@ export default function StatusPagesPage() {
               setEditingPage(undefined);
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors"
+            disabled={planUsage ? !planUsage.allowed : false}
+            className="flex items-center gap-2 bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

@@ -497,10 +497,48 @@ export interface CreateStatusPageData {
   showTags?: boolean;
 }
 
+export interface StatusPageLimitResult {
+  allowed: boolean;
+  current: number;
+  limit: number;
+  plan: PlanType;
+  reason?: string;
+}
+
+export async function canCreateStatusPage(userId: string): Promise<StatusPageLimitResult> {
+  const plan = await getUserPlan(userId);
+  const planLimits = PLANS[plan];
+  const existingPages = await getUserStatusPages(userId);
+  const currentCount = existingPages.length;
+
+  if (currentCount >= planLimits.statusPagesLimit) {
+    return {
+      allowed: false,
+      current: currentCount,
+      limit: planLimits.statusPagesLimit,
+      plan,
+      reason: `You've reached the limit of ${planLimits.statusPagesLimit} status page(s) on the ${planLimits.name} plan. Upgrade to add more.`,
+    };
+  }
+
+  return {
+    allowed: true,
+    current: currentCount,
+    limit: planLimits.statusPagesLimit,
+    plan,
+  };
+}
+
 export async function createStatusPage(
   userId: string,
   data: CreateStatusPageData
 ): Promise<string> {
+  // Check plan-based limit
+  const limitCheck = await canCreateStatusPage(userId);
+  if (!limitCheck.allowed) {
+    throw new Error(limitCheck.reason || "Status page limit reached");
+  }
+
   const now = Timestamp.now();
   const pageData = {
     userId,
@@ -606,4 +644,166 @@ export async function getPublicStatusPageData(slug: string): Promise<PublicStatu
     overallStatus,
     updatedAt: new Date().toISOString(),
   };
+}
+
+// ==================== Team Members ====================
+
+export interface TeamMember {
+  id: string;
+  ownerId: string; // The Pro user who owns the team
+  memberEmail: string;
+  memberUserId?: string; // Set when member accepts invite
+  role: "viewer" | "editor"; // viewer can only view, editor can modify
+  status: "pending" | "accepted";
+  invitedAt: Timestamp;
+  acceptedAt?: Timestamp;
+}
+
+export interface TeamMemberLimitResult {
+  allowed: boolean;
+  current: number;
+  limit: number;
+  plan: PlanType;
+  reason?: string;
+}
+
+export async function canInviteTeamMember(userId: string): Promise<TeamMemberLimitResult> {
+  const plan = await getUserPlan(userId);
+  const planLimits = PLANS[plan];
+
+  if (planLimits.teamMembers === 0) {
+    return {
+      allowed: false,
+      current: 0,
+      limit: 0,
+      plan,
+      reason: "Team members are only available on the Pro plan.",
+    };
+  }
+
+  const existingMembers = await getTeamMembers(userId);
+  const currentCount = existingMembers.length;
+
+  if (currentCount >= planLimits.teamMembers) {
+    return {
+      allowed: false,
+      current: currentCount,
+      limit: planLimits.teamMembers,
+      plan,
+      reason: `You've reached the limit of ${planLimits.teamMembers} team members on the ${planLimits.name} plan.`,
+    };
+  }
+
+  return {
+    allowed: true,
+    current: currentCount,
+    limit: planLimits.teamMembers,
+    plan,
+  };
+}
+
+export async function inviteTeamMember(
+  ownerId: string,
+  memberEmail: string,
+  role: "viewer" | "editor" = "viewer"
+): Promise<string> {
+  // Check limit
+  const limitCheck = await canInviteTeamMember(ownerId);
+  if (!limitCheck.allowed) {
+    throw new Error(limitCheck.reason || "Team member limit reached");
+  }
+
+  // Check if already invited
+  const existingQuery = query(
+    collection(db, "teamMembers"),
+    where("ownerId", "==", ownerId),
+    where("memberEmail", "==", memberEmail.toLowerCase())
+  );
+  const existingSnapshot = await getDocs(existingQuery);
+  if (!existingSnapshot.empty) {
+    throw new Error("This email has already been invited");
+  }
+
+  const docRef = await addDoc(collection(db, "teamMembers"), {
+    ownerId,
+    memberEmail: memberEmail.toLowerCase(),
+    role,
+    status: "pending",
+    invitedAt: Timestamp.now(),
+  });
+
+  return docRef.id;
+}
+
+export async function getTeamMembers(ownerId: string): Promise<TeamMember[]> {
+  const membersQuery = query(
+    collection(db, "teamMembers"),
+    where("ownerId", "==", ownerId),
+    orderBy("invitedAt", "desc")
+  );
+
+  const snapshot = await getDocs(membersQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as TeamMember[];
+}
+
+export async function getTeamInvitations(memberEmail: string): Promise<TeamMember[]> {
+  const invitesQuery = query(
+    collection(db, "teamMembers"),
+    where("memberEmail", "==", memberEmail.toLowerCase()),
+    where("status", "==", "pending")
+  );
+
+  const snapshot = await getDocs(invitesQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as TeamMember[];
+}
+
+export async function acceptTeamInvitation(
+  invitationId: string,
+  memberUserId: string
+): Promise<void> {
+  await updateDoc(doc(db, "teamMembers", invitationId), {
+    memberUserId,
+    status: "accepted",
+    acceptedAt: Timestamp.now(),
+  });
+}
+
+export async function removeTeamMember(memberId: string): Promise<void> {
+  await deleteDoc(doc(db, "teamMembers", memberId));
+}
+
+export async function getTeamsUserBelongsTo(userId: string): Promise<string[]> {
+  // Find all teams where user is an accepted member
+  const memberQuery = query(
+    collection(db, "teamMembers"),
+    where("memberUserId", "==", userId),
+    where("status", "==", "accepted")
+  );
+
+  const snapshot = await getDocs(memberQuery);
+  return snapshot.docs.map((doc) => doc.data().ownerId as string);
+}
+
+// Get all checks user can access (own + team owner's)
+export async function getAccessibleChecks(userId: string): Promise<Check[]> {
+  // Get own checks
+  const ownChecks = await getUserChecks(userId);
+
+  // Get team owner IDs
+  const teamOwnerIds = await getTeamsUserBelongsTo(userId);
+
+  // Get checks from team owners
+  const teamChecks: Check[] = [];
+  for (const ownerId of teamOwnerIds) {
+    const ownerChecks = await getUserChecks(ownerId);
+    teamChecks.push(...ownerChecks);
+  }
+
+  return [...ownChecks, ...teamChecks];
 }

@@ -979,6 +979,7 @@ export default function DashboardPage() {
           onSave={handleCreateCheck}
           title="Create New Check"
           existingTags={allTags}
+          userPlan={planUsage?.plan || "free"}
         />
       )}
 
@@ -988,6 +989,7 @@ export default function DashboardPage() {
           onSave={handleEditCheck}
           title="Edit Check"
           existingTags={allTags}
+          userPlan={planUsage?.plan || "free"}
           initialData={{
             name: editingCheck.name,
             scheduleType: editingCheck.scheduleType || "preset",
@@ -1013,6 +1015,7 @@ function CheckModal({
   title,
   initialData,
   existingTags = [],
+  userPlan = "free",
 }: {
   onClose: () => void;
   onSave: (data: CreateCheckData) => void;
@@ -1029,7 +1032,10 @@ function CheckModal({
     maxDuration?: number;
   };
   existingTags?: string[];
+  userPlan?: keyof typeof PLANS;
 }) {
+  const planLimits = PLANS[userPlan];
+  const canUseWebhooks = planLimits.webhooksPerCheck > 0;
   const [name, setName] = useState(initialData?.name || "");
   const [scheduleType, setScheduleType] = useState<ScheduleType>(
     initialData?.scheduleType || "preset"
@@ -1452,26 +1458,39 @@ function CheckModal({
           {/* Webhook */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Webhook URL (optional)
+              Webhook URL {canUseWebhooks ? "(optional)" : ""}
             </label>
-            <input
-              type="url"
-              value={webhookUrl}
-              onChange={(e) => {
-                setWebhookUrl(e.target.value);
-                setWebhookError("");
-              }}
-              placeholder="https://example.com/webhook"
-              className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                webhookError ? "border-red-500" : "border-gray-700"
-              }`}
-            />
-            {webhookError ? (
-              <p className="text-red-400 text-xs mt-1">{webhookError}</p>
+            {canUseWebhooks ? (
+              <>
+                <input
+                  type="url"
+                  value={webhookUrl}
+                  onChange={(e) => {
+                    setWebhookUrl(e.target.value);
+                    setWebhookError("");
+                  }}
+                  placeholder="https://example.com/webhook"
+                  className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    webhookError ? "border-red-500" : "border-gray-700"
+                  }`}
+                />
+                {webhookError ? (
+                  <p className="text-red-400 text-xs mt-1">{webhookError}</p>
+                ) : (
+                  <p className="text-gray-500 text-xs mt-1">
+                    Receive POST requests when status changes (down/recovery)
+                  </p>
+                )}
+              </>
             ) : (
-              <p className="text-gray-500 text-xs mt-1">
-                Receive POST requests when status changes (down/recovery)
-              </p>
+              <div className="bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3">
+                <p className="text-gray-400 text-sm">
+                  Webhooks are available on paid plans.
+                </p>
+                <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm">
+                  Upgrade to Starter or Pro
+                </Link>
+              </div>
             )}
           </div>
 
