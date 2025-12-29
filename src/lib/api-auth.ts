@@ -13,7 +13,8 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from "crypto";
-import { checkRateLimit, getClientIp, RATE_LIMITS } from "./rate-limit";
+import { checkRateLimit, getClientIp } from "./rate-limit";
+import { PLANS, PlanType } from "./plans";
 
 // API Key interface
 export interface ApiKey {
@@ -43,15 +44,25 @@ export function getKeyPrefix(key: string): string {
   return key.substring(0, 12) + "...";
 }
 
+// Get user's plan
+async function getUserPlan(userId: string): Promise<PlanType> {
+  const userDoc = await getDoc(doc(db, "users", userId));
+  if (!userDoc.exists()) return "free";
+  return (userDoc.data().plan as PlanType) || "free";
+}
+
 // Create a new API key for a user
 export async function createApiKey(
   userId: string,
   name: string
 ): Promise<{ key: string; keyData: ApiKey }> {
-  // Check limit (max 10 keys per user)
+  // Check plan-based limit
+  const plan = await getUserPlan(userId);
+  const planLimits = PLANS[plan];
   const existingKeys = await getUserApiKeys(userId);
-  if (existingKeys.length >= 10) {
-    throw new Error("Maximum of 10 API keys allowed per user");
+
+  if (existingKeys.length >= planLimits.apiKeysLimit) {
+    throw new Error(`Maximum of ${planLimits.apiKeysLimit} API keys allowed on ${planLimits.name} plan`);
   }
 
   const key = generateApiKey();
@@ -170,6 +181,8 @@ export function apiError(
 export interface ApiAuthContext {
   userId: string;
   keyId: string;
+  plan: PlanType;
+  planLimits: (typeof PLANS)[PlanType];
 }
 
 // Middleware to authenticate API requests
@@ -177,20 +190,7 @@ export async function withApiAuth(
   request: NextRequest,
   handler: (req: NextRequest, auth: ApiAuthContext) => Promise<NextResponse>
 ): Promise<NextResponse> {
-  // Rate limiting by IP first
-  const clientIp = getClientIp(request);
-  const rateLimit = checkRateLimit(`api:${clientIp}`, RATE_LIMITS.api);
-
-  if (!rateLimit.success) {
-    return apiError(
-      "RATE_LIMIT_EXCEEDED",
-      "Too many requests",
-      429,
-      { retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000) }
-    );
-  }
-
-  // Extract Bearer token
+  // Extract Bearer token first (before rate limiting to get user plan)
   const authHeader = request.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return apiError(
@@ -221,9 +221,52 @@ export async function withApiAuth(
     );
   }
 
-  // Call the handler with auth context
+  // Get user's plan for rate limiting
+  const plan = await getUserPlan(validation.userId);
+  const planLimits = PLANS[plan];
+
+  // Rate limiting by user ID with plan-based limits
+  const rateLimit = checkRateLimit(`api:user:${validation.userId}`, {
+    maxRequests: planLimits.apiRequestsPerMin,
+    windowMs: 60000, // 1 minute
+  });
+
+  if (!rateLimit.success) {
+    const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+    return apiError(
+      "RATE_LIMIT_EXCEEDED",
+      `Too many requests. Your ${planLimits.name} plan allows ${planLimits.apiRequestsPerMin} requests/min.`,
+      429,
+      {
+        retryAfter,
+        limit: planLimits.apiRequestsPerMin,
+        remaining: 0,
+        plan: plan,
+      }
+    );
+  }
+
+  // Also apply IP-based rate limit as fallback (higher limit)
+  const clientIp = getClientIp(request);
+  const ipRateLimit = checkRateLimit(`api:ip:${clientIp}`, {
+    maxRequests: 500, // Generous IP limit
+    windowMs: 60000,
+  });
+
+  if (!ipRateLimit.success) {
+    return apiError(
+      "RATE_LIMIT_EXCEEDED",
+      "Too many requests from this IP",
+      429,
+      { retryAfter: Math.ceil((ipRateLimit.resetTime - Date.now()) / 1000) }
+    );
+  }
+
+  // Call the handler with auth context including plan info
   return handler(request, {
     userId: validation.userId,
     keyId: validation.keyId,
+    plan,
+    planLimits,
   });
 }

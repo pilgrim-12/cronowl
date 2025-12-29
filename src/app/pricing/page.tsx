@@ -101,11 +101,80 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing Cards */}
-      <section className="max-w-5xl mx-auto px-4 pb-20">
+      <section className="max-w-5xl mx-auto px-4 pb-12">
         <div className="grid md:grid-cols-3 gap-8">
           <PricingCard plan={PLANS.free} planKey="free" />
           <PricingCard plan={PLANS.starter} planKey="starter" isPopular />
           <PricingCard plan={PLANS.pro} planKey="pro" />
+        </div>
+      </section>
+
+      {/* Detailed Limits Comparison */}
+      <section className="max-w-4xl mx-auto px-4 pb-20">
+        <h2 className="text-2xl font-bold text-white text-center mb-8">
+          Plan Limits & Quotas
+        </h2>
+        <div className="bg-gray-900 rounded-lg overflow-hidden overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-800">
+                <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
+                <th className="text-center py-4 px-4 text-gray-400 font-medium">Free</th>
+                <th className="text-center py-4 px-4 text-blue-400 font-medium">Starter</th>
+                <th className="text-center py-4 px-4 text-purple-400 font-medium">Pro</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">Checks</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.checksLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.checksLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.checksLimit}</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">History retention</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.historyDays} days</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.historyDays} days</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.historyDays} days</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">API requests</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.apiRequestsPerMin}/min</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.apiRequestsPerMin}/min</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.apiRequestsPerMin}/min</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">API keys</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.apiKeysLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.apiKeysLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.apiKeysLimit}</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">Status pages</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.statusPagesLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.statusPagesLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.statusPagesLimit}</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">Webhooks per check</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.webhooksPerCheck}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.webhooksPerCheck}</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.webhooksPerCheck}</td>
+              </tr>
+              <tr className="border-b border-gray-800/50">
+                <td className="py-3 px-6 text-gray-300">Log output size</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.logOutputSize / 1024}KB</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.logOutputSize / 1024}KB</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.logOutputSize / 1024}KB</td>
+              </tr>
+              <tr>
+                <td className="py-3 px-6 text-gray-300">Team members</td>
+                <td className="py-3 px-4 text-center text-gray-500">—</td>
+                <td className="py-3 px-4 text-center text-gray-500">—</td>
+                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.teamMembers}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
