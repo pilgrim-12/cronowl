@@ -1,6 +1,6 @@
 // Rate limiter using Firebase Admin SDK for serverless compatibility
 import { adminDb } from "@/lib/firebase-admin";
-import { FieldValue } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 
 export interface RateLimitConfig {
   maxRequests: number; // Maximum requests allowed
@@ -15,7 +15,7 @@ export interface RateLimitResult {
 
 /**
  * Check rate limit for a given key (usually user ID)
- * Uses Firebase Admin SDK with transactions for atomic operations
+ * Uses Firestore transaction to prevent race conditions
  */
 export async function checkRateLimit(
   key: string,
@@ -24,63 +24,68 @@ export async function checkRateLimit(
   const now = Date.now();
   const sanitizedKey = key.replace(/[\/]/g, "_");
   const docRef = adminDb.collection("rateLimits").doc(sanitizedKey);
+  const firestore = getFirestore();
 
   try {
-    const docSnap = await docRef.get();
+    const result = await firestore.runTransaction(async (transaction) => {
+      const docSnap = await transaction.get(docRef);
 
-    if (!docSnap.exists) {
-      // First request - create new entry
-      await docRef.set({
-        count: 1,
-        resetTime: now + config.windowMs,
+      if (!docSnap.exists) {
+        // First request - create new entry
+        transaction.set(docRef, {
+          count: 1,
+          resetTime: now + config.windowMs,
+        });
+        return {
+          success: true,
+          remaining: config.maxRequests - 1,
+          resetTime: now + config.windowMs,
+        };
+      }
+
+      const data = docSnap.data()!;
+      const resetTime = data.resetTime as number;
+
+      // Window expired - reset counter
+      if (resetTime < now) {
+        transaction.set(docRef, {
+          count: 1,
+          resetTime: now + config.windowMs,
+        });
+        return {
+          success: true,
+          remaining: config.maxRequests - 1,
+          resetTime: now + config.windowMs,
+        };
+      }
+
+      const currentCount = data.count as number;
+
+      // Check if limit exceeded BEFORE incrementing
+      if (currentCount >= config.maxRequests) {
+        return {
+          success: false,
+          remaining: 0,
+          resetTime: resetTime,
+        };
+      }
+
+      // Increment within transaction
+      transaction.update(docRef, {
+        count: currentCount + 1,
       });
+
       return {
         success: true,
-        remaining: config.maxRequests - 1,
-        resetTime: now + config.windowMs,
-      };
-    }
-
-    const data = docSnap.data()!;
-    const resetTime = data.resetTime as number;
-
-    // Window expired - reset counter
-    if (resetTime < now) {
-      await docRef.set({
-        count: 1,
-        resetTime: now + config.windowMs,
-      });
-      return {
-        success: true,
-        remaining: config.maxRequests - 1,
-        resetTime: now + config.windowMs,
-      };
-    }
-
-    const currentCount = data.count as number;
-
-    // Check if limit exceeded
-    if (currentCount >= config.maxRequests) {
-      return {
-        success: false,
-        remaining: 0,
+        remaining: config.maxRequests - currentCount - 1,
         resetTime: resetTime,
       };
-    }
-
-    // Atomic increment using FieldValue
-    await docRef.update({
-      count: FieldValue.increment(1),
     });
 
-    return {
-      success: true,
-      remaining: config.maxRequests - currentCount - 1,
-      resetTime: resetTime,
-    };
+    return result;
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    throw error; // Let the caller handle the error
+    throw error;
   }
 }
 
