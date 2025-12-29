@@ -80,12 +80,7 @@ export async function checkRateLimit(
     };
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    // On error, allow the request (fail open)
-    return {
-      success: true,
-      remaining: config.maxRequests,
-      resetTime: now + config.windowMs,
-    };
+    throw error; // Let the caller handle the error
   }
 }
 

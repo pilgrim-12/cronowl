@@ -226,10 +226,21 @@ export async function withApiAuth(
   const planLimits = PLANS[plan];
 
   // Rate limiting by user ID with plan-based limits
-  const rateLimit = await checkRateLimit(`api:user:${validation.userId}`, {
-    maxRequests: planLimits.apiRequestsPerMin,
-    windowMs: 60000, // 1 minute
-  });
+  let rateLimit;
+  try {
+    rateLimit = await checkRateLimit(`api:user:${validation.userId}`, {
+      maxRequests: planLimits.apiRequestsPerMin,
+      windowMs: 60000, // 1 minute
+    });
+  } catch (rateLimitError) {
+    console.error("Rate limit error:", rateLimitError);
+    // Fail closed on rate limit errors
+    return apiError(
+      "RATE_LIMIT_ERROR",
+      "Rate limit check failed. Please try again.",
+      500
+    );
+  }
 
   if (!rateLimit.success) {
     const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
