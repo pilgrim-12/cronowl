@@ -329,7 +329,7 @@ export default function Home() {
               </div>
               <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-gray-300 flex items-center gap-2">
-                  <span className="text-green-500">✓</span> Unlimited checks
+                  <span className="text-green-500">✓</span> 500 checks
                 </li>
                 <li className="text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Everything in Starter
