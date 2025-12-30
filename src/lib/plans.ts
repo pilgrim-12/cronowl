@@ -25,7 +25,7 @@ export const PLANS = {
     price: 4,
     checksLimit: 100,
     historyDays: 30,
-    apiRequestsPerMin: 120,
+    apiRequestsPerMin: 10, // TEMP: was 120, testing rate limit
     apiKeysLimit: 3,
     webhooksPerCheck: 3,
     statusPagesLimit: 3,
