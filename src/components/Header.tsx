@@ -79,11 +79,27 @@ export function Header({ user, signOut }: HeaderProps) {
   return (
     <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <OwlLogo className="w-7 h-7" />
-          <span className="text-lg font-semibold text-white">CronOwl</span>
-        </Link>
+        {/* Logo and Nav */}
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <OwlLogo className="w-7 h-7" />
+            <span className="text-lg font-semibold text-white">CronOwl</span>
+          </Link>
+          <nav className="hidden sm:flex items-center gap-1">
+            <Link
+              href="/dashboard"
+              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              Checks
+            </Link>
+            <Link
+              href="/dashboard/status-pages"
+              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              Status Pages
+            </Link>
+          </nav>
+        </div>
 
         {/* Right side - Plan badge and User dropdown */}
         <div className="flex items-center gap-3">
