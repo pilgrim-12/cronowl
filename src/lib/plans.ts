@@ -10,6 +10,8 @@ export const PLANS = {
     statusPagesLimit: 1,
     logOutputSize: 1024, // 1KB
     teamMembers: 0,
+    customBranding: false, // Custom branding only for Pro
+    activeIncidentsLimit: 1, // Max active incidents per status page
     features: [
       "25 checks",
       "Email alerts",
@@ -31,6 +33,8 @@ export const PLANS = {
     statusPagesLimit: 3,
     logOutputSize: 5120, // 5KB
     teamMembers: 0,
+    customBranding: false,
+    activeIncidentsLimit: 3,
     features: [
       "100 checks",
       "Everything in Free",
@@ -52,6 +56,8 @@ export const PLANS = {
     statusPagesLimit: 10,
     logOutputSize: 10240, // 10KB
     teamMembers: 3,
+    customBranding: true, // Custom branding available
+    activeIncidentsLimit: 100, // Effectively unlimited
     features: [
       "500 checks",
       "Everything in Starter",
@@ -59,6 +65,7 @@ export const PLANS = {
       "10 status pages",
       "API access (300 req/min)",
       "Team members (3 users)",
+      "Custom branding",
       "Priority support",
     ],
   },

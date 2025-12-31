@@ -450,6 +450,14 @@ export async function getLastStatusEvent(
 
 // ==================== Status Pages ====================
 
+// ==================== Status Page Branding ====================
+
+export interface StatusPageBranding {
+  logoUrl?: string; // URL to custom logo image
+  primaryColor?: string; // Hex color (e.g., "#3B82F6")
+  hidePoweredBy?: boolean; // Hide "Powered by CronOwl" footer
+}
+
 export interface StatusPage {
   id: string;
   userId: string;
@@ -460,8 +468,25 @@ export interface StatusPage {
   isPublic: boolean;
   showTags: boolean; // whether to show tags on public page
   customDomain?: string; // optional custom domain
+  branding?: StatusPageBranding; // custom branding (Pro only)
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// ==================== Status History (Uptime) ====================
+
+export interface DayStatus {
+  date: string; // "2025-12-31" ISO date
+  status: "operational" | "incident" | "no-data";
+  uptimePercent?: number; // 0-100
+  downMinutes?: number; // minutes of downtime that day
+}
+
+export interface CheckHistoryData {
+  checkId: string;
+  checkName: string;
+  days: DayStatus[];
+  overallUptime: number; // 0-100
 }
 
 export interface StatusPageCheck {
@@ -470,6 +495,48 @@ export interface StatusPageCheck {
   status: "up" | "down" | "new";
   lastPing: Timestamp | null;
   tags?: string[];
+  history?: DayStatus[]; // uptime history
+  uptimePercent?: number; // overall uptime
+}
+
+// ==================== Incidents ====================
+
+export type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved";
+export type IncidentSeverity = "minor" | "major" | "critical";
+
+export interface Incident {
+  id: string;
+  statusPageId: string;
+  userId: string;
+  title: string;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  affectedCheckIds?: string[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  resolvedAt?: Timestamp;
+}
+
+export interface IncidentUpdate {
+  id: string;
+  message: string;
+  status: IncidentStatus;
+  createdAt: Timestamp;
+}
+
+export interface PublicIncident {
+  id: string;
+  title: string;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  updates: {
+    message: string;
+    status: IncidentStatus;
+    createdAt: string;
+  }[];
 }
 
 export interface PublicStatusPage {
@@ -478,6 +545,11 @@ export interface PublicStatusPage {
   checks: StatusPageCheck[];
   overallStatus: "operational" | "degraded" | "down";
   updatedAt: string;
+  branding?: StatusPageBranding;
+  incidents?: {
+    active: PublicIncident[];
+    recent: PublicIncident[];
+  };
 }
 
 function generateStatusPageSlug(): string {
@@ -605,7 +677,11 @@ export async function getPublicStatusPageData(slug: string): Promise<PublicStatu
   const page = await getStatusPageBySlug(slug);
   if (!page || !page.isPublic) return null;
 
-  // Fetch all checks for this page
+  // Get owner's plan to determine history days limit
+  const plan = await getUserPlan(page.userId);
+  const historyDays = PLANS[plan].historyDays;
+
+  // Fetch all checks for this page with history
   const checks: StatusPageCheck[] = [];
   let upCount = 0;
   let downCount = 0;
@@ -616,12 +692,17 @@ export async function getPublicStatusPageData(slug: string): Promise<PublicStatu
       const checkData = checkDoc.data() as Omit<Check, "id">;
       const realStatus = calculateRealStatus({ id: checkId, ...checkData } as Check);
 
+      // Get uptime history (limited by plan)
+      const { days: history, overallUptime } = await getCheckUptimeHistory(checkId, historyDays);
+
       checks.push({
         id: checkId,
         name: checkData.name,
         status: realStatus,
         lastPing: checkData.lastPing,
         tags: page.showTags ? checkData.tags : undefined,
+        history,
+        uptimePercent: overallUptime,
       });
 
       if (realStatus === "up") upCount++;
@@ -637,12 +718,43 @@ export async function getPublicStatusPageData(slug: string): Promise<PublicStatu
     overallStatus = "down";
   }
 
+  // Get incidents for this status page
+  const activeIncidents = await getStatusPageIncidents(page.id, false);
+  const recentResolved = await getRecentResolvedIncidents(page.id, 7, 5);
+
+  // Format incidents for public display
+  const formatIncidentForPublic = async (incident: Incident): Promise<PublicIncident> => {
+    const fullIncident = await getIncidentWithUpdates(incident.id);
+    return {
+      id: incident.id,
+      title: incident.title,
+      status: incident.status,
+      severity: incident.severity,
+      createdAt: incident.createdAt.toDate().toISOString(),
+      updatedAt: incident.updatedAt.toDate().toISOString(),
+      resolvedAt: incident.resolvedAt?.toDate().toISOString(),
+      updates: (fullIncident?.updates || []).map(u => ({
+        message: u.message,
+        status: u.status,
+        createdAt: u.createdAt.toDate().toISOString(),
+      })),
+    };
+  };
+
+  const formattedActiveIncidents = await Promise.all(activeIncidents.map(formatIncidentForPublic));
+  const formattedRecentIncidents = await Promise.all(recentResolved.map(formatIncidentForPublic));
+
   return {
     title: page.title,
     description: page.description,
     checks,
     overallStatus,
     updatedAt: new Date().toISOString(),
+    branding: page.branding,
+    incidents: {
+      active: formattedActiveIncidents,
+      recent: formattedRecentIncidents,
+    },
   };
 }
 
@@ -806,4 +918,379 @@ export async function getAccessibleChecks(userId: string): Promise<Check[]> {
   }
 
   return [...ownChecks, ...teamChecks];
+}
+
+// ==================== Status History (Uptime) Functions ====================
+
+/**
+ * Get uptime history for a check over the last N days
+ * Aggregates statusHistory events into daily buckets
+ */
+export async function getCheckUptimeHistory(
+  checkId: string,
+  days: number = 90
+): Promise<{ days: DayStatus[]; overallUptime: number }> {
+  const now = new Date();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  cutoffDate.setHours(0, 0, 0, 0);
+
+  // Get status history for the period
+  const historyQuery = query(
+    collection(db, "checks", checkId, "statusHistory"),
+    where("timestamp", ">=", Timestamp.fromDate(cutoffDate)),
+    orderBy("timestamp", "asc")
+  );
+
+  const snapshot = await getDocs(historyQuery);
+  const events = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as StatusEvent[];
+
+  // Initialize daily buckets
+  const dayMap = new Map<string, { downMinutes: number; hasData: boolean }>();
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - (days - 1 - i));
+    const dateStr = date.toISOString().split("T")[0];
+    dayMap.set(dateStr, { downMinutes: 0, hasData: false });
+  }
+
+  // Process events to calculate downtime per day
+  let currentStatus: "up" | "down" = "up";
+  let lastEventTime = cutoffDate;
+
+  for (const event of events) {
+    const eventTime = event.timestamp.toDate();
+    const eventDateStr = eventTime.toISOString().split("T")[0];
+
+    // If previous status was "down", calculate downtime
+    if (currentStatus === "down") {
+      // Calculate downtime between lastEventTime and eventTime
+      let cursor = new Date(lastEventTime);
+      while (cursor < eventTime) {
+        const cursorDateStr = cursor.toISOString().split("T")[0];
+        const dayData = dayMap.get(cursorDateStr);
+        if (dayData) {
+          // Calculate minutes in this day
+          const dayStart = new Date(cursor);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+
+          const periodStart = cursor > dayStart ? cursor : dayStart;
+          const periodEnd = eventTime < dayEnd ? eventTime : dayEnd;
+
+          if (periodEnd > periodStart) {
+            const minutes = (periodEnd.getTime() - periodStart.getTime()) / 60000;
+            dayData.downMinutes += minutes;
+            dayData.hasData = true;
+          }
+        }
+        // Move to next day
+        cursor.setDate(cursor.getDate() + 1);
+        cursor.setHours(0, 0, 0, 0);
+      }
+    }
+
+    // Mark day as having data
+    const dayData = dayMap.get(eventDateStr);
+    if (dayData) {
+      dayData.hasData = true;
+    }
+
+    currentStatus = event.status;
+    lastEventTime = eventTime;
+  }
+
+  // If currently down, calculate downtime until now
+  if (currentStatus === "down") {
+    let cursor = new Date(lastEventTime);
+    while (cursor < now) {
+      const cursorDateStr = cursor.toISOString().split("T")[0];
+      const dayData = dayMap.get(cursorDateStr);
+      if (dayData) {
+        const dayStart = new Date(cursor);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+
+        const periodStart = cursor > dayStart ? cursor : dayStart;
+        const periodEnd = now < dayEnd ? now : dayEnd;
+
+        if (periodEnd > periodStart) {
+          const minutes = (periodEnd.getTime() - periodStart.getTime()) / 60000;
+          dayData.downMinutes += minutes;
+          dayData.hasData = true;
+        }
+      }
+      cursor.setDate(cursor.getDate() + 1);
+      cursor.setHours(0, 0, 0, 0);
+    }
+  }
+
+  // Convert to DayStatus array
+  const daysResult: DayStatus[] = [];
+  let totalMinutes = 0;
+  let totalDownMinutes = 0;
+
+  for (const [dateStr, data] of dayMap) {
+    const minutesInDay = 24 * 60;
+    totalMinutes += minutesInDay;
+    totalDownMinutes += data.downMinutes;
+
+    const uptimePercent = ((minutesInDay - data.downMinutes) / minutesInDay) * 100;
+
+    daysResult.push({
+      date: dateStr,
+      status: !data.hasData
+        ? "no-data"
+        : data.downMinutes > 0
+        ? "incident"
+        : "operational",
+      uptimePercent: Math.round(uptimePercent * 100) / 100,
+      downMinutes: Math.round(data.downMinutes),
+    });
+  }
+
+  const overallUptime =
+    totalMinutes > 0
+      ? Math.round(((totalMinutes - totalDownMinutes) / totalMinutes) * 10000) / 100
+      : 100;
+
+  return { days: daysResult, overallUptime };
+}
+
+// ==================== Branding Functions ====================
+
+export async function canUseBranding(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+  const plan = await getUserPlan(userId);
+  const planLimits = PLANS[plan];
+
+  if (!planLimits.customBranding) {
+    return {
+      allowed: false,
+      reason: "Custom branding is only available on the Pro plan.",
+    };
+  }
+
+  return { allowed: true };
+}
+
+// ==================== Incident Functions ====================
+
+export interface IncidentLimitResult {
+  allowed: boolean;
+  current: number;
+  limit: number;
+  plan: PlanType;
+  reason?: string;
+}
+
+export async function canCreateIncident(
+  userId: string,
+  statusPageId: string
+): Promise<IncidentLimitResult> {
+  const plan = await getUserPlan(userId);
+  const planLimits = PLANS[plan];
+  const limit = planLimits.activeIncidentsLimit;
+
+  // Get active incidents count for this status page
+  const activeIncidents = await getStatusPageIncidents(statusPageId, false);
+  const current = activeIncidents.length;
+
+  if (current >= limit) {
+    return {
+      allowed: false,
+      current,
+      limit,
+      plan,
+      reason: `You've reached the limit of ${limit} active incident(s) on the ${planLimits.name} plan. Resolve existing incidents or upgrade.`,
+    };
+  }
+
+  return { allowed: true, current, limit, plan };
+}
+
+export interface CreateIncidentData {
+  title: string;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  initialMessage?: string;
+  affectedCheckIds?: string[];
+}
+
+export async function createIncident(
+  statusPageId: string,
+  userId: string,
+  data: CreateIncidentData
+): Promise<string> {
+  // Check limit
+  const limitCheck = await canCreateIncident(userId, statusPageId);
+  if (!limitCheck.allowed) {
+    throw new Error(limitCheck.reason || "Incident limit reached");
+  }
+
+  const now = Timestamp.now();
+  const incidentData = {
+    statusPageId,
+    userId,
+    title: data.title,
+    status: data.status,
+    severity: data.severity,
+    affectedCheckIds: data.affectedCheckIds || [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const docRef = await addDoc(collection(db, "incidents"), incidentData);
+
+  // Add initial update if message provided
+  if (data.initialMessage) {
+    await addDoc(collection(db, "incidents", docRef.id, "updates"), {
+      message: data.initialMessage,
+      status: data.status,
+      createdAt: now,
+    });
+  }
+
+  return docRef.id;
+}
+
+export async function addIncidentUpdate(
+  incidentId: string,
+  message: string,
+  status: IncidentStatus
+): Promise<string> {
+  const now = Timestamp.now();
+
+  // Add update
+  const updateRef = await addDoc(collection(db, "incidents", incidentId, "updates"), {
+    message,
+    status,
+    createdAt: now,
+  });
+
+  // Update incident status and timestamp
+  const updateData: Record<string, unknown> = {
+    status,
+    updatedAt: now,
+  };
+
+  if (status === "resolved") {
+    updateData.resolvedAt = now;
+  }
+
+  await updateDoc(doc(db, "incidents", incidentId), updateData);
+
+  return updateRef.id;
+}
+
+export async function resolveIncident(incidentId: string, message?: string): Promise<void> {
+  const now = Timestamp.now();
+
+  // Add resolution update
+  await addDoc(collection(db, "incidents", incidentId, "updates"), {
+    message: message || "This incident has been resolved.",
+    status: "resolved",
+    createdAt: now,
+  });
+
+  // Update incident
+  await updateDoc(doc(db, "incidents", incidentId), {
+    status: "resolved",
+    resolvedAt: now,
+    updatedAt: now,
+  });
+}
+
+export async function getStatusPageIncidents(
+  statusPageId: string,
+  includeResolved: boolean = false
+): Promise<Incident[]> {
+  let incidentsQuery;
+
+  if (includeResolved) {
+    incidentsQuery = query(
+      collection(db, "incidents"),
+      where("statusPageId", "==", statusPageId),
+      orderBy("createdAt", "desc"),
+      limit(20)
+    );
+  } else {
+    incidentsQuery = query(
+      collection(db, "incidents"),
+      where("statusPageId", "==", statusPageId),
+      where("status", "!=", "resolved"),
+      orderBy("status"),
+      orderBy("createdAt", "desc")
+    );
+  }
+
+  const snapshot = await getDocs(incidentsQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Incident[];
+}
+
+export async function getIncidentWithUpdates(
+  incidentId: string
+): Promise<(Incident & { updates: IncidentUpdate[] }) | null> {
+  const incidentDoc = await getDoc(doc(db, "incidents", incidentId));
+  if (!incidentDoc.exists()) return null;
+
+  const updatesQuery = query(
+    collection(db, "incidents", incidentId, "updates"),
+    orderBy("createdAt", "desc")
+  );
+  const updatesSnapshot = await getDocs(updatesQuery);
+
+  const updates = updatesSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as IncidentUpdate[];
+
+  return {
+    id: incidentDoc.id,
+    ...incidentDoc.data(),
+    updates,
+  } as Incident & { updates: IncidentUpdate[] };
+}
+
+export async function deleteIncident(incidentId: string): Promise<void> {
+  // Delete all updates first
+  const updatesQuery = query(collection(db, "incidents", incidentId, "updates"));
+  const updatesSnapshot = await getDocs(updatesQuery);
+  for (const updateDoc of updatesSnapshot.docs) {
+    await deleteDoc(updateDoc.ref);
+  }
+
+  // Delete incident
+  await deleteDoc(doc(db, "incidents", incidentId));
+}
+
+export async function getRecentResolvedIncidents(
+  statusPageId: string,
+  daysBack: number = 7,
+  maxCount: number = 5
+): Promise<Incident[]> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - daysBack);
+
+  const incidentsQuery = query(
+    collection(db, "incidents"),
+    where("statusPageId", "==", statusPageId),
+    where("status", "==", "resolved"),
+    where("resolvedAt", ">=", Timestamp.fromDate(cutoff)),
+    orderBy("resolvedAt", "desc"),
+    limit(maxCount)
+  );
+
+  const snapshot = await getDocs(incidentsQuery);
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Incident[];
 }

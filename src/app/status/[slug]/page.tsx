@@ -2,7 +2,17 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import Head from "next/head";
 import { OwlLogo } from "@/components/OwlLogo";
+import { UptimeBar } from "@/components/UptimeBar";
+import { IncidentBanner } from "@/components/IncidentBanner";
+
+interface DayStatus {
+  date: string;
+  status: "operational" | "incident" | "no-data";
+  uptimePercent?: number;
+  downMinutes?: number;
+}
 
 interface StatusCheck {
   id: string;
@@ -10,6 +20,32 @@ interface StatusCheck {
   status: "up" | "down" | "new";
   lastPing: { seconds: number; nanoseconds: number } | null;
   tags?: string[];
+  history?: DayStatus[];
+  uptimePercent?: number;
+}
+
+interface StatusPageBranding {
+  logoUrl?: string;
+  primaryColor?: string;
+  hidePoweredBy?: boolean;
+}
+
+type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved";
+type IncidentSeverity = "minor" | "major" | "critical";
+
+interface PublicIncident {
+  id: string;
+  title: string;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  updates: {
+    message: string;
+    status: IncidentStatus;
+    createdAt: string;
+  }[];
 }
 
 interface StatusPageData {
@@ -18,6 +54,11 @@ interface StatusPageData {
   checks: StatusCheck[];
   overallStatus: "operational" | "degraded" | "down";
   updatedAt: string;
+  branding?: StatusPageBranding;
+  incidents?: {
+    active: PublicIncident[];
+    recent: PublicIncident[];
+  };
 }
 
 function formatRelativeTime(timestamp: { seconds: number } | null): string {
@@ -59,7 +100,7 @@ function StatusIndicator({ status }: { status: "up" | "down" | "new" }) {
   );
 }
 
-function OverallStatusBanner({ status }: { status: "operational" | "degraded" | "down" }) {
+function OverallStatusBanner({ status, primaryColor }: { status: "operational" | "degraded" | "down"; primaryColor?: string }) {
   const config = {
     operational: {
       bg: "bg-green-500/10 border-green-500/30",
@@ -95,9 +136,17 @@ function OverallStatusBanner({ status }: { status: "operational" | "degraded" | 
 
   const { bg, text, icon, label } = config[status];
 
+  // Apply custom primary color for operational status if provided
+  const customStyle = primaryColor && status === "operational"
+    ? { borderColor: `${primaryColor}40`, backgroundColor: `${primaryColor}15` }
+    : undefined;
+  const customTextStyle = primaryColor && status === "operational"
+    ? { color: primaryColor }
+    : undefined;
+
   return (
-    <div className={`${bg} border rounded-xl p-6 mb-8`}>
-      <div className={`flex items-center gap-3 ${text}`}>
+    <div className={`${bg} border rounded-xl p-6 mb-8`} style={customStyle}>
+      <div className={`flex items-center gap-3 ${text}`} style={customTextStyle}>
         {icon}
         <span className="text-xl font-semibold">{label}</span>
       </div>
@@ -110,6 +159,19 @@ export default function StatusPage({ params }: { params: Promise<{ slug: string 
   const [data, setData] = useState<StatusPageData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expandedChecks, setExpandedChecks] = useState<Set<string>>(new Set());
+
+  const toggleCheckExpanded = (checkId: string) => {
+    setExpandedChecks((prev) => {
+      const next = new Set(prev);
+      if (next.has(checkId)) {
+        next.delete(checkId);
+      } else {
+        next.add(checkId);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     async function fetchStatus() {
@@ -174,21 +236,35 @@ export default function StatusPage({ params }: { params: Promise<{ slug: string 
     );
   }
 
+  const branding = data.branding;
+  const hasActiveIncidents = data.incidents?.active && data.incidents.active.length > 0;
+  const hasRecentIncidents = data.incidents?.recent && data.incidents.recent.length > 0;
+
   return (
     <div className="min-h-screen bg-gray-950">
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <OwlLogo className="w-7 h-7" />
+            {branding?.logoUrl ? (
+              <img
+                src={branding.logoUrl}
+                alt="Logo"
+                className="h-8 w-auto max-w-[120px] object-contain"
+              />
+            ) : (
+              <OwlLogo className="w-7 h-7" />
+            )}
             <span className="text-lg font-semibold text-white">{data.title}</span>
           </div>
-          <Link
-            href="/"
-            className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
-          >
-            Powered by CronOwl
-          </Link>
+          {!branding?.hidePoweredBy && (
+            <Link
+              href="/"
+              className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+            >
+              Powered by CronOwl
+            </Link>
+          )}
         </div>
       </header>
 
@@ -199,8 +275,15 @@ export default function StatusPage({ params }: { params: Promise<{ slug: string 
           <p className="text-gray-400 mb-6">{data.description}</p>
         )}
 
+        {/* Active Incidents */}
+        {hasActiveIncidents && (
+          <div className="mb-8">
+            <IncidentBanner incidents={data.incidents!.active} type="active" />
+          </div>
+        )}
+
         {/* Overall status banner */}
-        <OverallStatusBanner status={data.overallStatus} />
+        <OverallStatusBanner status={data.overallStatus} primaryColor={branding?.primaryColor} />
 
         {/* Checks list */}
         <div className="space-y-3">
@@ -212,49 +295,97 @@ export default function StatusPage({ params }: { params: Promise<{ slug: string 
               <p className="text-gray-400">No services configured</p>
             </div>
           ) : (
-            data.checks.map((check) => (
-              <div
-                key={check.id}
-                className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-white">{check.name}</h3>
-                    {check.tags && check.tags.length > 0 && (
-                      <div className="flex gap-1.5 mt-1">
-                        {check.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
+            data.checks.map((check) => {
+              const isExpanded = expandedChecks.has(check.id);
+              const hasHistory = check.history && check.history.length > 0;
+
+              return (
+                <div
+                  key={check.id}
+                  className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden"
+                >
+                  <div
+                    className={`p-4 flex items-center justify-between ${hasHistory ? "cursor-pointer hover:bg-gray-800/50" : ""}`}
+                    onClick={() => hasHistory && toggleCheckExpanded(check.id)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-white">{check.name}</h3>
+                          {check.uptimePercent !== undefined && (
+                            <span className={`text-xs ${
+                              check.uptimePercent >= 99.9 ? "text-green-400" :
+                              check.uptimePercent >= 99 ? "text-yellow-400" :
+                              "text-red-400"
+                            }`}>
+                              {check.uptimePercent.toFixed(2)}%
+                            </span>
+                          )}
+                        </div>
+                        {check.tags && check.tags.length > 0 && (
+                          <div className="flex gap-1.5 mt-1">
+                            {check.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-xs text-gray-500">
+                        {formatRelativeTime(check.lastPing)}
+                      </span>
+                      <StatusIndicator status={check.status} />
+                      {hasHistory && (
+                        <svg
+                          className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
+                  {isExpanded && check.history && (
+                    <div className="px-4 pb-4 border-t border-gray-800 pt-4">
+                      <UptimeBar
+                        days={check.history}
+                        uptimePercent={check.uptimePercent || 100}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-500">
-                    {formatRelativeTime(check.lastPing)}
-                  </span>
-                  <StatusIndicator status={check.status} />
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
+
+        {/* Recent Resolved Incidents */}
+        {hasRecentIncidents && (
+          <div className="mt-8">
+            <IncidentBanner incidents={data.incidents!.recent} type="recent" />
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
           <span>Last updated: {new Date(data.updatedAt).toLocaleString()}</span>
-          <Link
-            href="https://cronowl.com"
-            target="_blank"
-            className="hover:text-gray-400 transition-colors"
-          >
-            Create your own status page with CronOwl
-          </Link>
+          {!branding?.hidePoweredBy && (
+            <Link
+              href="https://cronowl.com"
+              target="_blank"
+              className="hover:text-gray-400 transition-colors"
+            >
+              Create your own status page with CronOwl
+            </Link>
+          )}
         </div>
       </main>
     </div>

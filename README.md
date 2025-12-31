@@ -557,8 +557,11 @@ This checks all active jobs and sends alerts for any that are overdue.
 - [x] CLI tool (`npm install -g cronowl`)
 - [x] Telegram integration
 - [x] Webhook notifications
+- [x] Public status pages with uptime history
+- [x] Custom branding (Pro)
+- [x] Incident management
+- [x] Plan-based limits & API rate limiting
 - [ ] Slow execution alerts (notify if job takes too long)
-- [ ] Public status page
 - [ ] Multiple notification channels per check
 - [ ] Team/organization support
 
