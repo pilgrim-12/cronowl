@@ -42,6 +42,19 @@ export function PublicHeader() {
           <span className="text-lg font-semibold text-white">CronOwl</span>
         </Link>
 
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
+            Docs
+          </Link>
+          <Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
+            Pricing
+          </Link>
+          <Link href="/docs/api" className="text-gray-400 hover:text-white text-sm transition-colors">
+            API
+          </Link>
+        </nav>
+
         {/* Right side */}
         {loading ? (
           <div className="w-8 h-8 rounded-full bg-gray-800 animate-pulse" />
@@ -148,7 +161,10 @@ export function PublicHeader() {
           </div>
         ) : (
           // Not logged in - show Sign in / Get Started
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
+            <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors hidden sm:block">
+              Docs
+            </Link>
             <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
               Sign in
             </Link>
