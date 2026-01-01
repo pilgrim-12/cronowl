@@ -219,9 +219,40 @@ async function updateUserSubscription(userId: string, data: any) {
   const priceId = data.items?.[0]?.price?.id;
   const plan = getPlanFromPriceId(priceId) || "starter";
   const limits = getLimitsForPlan(plan);
-
   const status = data.status === "active" ? "active" : data.status;
 
+  // Check if there's a scheduled change - if so, don't update plan yet
+  // The plan should only change when the scheduled change takes effect
+  const scheduledChange = data.scheduled_change;
+
+  if (scheduledChange) {
+    // There's a scheduled change - only update metadata, not the actual plan
+    console.log(`Subscription has scheduled change for user ${userId}:`, scheduledChange);
+
+    const scheduledPriceId = scheduledChange.items?.[0]?.price?.id;
+    const scheduledPlan = scheduledPriceId ? getPlanFromPriceId(scheduledPriceId) : null;
+
+    await adminDb
+      .collection("users")
+      .doc(userId)
+      .update({
+        "subscription.status": status,
+        "subscription.currentPeriodEnd": data.current_billing_period?.ends_at
+          ? new Date(data.current_billing_period.ends_at)
+          : null,
+        "subscription.updatedAt": FieldValue.serverTimestamp(),
+        "subscription.scheduledChange": {
+          action: scheduledChange.action,
+          effectiveAt: scheduledChange.effective_at,
+          plan: scheduledPlan,
+        },
+      });
+
+    console.log(`Subscription updated (scheduled change pending) for user ${userId}`);
+    return;
+  }
+
+  // No scheduled change - apply the plan change immediately
   await adminDb
     .collection("users")
     .doc(userId)
@@ -232,6 +263,7 @@ async function updateUserSubscription(userId: string, data: any) {
         ? new Date(data.current_billing_period.ends_at)
         : null,
       "subscription.updatedAt": FieldValue.serverTimestamp(),
+      "subscription.scheduledChange": null, // Clear any previous scheduled change
       limits,
       plan,
     });
