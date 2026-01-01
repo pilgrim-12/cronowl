@@ -55,8 +55,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // First, get the subscription to check if there's a scheduled change
+    const getResponse = await fetch(
+      `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${PADDLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!getResponse.ok) {
+      const errorData = await getResponse.json();
+      console.error("Paddle API error (get subscription):", errorData);
+      return NextResponse.json(
+        { error: "Failed to get subscription", details: errorData },
+        { status: 500 }
+      );
+    }
+
+    const subscriptionData = await getResponse.json();
+    const hasScheduledChange = subscriptionData.data?.scheduled_change !== null;
+
+    // If there's a scheduled change, we need to use a different proration mode
+    // or cancel the scheduled change first
+    const prorationMode = hasScheduledChange
+      ? "do_not_bill" // Don't bill anything, just schedule the change
+      : "prorated_next_billing_period"; // Apply at next billing
+
     // Call Paddle API to update subscription
-    // For downgrade, we use prorated_next_billing_period so user keeps Pro until end of period
     const response = await fetch(
       `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
       {
@@ -72,7 +101,7 @@ export async function POST(req: NextRequest) {
               quantity: 1,
             },
           ],
-          proration_billing_mode: "prorated_next_billing_period", // Apply at next billing
+          proration_billing_mode: prorationMode,
         }),
       }
     );
