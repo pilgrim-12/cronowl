@@ -277,9 +277,9 @@ await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
 #### Environment Variables
 
 ```env
-TELEGRAM_BOT_TOKEN=7993484224:AAGeC-yoEqPUjqUv1vzP77jIltj3x631EGY
+TELEGRAM_BOT_TOKEN=your-bot-token-from-botfather
 TELEGRAM_WEBHOOK_SECRET=random-secret-string-here
-NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=CronOwlBot
+NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=YourBotUsername
 ```
 
 #### Commands Supported
