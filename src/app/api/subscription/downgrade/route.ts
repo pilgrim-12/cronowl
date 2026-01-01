@@ -77,15 +77,46 @@ export async function POST(req: NextRequest) {
     }
 
     const subscriptionData = await getResponse.json();
-    const hasScheduledChange = subscriptionData.data?.scheduled_change !== null;
+    const scheduledChange = subscriptionData.data?.scheduled_change;
 
-    // If there's a scheduled change, we need to use a different proration mode
-    // or cancel the scheduled change first
-    const prorationMode = hasScheduledChange
-      ? "do_not_bill" // Don't bill anything, just schedule the change
-      : "prorated_next_billing_period"; // Apply at next billing
+    // If there's a scheduled cancellation, remove it first
+    // User wants to downgrade instead of cancel - valid flow
+    if (scheduledChange?.action === "cancel") {
+      console.log("Removing scheduled cancellation before downgrade");
 
-    // Call Paddle API to update subscription
+      const removeScheduleResponse = await fetch(
+        `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Authorization": `Bearer ${PADDLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            scheduled_change: null,
+          }),
+        }
+      );
+
+      if (!removeScheduleResponse.ok) {
+        const errorData = await removeScheduleResponse.json();
+        console.error("Failed to remove scheduled cancellation:", errorData);
+        return NextResponse.json(
+          { error: "Failed to remove scheduled cancellation. Please try again.", details: errorData },
+          { status: 500 }
+        );
+      }
+
+      // Update Firestore to remove canceled status
+      await adminDb.collection("users").doc(userId).update({
+        "subscription.status": "active",
+        "subscription.canceledAt": null,
+        "subscription.effectiveEndDate": null,
+      });
+    }
+
+    // Now apply the downgrade - schedule for next billing period
+    // User keeps Pro features until the end of current paid period
     const response = await fetch(
       `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
       {
@@ -101,7 +132,7 @@ export async function POST(req: NextRequest) {
               quantity: 1,
             },
           ],
-          proration_billing_mode: prorationMode,
+          proration_billing_mode: "prorated_next_billing_period",
         }),
       }
     );
@@ -118,10 +149,18 @@ export async function POST(req: NextRequest) {
     const result = await response.json();
     console.log(`Subscription ${subscriptionId} scheduled for downgrade to starter`, result);
 
+    // Update Firestore to reflect the scheduled downgrade
+    const effectiveAt = result.data?.scheduled_change?.effective_at;
+    await adminDb.collection("users").doc(userId).update({
+      "subscription.scheduledDowngrade": "starter",
+      "subscription.scheduledDowngradeAt": effectiveAt ? new Date(effectiveAt) : null,
+    });
+
     return NextResponse.json({
       success: true,
       message: "Subscription will be downgraded to Starter at the end of the current billing period",
       subscriptionId,
+      effectiveAt,
     });
   } catch (error) {
     console.error("Downgrade subscription error:", error);
