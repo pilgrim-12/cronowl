@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from "crypto";
-import { checkRateLimit, getClientIp } from "./rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "./rate-limit";
 import { PLANS, PlanType } from "./plans";
 
 // API Key interface
@@ -225,13 +225,10 @@ export async function withApiAuth(
   const plan = await getUserPlan(validation.userId);
   const planLimits = PLANS[plan];
 
-  // Rate limiting by user ID with plan-based limits
+  // Rate limiting by user ID with unified limits (100 req/min for all plans)
   let rateLimit;
   try {
-    rateLimit = await checkRateLimit(`api:user:${validation.userId}`, {
-      maxRequests: planLimits.apiRequestsPerMin,
-      windowMs: 60000, // 1 minute
-    });
+    rateLimit = await checkRateLimit(`api:user:${validation.userId}`, RATE_LIMITS.api);
   } catch (rateLimitError) {
     console.error("Rate limit error:", rateLimitError);
     // Fail closed on rate limit errors
@@ -246,13 +243,12 @@ export async function withApiAuth(
     const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
     return apiError(
       "RATE_LIMIT_EXCEEDED",
-      `Too many requests. Your ${planLimits.name} plan allows ${planLimits.apiRequestsPerMin} requests/min.`,
+      `Too many requests. API limit is ${RATE_LIMITS.api.maxRequests} requests/min.`,
       429,
       {
         retryAfter,
-        limit: planLimits.apiRequestsPerMin,
+        limit: RATE_LIMITS.api.maxRequests,
         remaining: 0,
-        plan: plan,
       }
     );
   }

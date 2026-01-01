@@ -4,7 +4,6 @@ export const PLANS = {
     price: 0,
     checksLimit: 25,
     historyDays: 7,
-    apiRequestsPerMin: 30,
     apiKeysLimit: 1,
     webhooksPerCheck: 0, // Webhooks only for paid plans
     statusPagesLimit: 1,
@@ -19,7 +18,6 @@ export const PLANS = {
       "Telegram alerts",
       "7 days history",
       "1 status page",
-      "API access (30 req/min)",
     ],
   },
   starter: {
@@ -27,7 +25,6 @@ export const PLANS = {
     price: 4,
     checksLimit: 100,
     historyDays: 30,
-    apiRequestsPerMin: 120,
     apiKeysLimit: 3,
     webhooksPerCheck: 3,
     statusPagesLimit: 3,
@@ -42,7 +39,6 @@ export const PLANS = {
       "Slack integration",
       "30 days history",
       "3 status pages",
-      "API access (120 req/min)",
     ],
   },
   pro: {
@@ -50,7 +46,6 @@ export const PLANS = {
     price: 9,
     checksLimit: 500,
     historyDays: 90,
-    apiRequestsPerMin: 300,
     apiKeysLimit: 10,
     webhooksPerCheck: 10,
     statusPagesLimit: 10,
@@ -63,7 +58,6 @@ export const PLANS = {
       "Everything in Starter",
       "90 days history",
       "10 status pages",
-      "API access (300 req/min)",
       "Team members (3 users)",
       "Custom branding",
       "Priority support",

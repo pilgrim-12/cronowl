@@ -106,12 +106,10 @@ export function getClientIp(request: Request): string {
 
 // Preset rate limit configs
 export const RATE_LIMITS = {
-  // Ping endpoint: 100 requests per minute per IP
-  ping: { maxRequests: 100, windowMs: 60000 },
-  // Auth endpoints: 10 requests per minute per IP
+  // Auth endpoints: 10 requests per minute per IP (login abuse prevention)
   auth: { maxRequests: 10, windowMs: 60000 },
-  // API endpoints: 60 requests per minute per IP
-  api: { maxRequests: 60, windowMs: 60000 },
+  // API endpoints: 100 requests per minute (unified for all plans)
+  api: { maxRequests: 100, windowMs: 60000 },
   // Webhook test: 5 requests per minute per user
   webhookTest: { maxRequests: 5, windowMs: 60000 },
 } as const;

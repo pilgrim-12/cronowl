@@ -138,12 +138,6 @@ export default function PricingPage() {
                 <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.historyDays} days</td>
               </tr>
               <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">API requests</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.apiRequestsPerMin}/min</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.apiRequestsPerMin}/min</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.apiRequestsPerMin}/min</td>
-              </tr>
-              <tr className="border-b border-gray-800/50">
                 <td className="py-3 px-6 text-gray-300">API keys</td>
                 <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.apiKeysLimit}</td>
                 <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.apiKeysLimit}</td>
