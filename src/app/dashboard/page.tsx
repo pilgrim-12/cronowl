@@ -59,6 +59,8 @@ export default function DashboardPage() {
   const [planUsage, setPlanUsage] = useState<CheckLimitResult | null>(null);
   const [limitError, setLimitError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [showRefreshDropdown, setShowRefreshDropdown] = useState(false);
+  const refreshDropdownRef = useRef<HTMLDivElement>(null);
 
   // Get all unique tags from checks
   const allTags = Array.from(
@@ -78,6 +80,17 @@ export default function DashboardPage() {
   useEffect(() => {
     localStorage.setItem("cronowl-refresh-interval", String(refreshInterval));
   }, [refreshInterval]);
+
+  // Close refresh dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (refreshDropdownRef.current && !refreshDropdownRef.current.contains(event.target as Node)) {
+        setShowRefreshDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -170,6 +183,12 @@ export default function DashboardPage() {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  };
+
+  // Helper to format refresh interval
+  const formatRefreshInterval = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    return `${seconds / 60}m`;
   };
 
   // Helper to display schedule info
@@ -368,18 +387,70 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-white">Your Checks</h2>
             {lastUpdated && (
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-2 mt-1">
                 <p className="text-gray-500 text-xs">
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </p>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-12 sm:w-16 h-1 bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
-                      style={{ width: `${(countdown / refreshInterval) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-gray-500 text-xs tabular-nums">{countdown}s</span>
+                <span className="text-gray-600">•</span>
+                {/* Compact refresh indicator with dropdown */}
+                <div className="relative" ref={refreshDropdownRef}>
+                  <button
+                    onClick={() => setShowRefreshDropdown(!showRefreshDropdown)}
+                    className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors group"
+                    title="Auto-refresh interval"
+                  >
+                    <svg
+                      className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-xs tabular-nums">{countdown}s</span>
+                    <svg className={`w-3 h-3 transition-transform ${showRefreshDropdown ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {showRefreshDropdown && (
+                    <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1 min-w-[120px]">
+                      <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-700">
+                        Auto-refresh
+                      </div>
+                      {[
+                        { value: 5, label: "5 seconds" },
+                        { value: 10, label: "10 seconds" },
+                        { value: 15, label: "15 seconds" },
+                        { value: 30, label: "30 seconds" },
+                        { value: 60, label: "1 minute" },
+                        { value: 120, label: "2 minutes" },
+                        { value: 300, label: "5 minutes" },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            setRefreshInterval(option.value);
+                            setCountdown(option.value);
+                            setShowRefreshDropdown(false);
+                          }}
+                          className={`w-full px-3 py-1.5 text-left text-sm transition-colors flex items-center justify-between ${
+                            refreshInterval === option.value
+                              ? "bg-blue-600/20 text-blue-400"
+                              : "text-gray-300 hover:bg-gray-700"
+                          }`}
+                        >
+                          {option.label}
+                          {refreshInterval === option.value && (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -387,34 +458,6 @@ export default function DashboardPage() {
 
           {/* Controls */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            {/* Refresh interval - scrollable on mobile */}
-            <div className="flex bg-gray-800 rounded-lg p-1 gap-0.5 overflow-x-auto max-w-full">
-              {[
-                { value: 5, label: "5s" },
-                { value: 10, label: "10s" },
-                { value: 15, label: "15s" },
-                { value: 30, label: "30s" },
-                { value: 60, label: "1m" },
-                { value: 120, label: "2m" },
-                { value: 300, label: "5m" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setRefreshInterval(option.value);
-                    setCountdown(option.value);
-                  }}
-                  className={`px-1.5 sm:px-2 py-1 rounded text-xs font-medium transition-colors flex-shrink-0 ${
-                    refreshInterval === option.value
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-gray-700"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
             {/* View mode toggle */}
             <div className="flex bg-gray-800 rounded-lg p-1">
               <button
