@@ -17,7 +17,7 @@ interface HeaderProps {
 
 export function Header({ user, signOut }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [plan, setPlan] = useState<PlanType>("free");
+  const [plan, setPlan] = useState<PlanType | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Fetch user's plan
@@ -28,15 +28,19 @@ export function Header({ user, signOut }: HeaderProps) {
         if (userDoc.exists()) {
           const data = userDoc.data();
           setPlan(data.plan || "free");
+        } else {
+          setPlan("free");
         }
       } catch (err) {
         console.error("Failed to fetch user plan:", err);
+        setPlan("free");
       }
     }
     fetchPlan();
   }, [user.uid]);
 
   const getPlanBadge = () => {
+    if (!plan) return null;
     const badges: Record<PlanType, { label: string; className: string }> = {
       free: {
         label: "Free",
@@ -103,10 +107,12 @@ export function Header({ user, signOut }: HeaderProps) {
 
         {/* Right side - Plan badge and User dropdown */}
         <div className="flex items-center gap-3">
-          {/* Plan badge - always visible */}
-          <span className={`px-2 py-1 text-xs font-medium rounded ${getPlanBadge().className}`}>
-            {getPlanBadge().label}
-          </span>
+          {/* Plan badge - only show when loaded */}
+          {getPlanBadge() && (
+            <span className={`px-2 py-1 text-xs font-medium rounded ${getPlanBadge()!.className}`}>
+              {getPlanBadge()!.label}
+            </span>
+          )}
 
           <div className="relative" ref={menuRef}>
             <button
@@ -160,17 +166,29 @@ export function Header({ user, signOut }: HeaderProps) {
                       <p className="text-sm font-medium text-white truncate">
                         {user.displayName || "User"}
                       </p>
-                      <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${getPlanBadge().className}`}>
-                        {getPlanBadge().label}
-                      </span>
+                      {getPlanBadge() && (
+                        <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${getPlanBadge()!.className}`}>
+                          {getPlanBadge()!.label}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{user.email}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Menu items */}
-              <div className="py-1">
+              {/* Mobile nav links - only visible on small screens */}
+              <div className="py-1 sm:hidden border-b border-gray-800">
+                <Link
+                  href="/dashboard"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  Checks
+                </Link>
                 <Link
                   href="/dashboard/status-pages"
                   onClick={() => setIsMenuOpen(false)}
@@ -181,6 +199,10 @@ export function Header({ user, signOut }: HeaderProps) {
                   </svg>
                   Status Pages
                 </Link>
+              </div>
+
+              {/* Menu items */}
+              <div className="py-1">
                 <Link
                   href="/settings"
                   onClick={() => setIsMenuOpen(false)}
