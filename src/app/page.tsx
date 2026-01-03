@@ -391,6 +391,9 @@ export default function Home() {
             <Link href="/privacy" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Privacy
             </Link>
+            <a href="mailto:support@cronowl.com" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+              Support
+            </a>
           </div>
         </div>
       </footer>

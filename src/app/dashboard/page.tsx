@@ -407,7 +407,7 @@ export default function DashboardPage() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span className="text-xs tabular-nums">{countdown}s</span>
+                    <span className="text-xs tabular-nums w-6 text-right">{countdown}s</span>
                     <svg className={`w-3 h-3 transition-transform ${showRefreshDropdown ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -1204,10 +1204,12 @@ function CheckModal({
   }, {} as Record<string, typeof TIMEZONE_OPTIONS>);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-lg my-8">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{title}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-lg my-8">
+        <div className="p-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
