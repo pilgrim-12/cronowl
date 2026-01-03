@@ -133,10 +133,10 @@ function StatusPageModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
-          <div className="p-6 border-b border-gray-800">
-            <h2 className="text-lg font-semibold text-white">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               {initialData ? "Edit Status Page" : "Create Status Page"}
             </h2>
             {/* Tabs */}
@@ -174,7 +174,7 @@ function StatusPageModal({
               <>
                 {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Title
                   </label>
                   <input
@@ -182,14 +182,14 @@ function StatusPageModal({
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="My Service Status"
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Description (optional)
                   </label>
                   <textarea
@@ -197,31 +197,31 @@ function StatusPageModal({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Current status of our services..."
                     rows={2}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
 
                 {/* Checks selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Checks to Display
                   </label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto bg-gray-800 rounded-lg p-2">
+                  <div className="space-y-2 max-h-48 overflow-y-auto bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
                     {checks.length === 0 ? (
-                      <p className="text-gray-500 text-sm p-2">No checks available</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm p-2">No checks available</p>
                     ) : (
                       checks.map((check) => (
                         <label
                           key={check.id}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 cursor-pointer"
+                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
                         >
                           <input
                             type="checkbox"
                             checked={selectedCheckIds.includes(check.id)}
                             onChange={() => toggleCheck(check.id)}
-                            className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-700"
+                            className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-50 dark:bg-gray-700"
                           />
-                          <span className="text-white">{check.name}</span>
+                          <span className="text-gray-900 dark:text-white">{check.name}</span>
                           <span
                             className={`ml-auto text-xs px-2 py-0.5 rounded ${
                               check.status === "up"
@@ -237,7 +237,7 @@ function StatusPageModal({
                       ))
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {selectedCheckIds.length} check(s) selected
                   </p>
                 </div>
@@ -249,11 +249,11 @@ function StatusPageModal({
                       type="checkbox"
                       checked={isPublic}
                       onChange={(e) => setIsPublic(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-700"
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-50 dark:bg-gray-700"
                     />
                     <div>
-                      <span className="text-white">Public</span>
-                      <p className="text-xs text-gray-500">
+                      <span className="text-gray-900 dark:text-white">Public</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Anyone with the link can view this status page
                       </p>
                     </div>
@@ -264,11 +264,11 @@ function StatusPageModal({
                       type="checkbox"
                       checked={showTags}
                       onChange={(e) => setShowTags(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-700"
+                      className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-50 dark:bg-gray-700"
                     />
                     <div>
-                      <span className="text-white">Show Tags</span>
-                      <p className="text-xs text-gray-500">
+                      <span className="text-gray-900 dark:text-white">Show Tags</span>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Display check tags on the public page
                       </p>
                     </div>
@@ -283,8 +283,8 @@ function StatusPageModal({
                     <svg className="w-12 h-12 text-blue-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
-                    <h3 className="text-white font-medium mb-2">Custom Branding is a Pro Feature</h3>
-                    <p className="text-gray-400 text-sm mb-4">
+                    <h3 className="text-gray-900 dark:text-white font-medium mb-2">Custom Branding is a Pro Feature</h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
                       Customize your status page with your own logo, colors, and remove the "Powered by CronOwl" footer.
                     </p>
                     <Link
@@ -298,7 +298,7 @@ function StatusPageModal({
                   <>
                     {/* Logo URL */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Logo URL
                       </label>
                       <input
@@ -306,14 +306,14 @@ function StatusPageModal({
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
                         placeholder="https://example.com/logo.png"
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         URL to your logo image (recommended: 120x32px)
                       </p>
                       {logoUrl && (
-                        <div className="mt-2 p-3 bg-gray-800 rounded-lg">
-                          <p className="text-xs text-gray-500 mb-2">Preview:</p>
+                        <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Preview:</p>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={logoUrl}
@@ -329,7 +329,7 @@ function StatusPageModal({
 
                     {/* Primary Color */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Primary Color
                       </label>
                       <div className="flex gap-2">
@@ -337,17 +337,17 @@ function StatusPageModal({
                           type="color"
                           value={primaryColor || "#22c55e"}
                           onChange={(e) => setPrimaryColor(e.target.value)}
-                          className="w-10 h-10 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer"
+                          className="w-10 h-10 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-pointer"
                         />
                         <input
                           type="text"
                           value={primaryColor}
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           placeholder="#22c55e"
-                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Used for the "All Systems Operational" banner
                       </p>
                     </div>
@@ -358,11 +358,11 @@ function StatusPageModal({
                         type="checkbox"
                         checked={hidePoweredBy}
                         onChange={(e) => setHidePoweredBy(e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-700"
+                        className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-gray-50 dark:bg-gray-700"
                       />
                       <div>
-                        <span className="text-white">Hide "Powered by CronOwl"</span>
-                        <p className="text-xs text-gray-500">
+                        <span className="text-gray-900 dark:text-white">Hide "Powered by CronOwl"</span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Remove CronOwl branding from the status page footer
                         </p>
                       </div>
@@ -373,11 +373,11 @@ function StatusPageModal({
             )}
           </div>
 
-          <div className="p-6 border-t border-gray-800 flex gap-3 justify-end">
+          <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex gap-3 justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              className="px-4 py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               Cancel
             </button>
@@ -561,7 +561,7 @@ export default function StatusPagesPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
       </div>
     );
@@ -570,17 +570,17 @@ export default function StatusPagesPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header user={user} signOut={signOut} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Plan Usage Banner */}
         {planUsage && (
-          <div className="bg-gray-900 rounded-lg p-4 mb-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-white font-medium">
+                  <span className="text-gray-900 dark:text-white font-medium">
                     {PLANS[planUsage.plan].name} Plan
                   </span>
                   {planUsage.plan === "free" && (
@@ -594,7 +594,7 @@ export default function StatusPagesPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 max-w-xs">
-                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
                           planUsage.current / planUsage.limit > 0.9
@@ -609,7 +609,7 @@ export default function StatusPagesPage() {
                       />
                     </div>
                   </div>
-                  <span className="text-gray-400 text-sm whitespace-nowrap">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">
                     {planUsage.current} / {planUsage.limit} status pages
                   </span>
                 </div>
@@ -647,14 +647,14 @@ export default function StatusPagesPage() {
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-              <Link href="/dashboard" className="hover:text-gray-400">
+              <Link href="/dashboard" className="hover:text-gray-700 dark:hover:text-gray-400">
                 Dashboard
               </Link>
               <span>/</span>
-              <span className="text-gray-400">Status Pages</span>
+              <span className="text-gray-600 dark:text-gray-400">Status Pages</span>
             </div>
-            <h1 className="text-2xl font-bold text-white">Status Pages</h1>
-            <p className="text-gray-400 mt-1 text-sm sm:text-base">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Status Pages</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm sm:text-base">
               Create public status pages to share with your team or customers
             </p>
           </div>
@@ -675,14 +675,14 @@ export default function StatusPagesPage() {
 
         {/* Status pages list */}
         {statusPages.length === 0 ? (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-            <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-white mb-2">No status pages yet</h2>
-            <p className="text-gray-400 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No status pages yet</h2>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Create a public status page to share the health of your services
             </p>
             <button
@@ -700,13 +700,13 @@ export default function StatusPagesPage() {
             {statusPages.map((page) => (
               <div
                 key={page.id}
-                className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6"
+                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-6"
               >
                 {/* Header with title and actions */}
                 <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg font-semibold text-white truncate">{page.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{page.title}</h3>
                       <span
                         className={`text-xs px-2 py-0.5 rounded shrink-0 ${
                           page.isPublic
@@ -718,9 +718,9 @@ export default function StatusPagesPage() {
                       </span>
                     </div>
                     {page.description && (
-                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">{page.description}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2">{page.description}</p>
                     )}
-                    <div className="flex items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-4 mt-2 text-sm text-gray-500 dark:text-gray-500 flex-wrap">
                       <span>{page.checkIds.length} check(s)</span>
                       <span className="hidden sm:inline">•</span>
                       <span>Created {new Date(page.createdAt.seconds * 1000).toLocaleDateString()}</span>
@@ -732,7 +732,7 @@ export default function StatusPagesPage() {
                     {/* Incidents */}
                     <button
                       onClick={() => openIncidentModal(page)}
-                      className="p-2 text-gray-400 hover:text-orange-400 hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                       title="Manage Incidents"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -743,7 +743,7 @@ export default function StatusPagesPage() {
                     {/* Copy URL */}
                     <button
                       onClick={() => copyToClipboard(page.slug)}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                       title="Copy URL"
                     >
                       {copiedSlug === page.slug ? (
@@ -761,7 +761,7 @@ export default function StatusPagesPage() {
                     <Link
                       href={`/status/${page.slug}`}
                       target="_blank"
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                       title="View page"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -775,7 +775,7 @@ export default function StatusPagesPage() {
                         setEditingPage(page);
                         setIsModalOpen(true);
                       }}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                       title="Edit"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -786,7 +786,7 @@ export default function StatusPagesPage() {
                     {/* Delete */}
                     <button
                       onClick={() => handleDelete(page.id)}
-                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                       title="Delete"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,9 +797,9 @@ export default function StatusPagesPage() {
                 </div>
 
                 {/* Badge preview */}
-                <div className="mt-4 pt-4 border-t border-gray-800">
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                    <span className="text-sm text-gray-500">Badge:</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-500">Badge:</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`/api/status/${page.slug}/badge?label=status`}
@@ -814,7 +814,7 @@ export default function StatusPagesPage() {
                         setCopiedSlug(`badge-${page.slug}`);
                         setTimeout(() => setCopiedSlug(null), 2000);
                       }}
-                      className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 transition-colors"
                     >
                       {copiedSlug === `badge-${page.slug}` ? "Copied!" : "Copy Markdown"}
                     </button>
@@ -952,14 +952,14 @@ function IncidentModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">Incidents</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Incidents</h2>
             <p className="text-sm text-gray-500">{pageTitle}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -993,14 +993,14 @@ function IncidentModal({
               {/* Active Incidents */}
               {activeIncidents.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-400 mb-3">Active Incidents</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Active Incidents</h3>
                   <div className="space-y-3">
                     {activeIncidents.map((incident) => (
-                      <div key={incident.id} className="bg-gray-800 rounded-lg p-4">
+                      <div key={incident.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium text-white">{incident.title}</h4>
+                              <h4 className="font-medium text-gray-900 dark:text-white">{incident.title}</h4>
                               <span className={`text-xs px-2 py-0.5 rounded ${severityColors[incident.severity]}`}>
                                 {incident.severity}
                               </span>
@@ -1033,12 +1033,12 @@ function IncidentModal({
               {/* Resolved Incidents */}
               {resolvedIncidents.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-400 mb-3">Resolved Incidents</h3>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Resolved Incidents</h3>
                   <div className="space-y-2">
                     {resolvedIncidents.slice(0, 5).map((incident) => (
-                      <div key={incident.id} className="bg-gray-800/50 rounded-lg p-3 flex items-center justify-between">
+                      <div key={incident.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex items-center justify-between">
                         <div>
-                          <span className="text-gray-300">{incident.title}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{incident.title}</span>
                           <span className="text-xs text-gray-500 ml-2">
                             {incident.resolvedAt
                               ? new Date(incident.resolvedAt.seconds * 1000).toLocaleDateString()
@@ -1055,7 +1055,7 @@ function IncidentModal({
               )}
 
               {incidents.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-500">
                   No incidents yet. Create one when something goes wrong.
                 </div>
               )}
@@ -1066,7 +1066,7 @@ function IncidentModal({
             <div className="space-y-4">
               <button
                 onClick={() => setView("list")}
-                className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mb-4"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm flex items-center gap-1 mb-4"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1075,23 +1075,23 @@ function IncidentModal({
               </button>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Database connectivity issues"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as IncidentStatus)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="investigating">Investigating</option>
                     <option value="identified">Identified</option>
@@ -1099,11 +1099,11 @@ function IncidentModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Severity</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Severity</label>
                   <select
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value as IncidentSeverity)}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="minor">Minor</option>
                     <option value="major">Major</option>
@@ -1113,13 +1113,13 @@ function IncidentModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Initial Message</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Initial Message</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="We are investigating issues with..."
                   rows={3}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
 
@@ -1140,7 +1140,7 @@ function IncidentModal({
                   setView("list");
                   setSelectedIncident(null);
                 }}
-                className="text-gray-400 hover:text-white text-sm flex items-center gap-1 mb-4"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm flex items-center gap-1 mb-4"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1148,8 +1148,8 @@ function IncidentModal({
                 Back to list
               </button>
 
-              <div className="bg-gray-800 rounded-lg p-4 mb-4">
-                <h3 className="font-medium text-white mb-1">{selectedIncident.title}</h3>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                <h3 className="font-medium text-gray-900 dark:text-white mb-1">{selectedIncident.title}</h3>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded ${severityColors[selectedIncident.severity]}`}>
                     {selectedIncident.severity}
@@ -1161,11 +1161,11 @@ function IncidentModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">New Status</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as IncidentStatus)}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="investigating">Investigating</option>
                   <option value="identified">Identified</option>
@@ -1175,13 +1175,13 @@ function IncidentModal({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Update Message</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Update Message</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={status === "resolved" ? "The issue has been resolved..." : "We have identified the issue..."}
                   rows={3}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
 

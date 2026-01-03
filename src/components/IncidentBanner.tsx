@@ -95,19 +95,19 @@ function IncidentCard({ incident, defaultExpanded = false }: { incident: PublicI
         <div className={config.text}>{config.icon}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-medium text-white">{incident.title}</h3>
+            <h3 className="font-medium text-gray-900 dark:text-white">{incident.title}</h3>
             <span className={`text-xs px-2 py-0.5 rounded-full ${config.badge}`}>
               {incident.severity}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+          <div className="flex items-center gap-2 mt-1 text-sm text-gray-600 dark:text-gray-400">
             <span className="capitalize">{statusLabels[incident.status]}</span>
             <span>•</span>
             <span>{formatRelativeTime(incident.updatedAt)}</span>
           </div>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -129,16 +129,16 @@ function IncidentCard({ incident, defaultExpanded = false }: { incident: PublicI
                     "bg-orange-500"
                   }`} />
                   {index < incident.updates.length - 1 && (
-                    <div className="w-px flex-1 bg-gray-700 mt-1" />
+                    <div className="w-px flex-1 bg-gray-300 dark:bg-gray-700 mt-1" />
                   )}
                 </div>
                 <div className="flex-1 pb-2">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-500 mb-1">
                     <span className="capitalize">{statusLabels[update.status]}</span>
                     <span>•</span>
                     <span>{formatRelativeTime(update.createdAt)}</span>
                   </div>
-                  <p className="text-sm text-gray-300">{update.message}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{update.message}</p>
                 </div>
               </div>
             ))}
@@ -154,7 +154,7 @@ export function IncidentBanner({ incidents, type }: IncidentBannerProps) {
 
   return (
     <div className="space-y-3">
-      <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+      <h2 className="text-sm font-medium text-gray-500 dark:text-gray-500 uppercase tracking-wider">
         {type === "active" ? "Active Incidents" : "Recent Incidents"}
       </h2>
       <div className="space-y-3">

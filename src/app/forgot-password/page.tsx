@@ -31,17 +31,17 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 justify-center">
             <OwlLogo className="w-10 h-10" />
-            <span className="text-3xl font-bold text-white">CronOwl</span>
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">CronOwl</span>
           </Link>
-          <p className="mt-2 text-gray-400">Reset your password</p>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">Reset your password</p>
         </div>
 
-        <div className="bg-gray-900 rounded-lg p-8 space-y-6">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8 space-y-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500 text-red-500 rounded-lg p-3 text-sm">
               {error}
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-300 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Email
                 </label>
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="you@example.com"
                 />
               </div>
@@ -88,11 +88,11 @@ export default function ForgotPasswordPage() {
                 {loading ? "Sending..." : "Send reset link"}
               </button>
 
-              <p className="text-center text-gray-400 text-sm">
+              <p className="text-center text-gray-500 dark:text-gray-400 text-sm">
                 Remember your password?{" "}
                 <Link
                   href="/login"
-                  className="text-blue-400 hover:text-blue-300"
+                  className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
                 >
                   Sign in
                 </Link>

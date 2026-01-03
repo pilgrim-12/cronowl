@@ -5,7 +5,7 @@ import { SmartCTAButton } from "@/components/SmartCTAButton";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <PublicHeader />
 
       {/* Hero */}
@@ -13,12 +13,12 @@ export default function Home() {
         <div className="flex justify-center mb-6">
           <OwlLogo className="w-24 h-24" />
         </div>
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+        <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
           Know when your cron jobs
           <br />
           <span className="text-blue-500">stop working</span>
         </h2>
-        <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-500 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
           Simple monitoring for your scheduled tasks. Get alerted before your
           users notice something is broken.
         </p>
@@ -26,7 +26,7 @@ export default function Home() {
           <SmartCTAButton>Start Monitoring — Free</SmartCTAButton>
           <a
             href="#how-it-works"
-            className="border border-gray-700 text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-gray-800 transition-colors"
+            className="border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-lg px-8 py-3 text-lg font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             How it works
           </a>
@@ -34,28 +34,28 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="bg-gray-900 py-20">
+      <section id="how-it-works" className="bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800 py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-white text-center mb-12">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
             Dead simple setup
           </h3>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="text-4xl mb-4">1️⃣</div>
-              <h4 className="text-xl font-semibold text-white mb-2">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Create a check
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-500 dark:text-gray-400">
                 Set up a check with your expected schedule (every hour, daily,
                 etc.)
               </p>
             </div>
             <div className="text-center">
               <div className="text-4xl mb-4">2️⃣</div>
-              <h4 className="text-xl font-semibold text-white mb-2">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Add one line
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-500 dark:text-gray-400">
                 Add a curl request to the end of your cron script
               </p>
               <code className="text-green-400 text-sm mt-2 block">
@@ -64,10 +64,10 @@ export default function Home() {
             </div>
             <div className="text-center">
               <div className="text-4xl mb-4">3️⃣</div>
-              <h4 className="text-xl font-semibold text-white mb-2">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 Get alerted
               </h4>
-              <p className="text-gray-400">
+              <p className="text-gray-500 dark:text-gray-400">
                 If your job stops pinging, we&apos;ll email you immediately
               </p>
             </div>
@@ -78,54 +78,54 @@ export default function Home() {
       {/* Features */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-white text-center mb-4">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-4">
             Everything you need
           </h3>
-          <p className="text-gray-400 text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-gray-500 dark:text-gray-400 text-center mb-12 max-w-2xl mx-auto">
             From simple pings to full API automation
           </p>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-white mb-2">Cron Expressions</h4>
-              <p className="text-gray-400 text-sm">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Cron Expressions</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Full cron syntax support with timezone awareness
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-white mb-2">Status Pages</h4>
-              <p className="text-gray-400 text-sm">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Status Pages</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Public status pages with embeddable badges
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-white mb-2">Slow Job Alerts</h4>
-              <p className="text-gray-400 text-sm">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Slow Job Alerts</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Get notified when jobs take longer than expected
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
               </div>
-              <h4 className="text-lg font-semibold text-white mb-2">REST API</h4>
-              <p className="text-gray-400 text-sm">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">REST API</h4>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Full API for automation and integrations
               </p>
             </div>
@@ -134,31 +134,31 @@ export default function Home() {
       </section>
 
       {/* API Section */}
-      <section className="bg-gray-900 py-20">
+      <section className="bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800 py-20">
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h3 className="text-3xl font-bold text-white mb-4">
+              <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Powerful REST API
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Automate everything with our API. Create checks, manage monitoring,
                 and integrate with your CI/CD pipelines.
               </p>
               <ul className="space-y-3 mb-6">
-                <li className="flex items-center gap-3 text-gray-300">
+                <li className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <span className="text-green-500">✓</span>
                   Bearer token authentication
                 </li>
-                <li className="flex items-center gap-3 text-gray-300">
+                <li className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <span className="text-green-500">✓</span>
                   Full CRUD for checks
                 </li>
-                <li className="flex items-center gap-3 text-gray-300">
+                <li className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <span className="text-green-500">✓</span>
                   Ping history & status events
                 </li>
-                <li className="flex items-center gap-3 text-gray-300">
+                <li className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                   <span className="text-green-500">✓</span>
                   Pause/resume monitoring
                 </li>
@@ -170,22 +170,22 @@ export default function Home() {
                 View API Documentation →
               </Link>
             </div>
-            <div className="bg-gray-950 rounded-xl p-6 font-mono text-sm overflow-x-auto">
-              <div className="text-gray-500 mb-2"># List all checks</div>
-              <div className="text-green-400 mb-4">
+            <div className="bg-gray-100 dark:bg-gray-950 rounded-xl p-6 font-mono text-sm overflow-x-auto">
+              <div className="text-gray-500 dark:text-gray-500 mb-2"># List all checks</div>
+              <div className="text-green-600 dark:text-green-400 mb-4">
                 curl -H &quot;Authorization: Bearer sk_live_xxx&quot; \<br />
                 &nbsp;&nbsp;https://cronowl.com/api/v1/checks
               </div>
-              <div className="text-gray-500 mb-2"># Create a check</div>
-              <div className="text-green-400 mb-4">
+              <div className="text-gray-500 dark:text-gray-500 mb-2"># Create a check</div>
+              <div className="text-green-600 dark:text-green-400 mb-4">
                 curl -X POST \<br />
                 &nbsp;&nbsp;-H &quot;Authorization: Bearer sk_live_xxx&quot; \<br />
                 &nbsp;&nbsp;-H &quot;Content-Type: application/json&quot; \<br />
                 &nbsp;&nbsp;-d &apos;&#123;&quot;name&quot;:&quot;Backup&quot;,&quot;schedule&quot;:&quot;every hour&quot;&#125;&apos; \<br />
                 &nbsp;&nbsp;https://cronowl.com/api/v1/checks
               </div>
-              <div className="text-gray-500 mb-2"># Ping with duration</div>
-              <div className="text-green-400">
+              <div className="text-gray-500 dark:text-gray-500 mb-2"># Ping with duration</div>
+              <div className="text-green-600 dark:text-green-400">
                 curl &quot;https://cronowl.com/api/ping/abc123?duration=5000&quot;
               </div>
             </div>
@@ -196,57 +196,57 @@ export default function Home() {
       {/* Use cases */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-white text-center mb-12">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
             Monitor what matters
           </h3>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">💾</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Database backups
               </h4>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Know if your backup script fails
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">📧</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Email digests
               </h4>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Ensure newsletters go out on time
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">🔄</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Data sync
               </h4>
-              <p className="text-gray-400 text-sm">Monitor API integrations</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Monitor API integrations</p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">🧹</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Cleanup jobs
               </h4>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Verify temp files get deleted
               </p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">📊</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Report generation
               </h4>
-              <p className="text-gray-400 text-sm">Track scheduled reports</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Track scheduled reports</p>
             </div>
-            <div className="bg-gray-900 rounded-lg p-6">
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
               <div className="text-3xl mb-3">🔔</div>
-              <h4 className="text-lg font-semibold text-white mb-1">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 Any scheduled task
               </h4>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 If it runs on a schedule, we can monitor it
               </p>
             </div>
@@ -255,36 +255,36 @@ export default function Home() {
       </section>
 
       {/* Pricing */}
-      <section className="bg-gray-900 py-20">
+      <section className="bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800 py-20">
         <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-white text-center mb-4">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-4">
             Simple pricing
           </h3>
-          <p className="text-gray-400 text-center mb-12">
+          <p className="text-gray-500 dark:text-gray-400 text-center mb-12">
             Start free, upgrade when you need more
           </p>
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {/* Free */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h4 className="text-xl font-semibold text-white mb-2">Free</h4>
-              <div className="text-3xl font-bold text-white mb-4">$0</div>
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Free</h4>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">$0</div>
               <ul className="space-y-2 mb-6 text-sm">
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> 25 checks
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Email alerts
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Push notifications
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Telegram alerts
                 </li>
               </ul>
               <Link
                 href="/signup"
-                className="block text-center border border-gray-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 transition-colors"
+                className="block text-center border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 Get Started
               </Link>
@@ -322,28 +322,28 @@ export default function Home() {
               </Link>
             </div>
             {/* Pro */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h4 className="text-xl font-semibold text-white mb-2">Pro</h4>
-              <div className="text-3xl font-bold text-white mb-4">
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Pro</h4>
+              <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 $9<span className="text-lg font-normal">/mo</span>
               </div>
               <ul className="space-y-2 mb-6 text-sm">
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> 500 checks
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Everything in Starter
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> 90 days history
                 </li>
-                <li className="text-gray-300 flex items-center gap-2">
+                <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span className="text-green-500">✓</span> Team (3 users)
                 </li>
               </ul>
               <Link
                 href="/signup"
-                className="block text-center border border-gray-600 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 transition-colors"
+                className="block text-center border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 Start Free Trial
               </Link>
@@ -360,10 +360,10 @@ export default function Home() {
       {/* CTA */}
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <h3 className="text-3xl font-bold text-white mb-4">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Stop losing sleep over cron jobs
           </h3>
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Join developers who trust CronOwl to watch their scheduled tasks
           </p>
           <SmartCTAButton className="inline-block">
@@ -373,22 +373,22 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-8">
+      <footer className="border-t border-gray-200 dark:border-gray-800 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-gray-400 text-sm">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
             © 2025 CronOwl. Built with ☕ by indie developers.
           </div>
           <div className="flex flex-wrap justify-center md:justify-end gap-6 text-sm">
-            <Link href="/pricing" className="text-gray-400 hover:text-white">
+            <Link href="/pricing" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Pricing
             </Link>
-            <Link href="/docs/api" className="text-gray-400 hover:text-white">
+            <Link href="/docs/api" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               API
             </Link>
-            <Link href="/terms" className="text-gray-400 hover:text-white">
+            <Link href="/terms" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Terms
             </Link>
-            <Link href="/privacy" className="text-gray-400 hover:text-white">
+            <Link href="/privacy" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Privacy
             </Link>
           </div>

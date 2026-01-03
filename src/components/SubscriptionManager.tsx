@@ -188,10 +188,10 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
 
   if (loading) {
     return (
-      <div className="bg-gray-900 rounded-lg p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-800">
         <div className="animate-pulse">
-          <div className="h-5 bg-gray-800 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-800 rounded w-2/3"></div>
+          <div className="h-5 bg-gray-200 dark:bg-gray-800 rounded w-1/3 mb-4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-2/3"></div>
         </div>
       </div>
     );
@@ -224,8 +224,8 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6">
-      <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-200 dark:border-gray-800">
+      <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
@@ -245,17 +245,17 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       )}
 
       {/* Current Plan */}
-      <div className="bg-gray-800 rounded-lg p-4 mb-4">
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-white font-medium">{PLANS[currentPlan].name} Plan</span>
+            <span className="text-gray-900 dark:text-white font-medium">{PLANS[currentPlan].name} Plan</span>
             {getStatusBadge()}
           </div>
-          <span className="text-gray-400">
+          <span className="text-gray-600 dark:text-gray-400">
             ${PLANS[currentPlan].price}/month
           </span>
         </div>
-        <div className="text-gray-400 text-sm">
+        <div className="text-gray-600 dark:text-gray-400 text-sm">
           {currentPlan === "free" ? (
             <span>{PLANS.free.checksLimit} checks included</span>
           ) : currentPlan === "starter" ? (
@@ -265,7 +265,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
           )}
         </div>
         {subscription?.currentPeriodEnd && subscription.status === "active" && (
-          <div className="text-gray-500 text-xs mt-2">
+          <div className="text-gray-500 dark:text-gray-500 text-xs mt-2">
             Renews on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
           </div>
         )}
@@ -279,14 +279,14 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       {/* Upgrade Options */}
       {currentPlan === "free" && (
         <div className="space-y-3">
-          <p className="text-gray-400 text-sm mb-3">Upgrade to get more features:</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">Upgrade to get more features:</p>
 
           {/* Starter Plan */}
-          <div className="border border-gray-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-white font-medium">Starter</span>
-                <span className="text-gray-400 text-sm ml-2">${PLANS.starter.price}/month</span>
+                <span className="text-gray-900 dark:text-white font-medium">Starter</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">${PLANS.starter.price}/month</span>
               </div>
               <button
                 onClick={() => handleUpgrade("starter")}
@@ -296,7 +296,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
                 {upgrading === "starter" ? "Loading..." : "Upgrade"}
               </button>
             </div>
-            <ul className="text-gray-400 text-sm space-y-1">
+            <ul className="text-gray-600 dark:text-gray-400 text-sm space-y-1">
               <li>• {PLANS.starter.checksLimit} checks</li>
               <li>• {PLANS.starter.historyDays} days history</li>
               <li>• Webhooks & Slack integration</li>
@@ -304,11 +304,11 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
           </div>
 
           {/* Pro Plan */}
-          <div className="border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-purple-500/5">
+          <div className="border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-purple-50 dark:bg-purple-500/5">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-white font-medium">Pro</span>
-                <span className="text-gray-400 text-sm ml-2">${PLANS.pro.price}/month</span>
+                <span className="text-gray-900 dark:text-white font-medium">Pro</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">${PLANS.pro.price}/month</span>
               </div>
               <button
                 onClick={() => handleUpgrade("pro")}
@@ -318,7 +318,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
                 {upgrading === "pro" ? "Loading..." : "Upgrade"}
               </button>
             </div>
-            <ul className="text-gray-400 text-sm space-y-1">
+            <ul className="text-gray-600 dark:text-gray-400 text-sm space-y-1">
               <li>• Unlimited checks</li>
               <li>• {PLANS.pro.historyDays} days history</li>
               <li>• Team members (3 users)</li>
@@ -331,11 +331,11 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       {/* Upgrade from Starter to Pro */}
       {currentPlan === "starter" && (
         <div className="space-y-3">
-          <div className="border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-purple-500/5">
+          <div className="border border-purple-500/30 rounded-lg p-4 hover:border-purple-500/50 transition-colors bg-purple-50 dark:bg-purple-500/5">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-white font-medium">Upgrade to Pro</span>
-                <span className="text-gray-400 text-sm ml-2">${PLANS.pro.price}/month</span>
+                <span className="text-gray-900 dark:text-white font-medium">Upgrade to Pro</span>
+                <span className="text-gray-600 dark:text-gray-400 text-sm ml-2">${PLANS.pro.price}/month</span>
               </div>
               <button
                 onClick={() => handleUpgrade("pro")}
@@ -345,7 +345,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
                 {upgrading === "pro" ? "Loading..." : "Upgrade"}
               </button>
             </div>
-            <ul className="text-gray-400 text-sm space-y-1">
+            <ul className="text-gray-600 dark:text-gray-400 text-sm space-y-1">
               <li>• Unlimited checks (currently {PLANS.starter.checksLimit})</li>
               <li>• {PLANS.pro.historyDays} days history (currently {PLANS.starter.historyDays})</li>
               <li>• Team members (3 users)</li>
@@ -358,22 +358,22 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
       {/* Downgrade from Pro to Starter */}
       {currentPlan === "pro" && subscription?.status === "active" && (
         <div className="space-y-3">
-          <p className="text-gray-400 text-sm">You&apos;re on the highest plan!</p>
-          <div className="border border-gray-700 rounded-lg p-4">
+          <p className="text-gray-600 dark:text-gray-400 text-sm">You&apos;re on the highest plan!</p>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <span className="text-gray-300 font-medium">Downgrade to Starter</span>
-                <span className="text-gray-500 text-sm ml-2">${PLANS.starter.price}/month</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">Downgrade to Starter</span>
+                <span className="text-gray-500 dark:text-gray-500 text-sm ml-2">${PLANS.starter.price}/month</span>
               </div>
               <button
                 onClick={handleDowngrade}
                 disabled={downgrading}
-                className="bg-gray-700 text-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors disabled:opacity-50"
+                className="bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
               >
                 {downgrading ? "Processing..." : "Downgrade"}
               </button>
             </div>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-500 dark:text-gray-500 text-sm">
               You&apos;ll keep Pro features until the end of your billing period.
             </p>
           </div>
@@ -382,12 +382,12 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
 
       {/* Manage Subscription */}
       {subscription && (subscription.status === "active" || subscription.status === "past_due") && (
-        <div className="mt-4 pt-4 border-t border-gray-800">
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-800">
           <div className="flex items-center justify-between">
             <button
               onClick={handleManageSubscription}
               disabled={openingPortal}
-              className="text-gray-400 hover:text-white text-sm flex items-center gap-1 disabled:opacity-50"
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white text-sm flex items-center gap-1 disabled:opacity-50"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -402,7 +402,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
               {canceling ? "Canceling..." : "Cancel subscription"}
             </button>
           </div>
-          <p className="text-gray-500 text-xs mt-2">
+          <p className="text-gray-500 dark:text-gray-500 text-xs mt-2">
             Update payment method or view invoices on Paddle
           </p>
         </div>
@@ -417,7 +417,7 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
             </svg>
             <div>
               <p className="text-orange-400 text-sm font-medium">Payment Failed</p>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">
                 Please update your payment method to continue your subscription.
               </p>
             </div>

@@ -110,11 +110,11 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
       <button
         onClick={unlinkTelegram}
         disabled={loading}
-        className="p-2 rounded-lg hover:bg-gray-800 transition-colors group relative"
+        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group relative"
         title={`Telegram: @${telegramUsername || "linked"} (click to unlink)`}
       >
         <TelegramIcon />
-        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-950" />
+        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-50 dark:border-gray-950" />
       </button>
     );
   }
@@ -124,7 +124,7 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
       <button
         onClick={generateCode}
         disabled={loading}
-        className="p-2 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 hover:text-[#0088cc]"
+        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-500 dark:text-gray-400 hover:text-[#0088cc]"
         title="Link Telegram"
       >
         <TelegramIcon />
@@ -133,12 +133,12 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-xl p-6 max-w-sm w-full border border-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-sm w-full border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Link Telegram</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Link Telegram</h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -149,14 +149,14 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
             {linkingCode ? (
               <>
                 <div className="text-center mb-4">
-                  <p className="text-sm text-gray-400 mb-2">Your linking code:</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Your linking code:</p>
                   <div className="flex items-center justify-center gap-2">
                     <code className="text-3xl font-mono font-bold text-yellow-400 tracking-widest">
                       {linkingCode}
                     </code>
                     <button
                       onClick={() => navigator.clipboard.writeText(linkingCode)}
-                      className="p-2 text-gray-400 hover:text-white transition-colors"
+                      className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
                       title="Copy code"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,10 +164,10 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
                       </svg>
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Expires in {formatTimeRemaining()}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Expires in {formatTimeRemaining()}</p>
                 </div>
 
-                <div className="space-y-3 text-sm text-gray-400">
+                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                   <p>Send this code to our bot:</p>
                   <a
                     href={`https://t.me/${botUsername}`}
@@ -182,8 +182,8 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
               </>
             ) : (
               <div className="text-center py-4">
-                <div className="animate-spin w-8 h-8 border-2 border-gray-600 border-t-blue-500 rounded-full mx-auto mb-2" />
-                <p className="text-gray-400 text-sm">Generating code...</p>
+                <div className="animate-spin w-8 h-8 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 rounded-full mx-auto mb-2" />
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Generating code...</p>
               </div>
             )}
           </div>

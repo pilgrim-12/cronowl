@@ -54,7 +54,7 @@ export function PricingCard({
   };
 
   return (
-    <div className={`relative bg-gray-900 rounded-2xl p-8 ${isPopular ? "ring-2 ring-blue-500" : ""}`}>
+    <div className={`relative bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 ${isPopular ? "ring-2 ring-blue-500" : ""}`}>
       {isPopular && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
           <span className="bg-blue-500 text-white text-sm font-medium px-4 py-1 rounded-full">
@@ -64,17 +64,17 @@ export function PricingCard({
       )}
 
       <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-white mb-2">{plan.name}</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{plan.name}</h3>
         <div className="flex items-baseline justify-center gap-1">
-          <span className="text-4xl font-bold text-white">
+          <span className="text-4xl font-bold text-gray-900 dark:text-white">
             ${plan.price}
           </span>
           {plan.price > 0 && (
-            <span className="text-gray-400">/month</span>
+            <span className="text-gray-500 dark:text-gray-400">/month</span>
           )}
         </div>
         {plan.price === 0 && (
-          <p className="text-gray-400 text-sm mt-1">Free forever</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Free forever</p>
         )}
       </div>
 
@@ -82,7 +82,7 @@ export function PricingCard({
         {plan.features.map((feature, index) => (
           <li key={index} className="flex items-start gap-3">
             <CheckIcon />
-            <span className="text-gray-300">{feature}</span>
+            <span className="text-gray-700 dark:text-gray-300">{feature}</span>
           </li>
         ))}
       </ul>
@@ -95,7 +95,7 @@ export function PricingCard({
             ? "bg-blue-600 text-white hover:bg-blue-700"
             : isProPlan
             ? "bg-purple-600 text-white hover:bg-purple-700"
-            : "bg-gray-800 text-white hover:bg-gray-700 border border-gray-700"
+            : "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:border-gray-700"
         }`}
       >
         {isLoading ? (

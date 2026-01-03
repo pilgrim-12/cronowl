@@ -49,7 +49,7 @@ export function UptimeBar({ days, uptimePercent, compact = false }: UptimeBarPro
         return "bg-red-500 hover:bg-red-400";
       case "no-data":
       default:
-        return "bg-gray-700 hover:bg-gray-600";
+        return "bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600";
     }
   };
 
@@ -75,15 +75,15 @@ export function UptimeBar({ days, uptimePercent, compact = false }: UptimeBarPro
         </div>
         {hoveredDay && (
           <div
-            className="fixed z-50 px-3 py-2 text-xs bg-gray-800 border border-gray-700 rounded-lg shadow-lg pointer-events-none"
+            className="fixed z-50 px-3 py-2 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg pointer-events-none"
             style={{
               left: tooltipPosition.x,
               top: tooltipPosition.y - 60,
               transform: "translateX(-50%)",
             }}
           >
-            <div className="font-medium text-white">{formatDate(hoveredDay.date)}</div>
-            <div className="text-gray-400">
+            <div className="font-medium text-gray-900 dark:text-white">{formatDate(hoveredDay.date)}</div>
+            <div className="text-gray-600 dark:text-gray-400">
               {hoveredDay.status === "operational" && "No incidents"}
               {hoveredDay.status === "incident" && `${hoveredDay.downMinutes}m downtime`}
               {hoveredDay.status === "no-data" && "No data"}
@@ -103,7 +103,7 @@ export function UptimeBar({ days, uptimePercent, compact = false }: UptimeBarPro
   return (
     <div className="space-y-2 relative">
       <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-500">{days.length} days</span>
+        <span className="text-xs text-gray-500 dark:text-gray-500">{days.length} days</span>
         <span className={`text-sm font-medium ${getUptimeColor(uptimePercent)}`}>
           {uptimePercent.toFixed(2)}% uptime
         </span>
@@ -118,21 +118,21 @@ export function UptimeBar({ days, uptimePercent, compact = false }: UptimeBarPro
           />
         ))}
       </div>
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
         <span>{formatDate(days[0]?.date || "")}</span>
         <span>Today</span>
       </div>
       {hoveredDay && (
         <div
-          className="fixed z-50 px-3 py-2 text-xs bg-gray-800 border border-gray-700 rounded-lg shadow-lg pointer-events-none"
+          className="fixed z-50 px-3 py-2 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg pointer-events-none"
           style={{
             left: tooltipPosition.x,
             top: tooltipPosition.y - 70,
             transform: "translateX(-50%)",
           }}
         >
-          <div className="font-medium text-white">{formatDate(hoveredDay.date)}</div>
-          <div className="text-gray-400">
+          <div className="font-medium text-gray-900 dark:text-white">{formatDate(hoveredDay.date)}</div>
+          <div className="text-gray-600 dark:text-gray-400">
             {hoveredDay.status === "operational" && "No incidents"}
             {hoveredDay.status === "incident" && `${hoveredDay.downMinutes}m downtime`}
             {hoveredDay.status === "no-data" && "No data"}

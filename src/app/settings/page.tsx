@@ -84,8 +84,8 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-gray-900 dark:text-white">Loading...</div>
       </div>
     );
   }
@@ -95,20 +95,20 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link
               href="/dashboard"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>
-            <h1 className="text-2xl font-bold text-white">Settings</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
           </div>
         </div>
 
@@ -118,8 +118,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Notification Settings */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
@@ -128,10 +128,10 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             {/* Email Notifications */}
-            <div className="flex items-center justify-between py-3 border-b border-gray-800">
+            <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-800">
               <div>
-                <h3 className="text-white font-medium">Email Notifications</h3>
-                <p className="text-gray-400 text-sm">Receive alerts via email when checks go down or recover</p>
+                <h3 className="text-gray-900 dark:text-white font-medium">Email Notifications</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Receive alerts via email when checks go down or recover</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -140,15 +140,15 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
 
             {/* Push Notifications */}
-            <div className="flex items-center justify-between py-3 border-b border-gray-800">
+            <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-800">
               <div>
-                <h3 className="text-white font-medium">Push Notifications</h3>
-                <p className="text-gray-400 text-sm">Receive browser/mobile push notifications</p>
+                <h3 className="text-gray-900 dark:text-white font-medium">Push Notifications</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Receive browser/mobile push notifications</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -157,15 +157,15 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings({ ...settings, pushNotifications: e.target.checked })}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
             </div>
 
             {/* Telegram Notifications */}
             <div className="flex items-center justify-between py-3">
               <div>
-                <h3 className="text-white font-medium">Telegram Notifications</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-gray-900 dark:text-white font-medium">Telegram Notifications</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   {hasTelegram ? "Receive alerts via Telegram" : "Link your Telegram account to receive alerts"}
                 </p>
               </div>
@@ -177,10 +177,10 @@ export default function SettingsPage() {
                     onChange={(e) => setSettings({ ...settings, telegramNotifications: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               ) : (
-                <span className="text-gray-500 text-sm">Not linked</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Not linked</span>
               )}
             </div>
           </div>
@@ -201,8 +201,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Connected Services */}
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
             </svg>
@@ -211,7 +211,7 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             {/* Telegram */}
-            <div className="flex items-center justify-between py-3 border-b border-gray-800">
+            <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -219,8 +219,8 @@ export default function SettingsPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">Telegram</h3>
-                  <p className="text-gray-400 text-sm">
+                  <h3 className="text-gray-900 dark:text-white font-medium">Telegram</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     {hasTelegram ? "Connected" : "Not connected"}
                   </p>
                 </div>
@@ -237,8 +237,8 @@ export default function SettingsPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-white font-medium">Push Notifications</h3>
-                  <p className="text-gray-400 text-sm">Browser & mobile alerts</p>
+                  <h3 className="text-gray-900 dark:text-white font-medium">Push Notifications</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Browser & mobile alerts</p>
                 </div>
               </div>
               <PushToggle userId={user.uid} />
@@ -257,8 +257,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Account Info */}
-        <div className="bg-gray-900 rounded-lg p-6">
-          <h2 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -267,13 +267,13 @@ export default function SettingsPage() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-400">Email</span>
-              <span className="text-white">{user.email}</span>
+              <span className="text-gray-500 dark:text-gray-400">Email</span>
+              <span className="text-gray-900 dark:text-white">{user.email}</span>
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-400">Email Status</span>
+              <span className="text-gray-500 dark:text-gray-400">Email Status</span>
               {user.emailVerified ? (
-                <span className="flex items-center gap-1.5 text-green-400">
+                <span className="flex items-center gap-1.5 text-green-500 dark:text-green-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -281,9 +281,9 @@ export default function SettingsPage() {
                 </span>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-yellow-400">Not verified</span>
+                  <span className="text-yellow-500 dark:text-yellow-400">Not verified</span>
                   {verificationSent ? (
-                    <span className="text-green-400 text-sm">Sent!</span>
+                    <span className="text-green-500 dark:text-green-400 text-sm">Sent!</span>
                   ) : (
                     <button
                       onClick={async () => {
@@ -298,7 +298,7 @@ export default function SettingsPage() {
                         }
                       }}
                       disabled={sendingVerification}
-                      className="text-blue-400 hover:text-blue-300 text-sm disabled:opacity-50"
+                      className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm disabled:opacity-50"
                     >
                       {sendingVerification ? "Sending..." : "Resend"}
                     </button>
@@ -307,8 +307,8 @@ export default function SettingsPage() {
               )}
             </div>
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-400">User ID</span>
-              <span className="text-gray-500 text-sm font-mono">{user.uid.substring(0, 12)}...</span>
+              <span className="text-gray-500 dark:text-gray-400">User ID</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm font-mono">{user.uid.substring(0, 12)}...</span>
             </div>
           </div>
         </div>

@@ -97,7 +97,7 @@ export function PushToggle({ userId }: PushToggleProps) {
       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
         isEnabled
           ? "bg-green-600/20 text-green-400 hover:bg-green-600/30"
-          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+          : "bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
       } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
       title={isEnabled ? "Push notifications enabled" : "Enable push notifications"}
     >

@@ -40,10 +40,10 @@ function WhyCronOwl() {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {benefits.map((benefit, index) => (
-        <div key={index} className="bg-gray-800 rounded-lg p-6">
+        <div key={index} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
           <div className="text-3xl mb-3">{benefit.icon}</div>
-          <h4 className="text-white font-medium mb-2">{benefit.title}</h4>
-          <p className="text-gray-400 text-sm">{benefit.description}</p>
+          <h4 className="text-gray-900 dark:text-white font-medium mb-2">{benefit.title}</h4>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{benefit.description}</p>
         </div>
       ))}
     </div>
@@ -73,9 +73,9 @@ function FAQ() {
   return (
     <div className="space-y-6">
       {faqs.map((faq, index) => (
-        <div key={index} className="bg-gray-900 rounded-lg p-6">
-          <h4 className="text-white font-medium mb-2">{faq.q}</h4>
-          <p className="text-gray-400 text-sm">{faq.a}</p>
+        <div key={index} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
+          <h4 className="text-gray-900 dark:text-white font-medium mb-2">{faq.q}</h4>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{faq.a}</p>
         </div>
       ))}
     </div>
@@ -84,18 +84,18 @@ function FAQ() {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <PublicHeader />
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
           Simple, transparent pricing
         </h1>
-        <p className="text-xl text-gray-400 mb-4">
+        <p className="text-xl text-gray-500 dark:text-gray-400 mb-4">
           Start free, upgrade when you need more
         </p>
-        <p className="text-gray-500">
+        <p className="text-gray-500 dark:text-gray-500">
           No credit card required • Cancel anytime
         </p>
       </section>
@@ -111,61 +111,61 @@ export default function PricingPage() {
 
       {/* Detailed Limits Comparison */}
       <section className="max-w-4xl mx-auto px-4 pb-20">
-        <h2 className="text-2xl font-bold text-white text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">
           Plan Limits & Quotas
         </h2>
-        <div className="bg-gray-900 rounded-lg overflow-hidden overflow-x-auto">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left py-4 px-6 text-gray-400 font-medium">Feature</th>
-                <th className="text-center py-4 px-4 text-gray-400 font-medium">Free</th>
-                <th className="text-center py-4 px-4 text-blue-400 font-medium">Starter</th>
-                <th className="text-center py-4 px-4 text-purple-400 font-medium">Pro</th>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <th className="text-left py-4 px-6 text-gray-500 dark:text-gray-400 font-medium">Feature</th>
+                <th className="text-center py-4 px-4 text-gray-500 dark:text-gray-400 font-medium">Free</th>
+                <th className="text-center py-4 px-4 text-blue-500 dark:text-blue-400 font-medium">Starter</th>
+                <th className="text-center py-4 px-4 text-purple-500 dark:text-purple-400 font-medium">Pro</th>
               </tr>
             </thead>
             <tbody className="text-sm">
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">Checks</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.checksLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.checksLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.checksLimit}</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">Checks</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.checksLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.checksLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.checksLimit}</td>
               </tr>
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">History retention</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.historyDays} days</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.historyDays} days</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.historyDays} days</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">History retention</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.historyDays} days</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.historyDays} days</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.historyDays} days</td>
               </tr>
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">API keys</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.apiKeysLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.apiKeysLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.apiKeysLimit}</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">API keys</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.apiKeysLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.apiKeysLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.apiKeysLimit}</td>
               </tr>
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">Status pages</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.statusPagesLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.statusPagesLimit}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.statusPagesLimit}</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">Status pages</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.statusPagesLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.statusPagesLimit}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.statusPagesLimit}</td>
               </tr>
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">Webhooks per check</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.webhooksPerCheck}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.webhooksPerCheck}</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.webhooksPerCheck}</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">Webhooks per check</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.webhooksPerCheck}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.webhooksPerCheck}</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.webhooksPerCheck}</td>
               </tr>
-              <tr className="border-b border-gray-800/50">
-                <td className="py-3 px-6 text-gray-300">Log output size</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.free.logOutputSize / 1024}KB</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.starter.logOutputSize / 1024}KB</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.logOutputSize / 1024}KB</td>
+              <tr className="border-b border-gray-200/50 dark:border-gray-800/50">
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">Log output size</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.free.logOutputSize / 1024}KB</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.starter.logOutputSize / 1024}KB</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.logOutputSize / 1024}KB</td>
               </tr>
               <tr>
-                <td className="py-3 px-6 text-gray-300">Team members</td>
-                <td className="py-3 px-4 text-center text-gray-500">—</td>
-                <td className="py-3 px-4 text-center text-gray-500">—</td>
-                <td className="py-3 px-4 text-center text-gray-300">{PLANS.pro.teamMembers}</td>
+                <td className="py-3 px-6 text-gray-700 dark:text-gray-300">Team members</td>
+                <td className="py-3 px-4 text-center text-gray-500 dark:text-gray-500">—</td>
+                <td className="py-3 px-4 text-center text-gray-500 dark:text-gray-500">—</td>
+                <td className="py-3 px-4 text-center text-gray-700 dark:text-gray-300">{PLANS.pro.teamMembers}</td>
               </tr>
             </tbody>
           </table>
@@ -173,12 +173,12 @@ export default function PricingPage() {
       </section>
 
       {/* Why CronOwl */}
-      <section className="bg-gray-900 py-20">
+      <section className="bg-gray-100 dark:bg-gray-900 py-20">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-4">
             Why CronOwl?
           </h2>
-          <p className="text-gray-400 text-center mb-12">
+          <p className="text-gray-500 dark:text-gray-400 text-center mb-12">
             Everything you need to monitor your scheduled tasks
           </p>
           <WhyCronOwl />
@@ -188,7 +188,7 @@ export default function PricingPage() {
       {/* FAQ */}
       <section className="py-20">
         <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
             Frequently Asked Questions
           </h2>
           <FAQ />
@@ -196,12 +196,12 @@ export default function PricingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gray-900">
+      <section className="py-20 bg-gray-100 dark:bg-gray-900">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
             Ready to monitor your cron jobs?
           </h2>
-          <p className="text-gray-400 mb-8">
+          <p className="text-gray-500 dark:text-gray-400 mb-8">
             Join developers who trust CronOwl to watch their scheduled tasks
           </p>
           <Link
@@ -214,22 +214,22 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-8">
+      <footer className="border-t border-gray-200 dark:border-gray-800 py-8">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-gray-400 text-sm">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
             © 2025 CronOwl. Built with ☕ by indie developers.
           </div>
           <div className="flex gap-6 text-sm">
-            <Link href="/pricing" className="text-gray-400 hover:text-white">
+            <Link href="/pricing" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Pricing
             </Link>
-            <Link href="/terms" className="text-gray-400 hover:text-white">
+            <Link href="/terms" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Terms
             </Link>
-            <Link href="/privacy" className="text-gray-400 hover:text-white">
+            <Link href="/privacy" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Privacy
             </Link>
-            <Link href="/refund" className="text-gray-400 hover:text-white">
+            <Link href="/refund" className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
               Refund
             </Link>
           </div>

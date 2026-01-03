@@ -44,7 +44,7 @@ export function EmailVerificationBanner() {
         </svg>
         <div className="flex-1">
           <h3 className="text-yellow-500 font-medium">Verify your email</h3>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
             Please verify your email address ({user.email}) to ensure you receive important notifications about your cron jobs.
           </p>
           {error && (

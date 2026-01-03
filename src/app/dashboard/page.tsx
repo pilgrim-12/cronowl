@@ -288,8 +288,8 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="text-gray-900 dark:text-white">Loading...</div>
       </div>
     );
   }
@@ -299,7 +299,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header user={user} signOut={signOut} />
 
       <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
@@ -307,11 +307,11 @@ export default function DashboardPage() {
 
         {/* Plan Usage Banner */}
         {planUsage && (
-          <div className="bg-gray-900 rounded-lg p-4 mb-6">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-white font-medium">
+                  <span className="text-gray-900 dark:text-white font-medium">
                     {PLANS[planUsage.plan].name} Plan
                   </span>
                   {planUsage.plan === "free" && (
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 max-w-xs">
-                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full transition-all ${
                           planUsage.current / planUsage.limit > 0.9
@@ -340,15 +340,15 @@ export default function DashboardPage() {
                       />
                     </div>
                   </div>
-                  <span className="text-gray-400 text-sm whitespace-nowrap">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">
                     {planUsage.current} / {planUsage.limit === Infinity ? "∞" : planUsage.limit} checks
                   </span>
                 </div>
               </div>
               {planUsage.current / planUsage.limit > 0.8 && planUsage.plan === "free" && (
-                <div className="text-yellow-400 text-sm">
+                <div className="text-yellow-600 dark:text-yellow-400 text-sm">
                   Running low on checks!{" "}
-                  <Link href="/pricing" className="underline hover:text-yellow-300">
+                  <Link href="/pricing" className="underline hover:text-yellow-500 dark:hover:text-yellow-300">
                     Upgrade now
                   </Link>
                 </div>
@@ -365,14 +365,14 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <div className="flex-1">
-                <p className="text-red-400">{limitError}</p>
-                <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm mt-1 inline-block">
+                <p className="text-red-500 dark:text-red-400">{limitError}</p>
+                <Link href="/pricing" className="text-blue-500 hover:text-blue-400 dark:text-blue-400 dark:hover:text-blue-300 text-sm mt-1 inline-block">
                   View pricing plans →
                 </Link>
               </div>
               <button
                 onClick={() => setLimitError(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -385,18 +385,18 @@ export default function DashboardPage() {
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-white">Your Checks</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Your Checks</h2>
             {lastUpdated && (
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-gray-500 text-xs">
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </p>
-                <span className="text-gray-600">•</span>
+                <span className="text-gray-400 dark:text-gray-600">•</span>
                 {/* Compact refresh indicator with dropdown */}
                 <div className="relative" ref={refreshDropdownRef}>
                   <button
                     onClick={() => setShowRefreshDropdown(!showRefreshDropdown)}
-                    className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors group"
+                    className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors group"
                     title="Auto-refresh interval"
                   >
                     <svg
@@ -415,8 +415,8 @@ export default function DashboardPage() {
 
                   {/* Dropdown menu */}
                   {showRefreshDropdown && (
-                    <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1 min-w-[120px]">
-                      <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-700">
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1 min-w-[120px]">
+                      <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
                         Auto-refresh
                       </div>
                       {[
@@ -437,8 +437,8 @@ export default function DashboardPage() {
                           }}
                           className={`w-full px-3 py-1.5 text-left text-sm transition-colors flex items-center justify-between ${
                             refreshInterval === option.value
-                              ? "bg-blue-600/20 text-blue-400"
-                              : "text-gray-300 hover:bg-gray-700"
+                              ? "bg-blue-600/20 text-blue-600 dark:text-blue-400"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                           }`}
                         >
                           {option.label}
@@ -459,13 +459,13 @@ export default function DashboardPage() {
           {/* Controls */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* View mode toggle */}
-            <div className="flex bg-gray-800 rounded-lg p-1">
+            <div className="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
                   viewMode === "list"
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
                 title="List view"
               >
@@ -477,8 +477,8 @@ export default function DashboardPage() {
                 onClick={() => setViewMode("grid")}
                 className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
                   viewMode === "grid"
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
                 title="Grid view"
               >
@@ -507,7 +507,7 @@ export default function DashboardPage() {
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                 selectedTag === null
                   ? "bg-blue-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                  : "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
               All ({checks.length})
@@ -521,7 +521,7 @@ export default function DashboardPage() {
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                     selectedTag === tag
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                      : "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   {tag} ({count})
@@ -532,18 +532,18 @@ export default function DashboardPage() {
         )}
 
         {loadingChecks ? (
-          <div className="text-gray-400 text-center py-8">
+          <div className="text-gray-500 dark:text-gray-400 text-center py-8">
             Loading checks...
           </div>
         ) : checks.length === 0 ? (
-          <div className="bg-gray-900 rounded-lg p-8 text-center">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8 text-center">
             <div className="flex justify-center mb-4">
               <OwlLogo className="w-20 h-20" />
             </div>
-            <h3 className="text-xl font-medium text-white mb-2">
+            <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
               No checks yet
             </h3>
-            <p className="text-gray-400 mb-6">
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Create your first check to start monitoring your cron jobs
             </p>
             <button
@@ -556,7 +556,7 @@ export default function DashboardPage() {
         ) : viewMode === "list" ? (
           <div className="space-y-4">
             {filteredChecks.map((check) => (
-              <div key={check.id} className="bg-gray-900 rounded-lg p-4">
+              <div key={check.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div
@@ -566,19 +566,19 @@ export default function DashboardPage() {
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-white font-medium truncate">{check.name}</h3>
+                        <h3 className="text-gray-900 dark:text-white font-medium truncate">{check.name}</h3>
                         {check.webhookUrl && (
-                          <span title="Webhook configured" className="text-gray-500">
+                          <span title="Webhook configured" className="text-gray-400 dark:text-gray-500">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                             </svg>
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         {getScheduleDisplay(check)} • {check.gracePeriod}min grace
                         {check.scheduleType === "cron" && (
-                          <span className="ml-2 text-xs text-blue-400 font-mono">
+                          <span className="ml-2 text-xs text-blue-500 dark:text-blue-400 font-mono">
                             ({check.cronExpression})
                           </span>
                         )}
@@ -589,7 +589,7 @@ export default function DashboardPage() {
                             <span
                               key={tag}
                               onClick={() => setSelectedTag(tag)}
-                              className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-700 hover:text-white"
+                              className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                             >
                               {tag}
                             </span>
@@ -601,32 +601,32 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={() => copyToClipboard(getPingUrl(check.slug))}
-                      className="text-gray-400 hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-800 rounded"
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded"
                     >
                       Copy URL
                     </button>
                     <button
                       onClick={() => toggleExpand(check.id)}
-                      className="text-gray-400 hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1"
+                      className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       {expandedCheck === check.id ? "Hide" : "History"}
                     </button>
                     <button
                       onClick={() => setEditingCheck(check)}
-                      className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                      className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDeleteCheck(check.id)}
-                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                      className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
                     >
                       Delete
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 bg-gray-800 rounded p-2">
-                  <code className="text-green-400 text-sm break-all">
+                <div className="mt-3 bg-gray-100 dark:bg-gray-800 rounded p-2">
+                  <code className="text-green-600 dark:text-green-400 text-sm break-all">
                     {getPingUrl(check.slug)}
                   </code>
                 </div>
@@ -638,7 +638,7 @@ export default function DashboardPage() {
                       : "Never"}
                   </span>
                   {check.lastDuration !== undefined && (
-                    <span className="text-blue-400">
+                    <span className="text-blue-500 dark:text-blue-400">
                       {check.lastDuration < 1000
                         ? `${check.lastDuration}ms`
                         : `${(check.lastDuration / 1000).toFixed(1)}s`}
@@ -648,23 +648,23 @@ export default function DashboardPage() {
 
                 {/* Expanded History Section */}
                 {expandedCheck === check.id && (
-                  <div className="mt-4 border-t border-gray-800 pt-4">
+                  <div className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-4">
                     {/* Duration Graph */}
                     {pings[check.id] && pings[check.id].some(p => p.duration !== undefined) && (
                       <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                           </svg>
                           Execution Time
                         </h4>
-                        <div className="bg-gray-800/50 rounded-lg p-4">
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-4">
                           <div className="flex items-end gap-1 h-16">
                             {pings[check.id]
                               .filter(p => p.duration !== undefined)
                               .slice(0, 20)
                               .reverse()
-                              .map((ping, i, arr) => {
+                              .map((ping, _i, arr) => {
                                 const maxDuration = Math.max(...arr.map(p => p.duration || 0));
                                 const height = maxDuration > 0 ? ((ping.duration || 0) / maxDuration) * 100 : 0;
                                 return (
@@ -697,7 +697,7 @@ export default function DashboardPage() {
 
                     {/* Status History Timeline */}
                     <div className="mb-6">
-                      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
@@ -706,7 +706,7 @@ export default function DashboardPage() {
                       {!statusHistory[check.id] ? (
                         <p className="text-gray-500 text-sm">Loading...</p>
                       ) : statusHistory[check.id].length === 0 ? (
-                        <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-4 text-center">
                           <p className="text-gray-500 text-sm">No status changes recorded yet</p>
                         </div>
                       ) : (
@@ -761,7 +761,7 @@ export default function DashboardPage() {
 
                     {/* Recent Pings */}
                     <div>
-                      <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -770,7 +770,7 @@ export default function DashboardPage() {
                       {!pings[check.id] ? (
                         <p className="text-gray-500 text-sm">Loading...</p>
                       ) : pings[check.id].length === 0 ? (
-                        <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-4 text-center">
                           <p className="text-gray-500 text-sm">No pings received yet</p>
                         </div>
                       ) : (
@@ -778,7 +778,7 @@ export default function DashboardPage() {
                           {pings[check.id].slice(0, 10).map((ping) => (
                             <div
                               key={ping.id}
-                              className={`bg-gray-800 rounded-lg px-2 sm:px-3 py-2 text-center border ${
+                              className={`bg-gray-100 dark:bg-gray-800 rounded-lg px-2 sm:px-3 py-2 text-center border ${
                                 ping.status === "failure"
                                   ? "border-red-500/30"
                                   : ping.status === "success"
@@ -792,7 +792,7 @@ export default function DashboardPage() {
                                     ping.status === "failure" ? "bg-red-500" : "bg-green-500"
                                   }`} />
                                 )}
-                                <span className="text-gray-300 text-xs sm:text-sm">
+                                <span className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm">
                                   {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                               </div>
@@ -800,14 +800,14 @@ export default function DashboardPage() {
                                 {new Date(ping.timestamp.toDate()).toLocaleDateString()}
                               </div>
                               {ping.duration !== undefined && (
-                                <div className="text-blue-400 text-xs mt-1">
+                                <div className="text-blue-500 dark:text-blue-400 text-xs mt-1">
                                   {ping.duration < 1000
                                     ? `${ping.duration}ms`
                                     : `${(ping.duration / 1000).toFixed(1)}s`}
                                 </div>
                               )}
                               {ping.exitCode !== undefined && ping.exitCode !== 0 && (
-                                <div className="text-red-400 text-xs">
+                                <div className="text-red-500 dark:text-red-400 text-xs">
                                   exit: {ping.exitCode}
                                 </div>
                               )}
@@ -826,17 +826,17 @@ export default function DashboardPage() {
             {filteredChecks.map((check) => (
               <div
                 key={check.id}
-                className="bg-gray-900 rounded-lg p-4 flex flex-col"
+                className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex flex-col"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
                     className={`w-4 h-4 rounded-full ${getStatusColor(check)}`}
                   />
-                  <h3 className="text-white font-medium truncate flex-1">
+                  <h3 className="text-gray-900 dark:text-white font-medium truncate flex-1">
                     {check.name}
                   </h3>
                   {check.webhookUrl && (
-                    <span title="Webhook configured" className="text-gray-500">
+                    <span title="Webhook configured" className="text-gray-400 dark:text-gray-500">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                       </svg>
@@ -844,11 +844,11 @@ export default function DashboardPage() {
                   )}
                 </div>
 
-                <p className="text-gray-400 text-sm mb-1">
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">
                   {getScheduleDisplay(check)}
                 </p>
                 {check.scheduleType === "cron" && (
-                  <p className="text-blue-400 text-xs font-mono mb-1">
+                  <p className="text-blue-500 dark:text-blue-400 text-xs font-mono mb-1">
                     {check.cronExpression}
                   </p>
                 )}
@@ -862,7 +862,7 @@ export default function DashboardPage() {
                       <span
                         key={tag}
                         onClick={() => setSelectedTag(tag)}
-                        className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-700 hover:text-white"
+                        className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                       >
                         {tag}
                       </span>
@@ -870,8 +870,8 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                <div className="bg-gray-800 rounded p-2 mb-3">
-                  <code className="text-green-400 text-xs break-all line-clamp-2">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded p-2 mb-3">
+                  <code className="text-green-600 dark:text-green-400 text-xs break-all line-clamp-2">
                     {getPingUrl(check.slug)}
                   </code>
                 </div>
@@ -883,28 +883,28 @@ export default function DashboardPage() {
                     : "Never"}
                 </p>
 
-                <div className="mt-auto flex items-center gap-2 pt-3 border-t border-gray-800">
+                <div className="mt-auto flex items-center gap-2 pt-3 border-t border-gray-200 dark:border-gray-800">
                   <button
                     onClick={() => copyToClipboard(getPingUrl(check.slug))}
-                    className="text-gray-400 hover:text-white text-xs px-2 py-1 bg-gray-800 rounded flex-1"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded flex-1"
                   >
                     Copy
                   </button>
                   <button
                     onClick={() => toggleExpand(check.id)}
-                    className="text-gray-400 hover:text-white text-xs px-2 py-1"
+                    className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1"
                   >
                     {expandedCheck === check.id ? "Hide" : "History"}
                   </button>
                   <button
                     onClick={() => setEditingCheck(check)}
-                    className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1"
+                    className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs px-2 py-1"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDeleteCheck(check.id)}
-                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                    className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 text-xs px-2 py-1"
                   >
                     Delete
                   </button>
@@ -912,18 +912,18 @@ export default function DashboardPage() {
 
                 {/* Expanded History Section for Grid View */}
                 {expandedCheck === check.id && (
-                  <div className="mt-4 border-t border-gray-800 pt-4">
+                  <div className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-4">
                     {/* Duration Graph for Grid View */}
                     {pings[check.id] && pings[check.id].some(p => p.duration !== undefined) && (
                       <div className="mb-4">
-                        <h4 className="text-xs font-medium text-gray-400 mb-2">Execution Time</h4>
-                        <div className="bg-gray-800/50 rounded-lg p-2">
+                        <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Execution Time</h4>
+                        <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-2">
                           <div className="flex items-end gap-0.5 h-12">
                             {pings[check.id]
                               .filter(p => p.duration !== undefined)
                               .slice(0, 10)
                               .reverse()
-                              .map((ping, i, arr) => {
+                              .map((ping, _i, arr) => {
                                 const maxDuration = Math.max(...arr.map(p => p.duration || 0));
                                 const height = maxDuration > 0 ? ((ping.duration || 0) / maxDuration) * 100 : 0;
                                 return (
@@ -952,7 +952,7 @@ export default function DashboardPage() {
 
                     {/* Status History */}
                     <div className="mb-4">
-                      <h4 className="text-xs font-medium text-gray-400 mb-2">Status History</h4>
+                      <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Status History</h4>
                       {!statusHistory[check.id] ? (
                         <p className="text-gray-500 text-xs">Loading...</p>
                       ) : statusHistory[check.id].length === 0 ? (
@@ -964,8 +964,8 @@ export default function DashboardPage() {
                               key={event.id}
                               className={`flex items-center gap-1.5 text-xs rounded px-2 py-1 ${
                                 event.status === "up"
-                                  ? "bg-green-500/10 text-green-400"
-                                  : "bg-red-500/10 text-red-400"
+                                  ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                  : "bg-red-500/10 text-red-600 dark:text-red-400"
                               }`}
                             >
                               <div
@@ -985,7 +985,7 @@ export default function DashboardPage() {
 
                     {/* Recent Pings */}
                     <div>
-                      <h4 className="text-xs font-medium text-gray-400 mb-2">Recent Pings</h4>
+                      <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Recent Pings</h4>
                       {!pings[check.id] ? (
                         <p className="text-gray-500 text-xs">Loading...</p>
                       ) : pings[check.id].length === 0 ? (
@@ -995,13 +995,13 @@ export default function DashboardPage() {
                           {pings[check.id].slice(0, 5).map((ping) => (
                             <div
                               key={ping.id}
-                              className={`bg-gray-800 rounded px-2 py-1 text-xs ${
-                                ping.status === "failure" ? "text-red-400 border border-red-500/30" : "text-gray-400"
+                              className={`bg-gray-100 dark:bg-gray-800 rounded px-2 py-1 text-xs ${
+                                ping.status === "failure" ? "text-red-500 dark:text-red-400 border border-red-500/30" : "text-gray-600 dark:text-gray-400"
                               }`}
                             >
                               {new Date(ping.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                               {ping.duration !== undefined && (
-                                <span className="text-blue-400 ml-1">{ping.duration}ms</span>
+                                <span className="text-blue-500 dark:text-blue-400 ml-1">{ping.duration}ms</span>
                               )}
                             </div>
                           ))}
@@ -1205,12 +1205,12 @@ function CheckModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-lg my-8">
-        <h2 className="text-xl font-bold text-white mb-4">{title}</h2>
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 w-full max-w-lg my-8">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{title}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Name
             </label>
             <input
@@ -1219,23 +1219,23 @@ function CheckModal({
               onChange={(e) => setName(e.target.value)}
               required
               placeholder="e.g., Daily backup"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Schedule Type Toggle */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Schedule Type
             </label>
-            <div className="flex bg-gray-800 rounded-lg p-1">
+            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
               <button
                 type="button"
                 onClick={() => setScheduleType("preset")}
                 className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   scheduleType === "preset"
                     ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Simple
@@ -1246,7 +1246,7 @@ function CheckModal({
                 className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   scheduleType === "cron"
                     ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Cron Expression
@@ -1257,7 +1257,7 @@ function CheckModal({
           {/* Preset Schedule */}
           {scheduleType === "preset" && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Expected Schedule
               </label>
               <div className="space-y-2">
@@ -1271,7 +1271,7 @@ function CheckModal({
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         schedule === option.value
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
                       {option.label}
@@ -1288,7 +1288,7 @@ function CheckModal({
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         schedule === option.value
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
                       {option.label}
@@ -1305,7 +1305,7 @@ function CheckModal({
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                         schedule === option.value
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                       }`}
                     >
                       {option.label}
@@ -1319,7 +1319,7 @@ function CheckModal({
           {/* Cron Expression */}
           {scheduleType === "cron" && (
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Cron Expression
               </label>
               {/* Quick presets */}
@@ -1335,7 +1335,7 @@ function CheckModal({
                     className={`px-2 py-1 rounded text-xs transition-colors ${
                       cronExpression === preset.value
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     {preset.label}
@@ -1347,19 +1347,19 @@ function CheckModal({
                 value={cronExpression}
                 onChange={(e) => handleCronChange(e.target.value)}
                 placeholder="*/5 * * * *"
-                className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white font-mono placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  cronError ? "border-red-500" : "border-gray-700"
+                className={`w-full bg-gray-100 dark:bg-gray-800 border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white font-mono placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  cronError ? "border-red-500" : "border-gray-300 dark:border-gray-700"
                 }`}
               />
               {cronError ? (
-                <p className="text-red-400 text-xs mt-1">{cronError}</p>
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1">{cronError}</p>
               ) : cronExpression && isValidCronExpression(cronExpression) ? (
                 <div className="mt-2 space-y-1">
-                  <p className="text-green-400 text-xs">
+                  <p className="text-green-600 dark:text-green-400 text-xs">
                     {describeCronExpression(cronExpression)}
                   </p>
                   {nextRunTime && (
-                    <p className="text-gray-400 text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">
                       Next run: {nextRunTime.toLocaleString(undefined, {
                         timeZone: timezone,
                         dateStyle: "medium",
@@ -1378,13 +1378,13 @@ function CheckModal({
 
           {/* Timezone */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Timezone
             </label>
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {Object.entries(timezoneGroups).map(([group, zones]) => (
                 <optgroup key={group} label={group}>
@@ -1400,7 +1400,7 @@ function CheckModal({
 
           {/* Grace Period */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Grace Period (minutes)
             </label>
             <input
@@ -1409,7 +1409,7 @@ function CheckModal({
               onChange={(e) => setGracePeriod(Number(e.target.value))}
               min={1}
               max={60}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-gray-500 text-xs mt-1">
               How long to wait before marking as down
@@ -1418,20 +1418,20 @@ function CheckModal({
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Tags (optional)
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-sm"
+                  className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded text-sm"
                 >
                   {tag}
                   <button
                     type="button"
                     onClick={() => removeTag(tag)}
-                    className="hover:text-blue-200"
+                    className="hover:text-blue-400 dark:hover:text-blue-200"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1448,7 +1448,7 @@ function CheckModal({
                 onKeyDown={handleTagKeyDown}
                 onBlur={() => tagInput && addTag(tagInput)}
                 placeholder="Add tag and press Enter"
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 disabled={tags.length >= 10}
               />
             </div>
@@ -1460,7 +1460,7 @@ function CheckModal({
                     key={tag}
                     type="button"
                     onClick={() => addTag(tag)}
-                    className="text-xs text-gray-400 hover:text-white bg-gray-800 px-2 py-0.5 rounded ml-1"
+                    className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded ml-1"
                   >
                     +{tag}
                   </button>
@@ -1474,7 +1474,7 @@ function CheckModal({
 
           {/* Max Duration (Slow Job Alert) */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Slow Job Alert (optional)
             </label>
             <div className="flex items-center gap-2">
@@ -1484,15 +1484,15 @@ function CheckModal({
                 onChange={(e) => setMaxDuration(e.target.value ? Number(e.target.value) : "")}
                 min={1}
                 placeholder="e.g., 60000"
-                className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-gray-400 text-sm">ms</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">ms</span>
             </div>
             <p className="text-gray-500 text-xs mt-1">
               Alert if job duration exceeds this threshold (in milliseconds). Leave empty to disable.
             </p>
             {maxDuration && (
-              <p className="text-blue-400 text-xs mt-1">
+              <p className="text-blue-500 dark:text-blue-400 text-xs mt-1">
                 Alert if job takes longer than {(Number(maxDuration) / 1000).toFixed(1)}s
               </p>
             )}
@@ -1500,7 +1500,7 @@ function CheckModal({
 
           {/* Webhook */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Webhook URL {canUseWebhooks ? "(optional)" : ""}
             </label>
             {canUseWebhooks ? (
@@ -1513,12 +1513,12 @@ function CheckModal({
                     setWebhookError("");
                   }}
                   placeholder="https://example.com/webhook"
-                  className={`w-full bg-gray-800 border rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    webhookError ? "border-red-500" : "border-gray-700"
+                  className={`w-full bg-gray-100 dark:bg-gray-800 border rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    webhookError ? "border-red-500" : "border-gray-300 dark:border-gray-700"
                   }`}
                 />
                 {webhookError ? (
-                  <p className="text-red-400 text-xs mt-1">{webhookError}</p>
+                  <p className="text-red-500 dark:text-red-400 text-xs mt-1">{webhookError}</p>
                 ) : (
                   <p className="text-gray-500 text-xs mt-1">
                     Receive POST requests when status changes (down/recovery)
@@ -1526,11 +1526,11 @@ function CheckModal({
                 )}
               </>
             ) : (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg px-4 py-3">
-                <p className="text-gray-400 text-sm">
+              <div className="bg-gray-100 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Webhooks are available on paid plans.
                 </p>
-                <Link href="/pricing" className="text-blue-400 hover:text-blue-300 text-sm">
+                <Link href="/pricing" className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm">
                   Upgrade to Starter or Pro
                 </Link>
               </div>
@@ -1542,7 +1542,7 @@ function CheckModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-700 transition-colors"
+              className="flex-1 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>
