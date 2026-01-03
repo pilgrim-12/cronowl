@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User } from "firebase/auth";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 // Component for displaying newly created key
 function NewKeyDisplay({
@@ -86,6 +87,7 @@ interface ApiKeysManagerProps {
 }
 
 export function ApiKeysManager({ user }: ApiKeysManagerProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [keys, setKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -154,9 +156,14 @@ export function ApiKeysManager({ user }: ApiKeysManagerProps) {
   };
 
   const handleDelete = async (keyId: string) => {
-    if (!confirm("Are you sure you want to revoke this API key? This cannot be undone.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Revoke API Key",
+      message: "Are you sure you want to revoke this API key? This action cannot be undone and any applications using this key will stop working.",
+      confirmText: "Revoke",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     setDeletingId(keyId);
 
@@ -347,6 +354,8 @@ export function ApiKeysManager({ user }: ApiKeysManagerProps) {
           </div>
         </div>
       )}
+
+      {ConfirmDialog}
     </div>
   );
 }

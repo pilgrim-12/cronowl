@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -20,6 +21,15 @@ export function Header({ user, signOut }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [plan, setPlan] = useState<PlanType | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Check if a nav link is active
+  const isActive = (href: string) => {
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname.startsWith(href);
+  };
 
   // Fetch user's plan
   useEffect(() => {
@@ -93,13 +103,21 @@ export function Header({ user, signOut }: HeaderProps) {
           <nav className="hidden sm:flex items-center gap-1">
             <Link
               href="/dashboard"
-              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
+                isActive("/dashboard")
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+              }`}
             >
               Checks
             </Link>
             <Link
               href="/dashboard/status-pages"
-              className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
+                isActive("/dashboard/status-pages")
+                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-200 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700"
+              }`}
             >
               Status Pages
             </Link>

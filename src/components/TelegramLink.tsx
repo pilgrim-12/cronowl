@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface TelegramLinkProps {
   userId: string;
 }
 
 export default function TelegramLink({ userId }: TelegramLinkProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [isLinked, setIsLinked] = useState(false);
   const [telegramUsername, setTelegramUsername] = useState<string | null>(null);
   const [linkingCode, setLinkingCode] = useState<string | null>(null);
@@ -73,7 +75,14 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
   };
 
   const unlinkTelegram = async () => {
-    if (!confirm("Are you sure you want to unlink Telegram?")) return;
+    const confirmed = await confirm({
+      title: "Unlink Telegram",
+      message: "Are you sure you want to unlink Telegram? You will no longer receive notifications via Telegram.",
+      confirmText: "Unlink",
+      cancelText: "Cancel",
+      variant: "warning",
+    });
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -189,6 +198,8 @@ export default function TelegramLink({ userId }: TelegramLinkProps) {
           </div>
         </div>
       )}
+
+      {ConfirmDialog}
     </>
   );
 }

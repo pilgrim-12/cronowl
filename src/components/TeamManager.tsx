@@ -13,6 +13,7 @@ import {
   acceptTeamInvitation,
 } from "@/lib/checks";
 import { PLANS, PlanType } from "@/lib/plans";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface TeamManagerProps {
   userId: string;
@@ -21,6 +22,7 @@ interface TeamManagerProps {
 }
 
 export function TeamManager({ userId, userEmail, userPlan }: TeamManagerProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [invitations, setInvitations] = useState<TeamMember[]>([]);
   const [planUsage, setPlanUsage] = useState<TeamMemberLimitResult | null>(null);
@@ -76,7 +78,14 @@ export function TeamManager({ userId, userEmail, userPlan }: TeamManagerProps) {
   };
 
   const handleRemove = async (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this team member?")) return;
+    const confirmed = await confirm({
+      title: "Remove Team Member",
+      message: "Are you sure you want to remove this team member? They will lose access to your checks.",
+      confirmText: "Remove",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     try {
       await removeTeamMember(memberId);
@@ -257,6 +266,8 @@ export function TeamManager({ userId, userEmail, userPlan }: TeamManagerProps) {
           )}
         </>
       )}
+
+      {ConfirmDialog}
     </div>
   );
 }

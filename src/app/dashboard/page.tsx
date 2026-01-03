@@ -30,10 +30,12 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Header } from "@/components/Header";
 import { OwlLogo } from "@/components/OwlLogo";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function DashboardPage() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [checks, setChecks] = useState<Check[]>([]);
   const [loadingChecks, setLoadingChecks] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -257,7 +259,14 @@ export default function DashboardPage() {
   };
 
   const handleDeleteCheck = async (checkId: string) => {
-    if (!confirm("Are you sure you want to delete this check?")) return;
+    const confirmed = await confirm({
+      title: "Delete Check",
+      message: "Are you sure you want to delete this check? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
     try {
       await deleteCheck(checkId);
       await loadChecks();
@@ -462,10 +471,10 @@ export default function DashboardPage() {
             <div className="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1">
               <button
                 onClick={() => setViewMode("list")}
-                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-all ${
                   viewMode === "list"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-md"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-300/50 dark:hover:bg-gray-700/50"
                 }`}
                 title="List view"
               >
@@ -475,10 +484,10 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-colors ${
+                className={`px-2 sm:px-3 py-1.5 rounded text-sm transition-all ${
                   viewMode === "grid"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-md"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-300/50 dark:hover:bg-gray-700/50"
                 }`}
                 title="Grid view"
               >
@@ -491,7 +500,7 @@ export default function DashboardPage() {
             {/* New Check button */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
+              className="bg-blue-600 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base font-medium hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 active:bg-blue-700 transition-all flex-shrink-0"
             >
               + New Check
             </button>
@@ -1048,6 +1057,7 @@ export default function DashboardPage() {
       )}
 
       <InstallPrompt />
+      {ConfirmDialog}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { openCheckout, PaddlePlan } from "@/lib/paddle";
 import { PLANS } from "@/lib/plans";
 import Link from "next/link";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface Subscription {
   status: "active" | "pending" | "canceled" | "past_due" | "paused";
@@ -23,6 +24,7 @@ interface SubscriptionManagerProps {
 }
 
 export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [currentPlan, setCurrentPlan] = useState<"free" | "starter" | "pro">("free");
   const [loading, setLoading] = useState(true);
@@ -94,9 +96,14 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   };
 
   const handleDowngrade = async () => {
-    if (!confirm("Are you sure you want to downgrade to Starter? You will keep Pro features until the end of your billing period.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Downgrade to Starter",
+      message: "Are you sure you want to downgrade to Starter? You will keep Pro features until the end of your billing period.",
+      confirmText: "Downgrade",
+      cancelText: "Keep Pro",
+      variant: "warning",
+    });
+    if (!confirmed) return;
 
     setDowngrading(true);
     setError(null);
@@ -126,9 +133,14 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You will keep access until the end of your current billing period.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Cancel Subscription",
+      message: "Are you sure you want to cancel your subscription? You will keep access until the end of your current billing period.",
+      confirmText: "Cancel Subscription",
+      cancelText: "Keep Subscription",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     setCanceling(true);
     setError(null);
@@ -431,6 +443,8 @@ export function SubscriptionManager({ userId, userEmail }: SubscriptionManagerPr
           Compare all plans →
         </Link>
       </div>
+
+      {ConfirmDialog}
     </div>
   );
 }

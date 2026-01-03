@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { Header } from "@/components/Header";
+import { useConfirm } from "@/components/ConfirmDialog";
 import {
   StatusPage,
   StatusPageBranding,
@@ -398,6 +399,7 @@ function StatusPageModal({
 export default function StatusPagesPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [statusPages, setStatusPages] = useState<StatusPage[]>([]);
   const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
@@ -541,7 +543,14 @@ export default function StatusPagesPage() {
   };
 
   const handleDelete = async (pageId: string) => {
-    if (!confirm("Are you sure you want to delete this status page?")) return;
+    const confirmed = await confirm({
+      title: "Delete Status Page",
+      message: "Are you sure you want to delete this status page? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     await deleteStatusPage(pageId);
 
@@ -856,6 +865,8 @@ export default function StatusPagesPage() {
           planLimit={PLANS[userPlan].activeIncidentsLimit}
         />
       )}
+
+      {ConfirmDialog}
     </div>
   );
 }
