@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Configure dark mode to use class selector instead of media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
