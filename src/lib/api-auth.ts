@@ -44,11 +44,21 @@ export function getKeyPrefix(key: string): string {
   return key.substring(0, 12) + "...";
 }
 
-// Get user's plan
-async function getUserPlan(userId: string): Promise<PlanType> {
+// Get user's plan and blocked status
+async function getUserData(userId: string): Promise<{ plan: PlanType; isBlocked: boolean }> {
   const userDoc = await getDoc(doc(db, "users", userId));
-  if (!userDoc.exists()) return "free";
-  return (userDoc.data().plan as PlanType) || "free";
+  if (!userDoc.exists()) return { plan: "free", isBlocked: false };
+  const data = userDoc.data();
+  return {
+    plan: (data.plan as PlanType) || "free",
+    isBlocked: data.isBlocked === true,
+  };
+}
+
+// Get user's plan (for backward compatibility)
+async function getUserPlan(userId: string): Promise<PlanType> {
+  const { plan } = await getUserData(userId);
+  return plan;
 }
 
 // Create a new API key for a user
@@ -221,8 +231,18 @@ export async function withApiAuth(
     );
   }
 
-  // Get user's plan for rate limiting
-  const plan = await getUserPlan(validation.userId);
+  // Get user's plan and blocked status
+  const { plan, isBlocked } = await getUserData(validation.userId);
+
+  // Check if user is blocked
+  if (isBlocked) {
+    return apiError(
+      "ACCOUNT_BLOCKED",
+      "Your account has been blocked. Please contact support.",
+      403
+    );
+  }
+
   const planLimits = PLANS[plan];
 
   // Rate limiting by user ID with unified limits (100 req/min for all plans)

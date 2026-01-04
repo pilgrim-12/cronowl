@@ -15,9 +15,10 @@ type PlanType = "free" | "starter" | "pro";
 interface HeaderProps {
   user: User;
   signOut: () => void;
+  isAdmin?: boolean;
 }
 
-export function Header({ user, signOut }: HeaderProps) {
+export function Header({ user, signOut, isAdmin }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [plan, setPlan] = useState<PlanType | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -225,6 +226,18 @@ export function Header({ user, signOut }: HeaderProps) {
 
               {/* Menu items */}
               <div className="py-1">
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Admin Panel
+                  </Link>
+                )}
                 <Link
                   href="/settings"
                   onClick={() => setIsMenuOpen(false)}

@@ -33,7 +33,7 @@ import { OwlLogo } from "@/components/OwlLogo";
 import { useConfirm } from "@/components/ConfirmDialog";
 
 export default function DashboardPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isAdmin } = useAuth();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
   const [checks, setChecks] = useState<Check[]>([]);
@@ -309,7 +309,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header user={user} signOut={signOut} />
+      <Header user={user} signOut={signOut} isAdmin={isAdmin} />
 
       <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
         <EmailVerificationBanner />

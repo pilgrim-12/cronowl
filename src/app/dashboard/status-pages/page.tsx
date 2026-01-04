@@ -397,7 +397,7 @@ function StatusPageModal({
 }
 
 export default function StatusPagesPage() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut, isAdmin } = useAuth();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
   const [statusPages, setStatusPages] = useState<StatusPage[]>([]);
@@ -580,7 +580,7 @@ export default function StatusPagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <Header user={user} signOut={signOut} />
+      <Header user={user} signOut={signOut} isAdmin={isAdmin} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Plan Usage Banner */}

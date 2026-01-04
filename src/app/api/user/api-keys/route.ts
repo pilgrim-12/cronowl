@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { adminAuth } from "@/lib/firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import {
   createApiKey,
   getUserApiKeys,
   revokeApiKey,
 } from "@/lib/api-auth";
+import { logApiKeyCreated, logApiKeyRevoked } from "@/lib/user-activity";
 
 // Verify Firebase ID token from Authorization header
-async function verifyAuth(request: NextRequest): Promise<string | null> {
+async function verifyAuth(request: NextRequest): Promise<{ userId: string; email: string } | null> {
   const headersList = await headers();
   const authHeader = headersList.get("authorization");
 
@@ -20,22 +21,32 @@ async function verifyAuth(request: NextRequest): Promise<string | null> {
 
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    return decodedToken.uid;
+    return { userId: decodedToken.uid, email: decodedToken.email || "" };
   } catch {
     return null;
   }
 }
 
+// Get user email from Firestore
+async function getUserEmail(userId: string): Promise<string> {
+  try {
+    const userDoc = await adminDb.collection("users").doc(userId).get();
+    return userDoc.exists ? userDoc.data()?.email || "" : "";
+  } catch {
+    return "";
+  }
+}
+
 // GET /api/user/api-keys - List API keys (authenticated with Firebase token)
 export async function GET(request: NextRequest) {
-  const userId = await verifyAuth(request);
+  const auth = await verifyAuth(request);
 
-  if (!userId) {
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const keys = await getUserApiKeys(userId);
+    const keys = await getUserApiKeys(auth.userId);
 
     const safeKeys = keys.map((key) => ({
       id: key.id,
@@ -54,9 +65,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/user/api-keys - Create a new API key (authenticated with Firebase token)
 export async function POST(request: NextRequest) {
-  const userId = await verifyAuth(request);
+  const auth = await verifyAuth(request);
 
-  if (!userId) {
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -71,7 +82,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { key, keyData } = await createApiKey(userId, name);
+    const { key, keyData } = await createApiKey(auth.userId, name);
+
+    // Log the activity
+    const userEmail = auth.email || await getUserEmail(auth.userId);
+    await logApiKeyCreated(auth.userId, userEmail, keyData.id, name);
 
     return NextResponse.json({
       id: keyData.id,
@@ -91,9 +106,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/user/api-keys - Revoke an API key (authenticated with Firebase token)
 export async function DELETE(request: NextRequest) {
-  const userId = await verifyAuth(request);
+  const auth = await verifyAuth(request);
 
-  if (!userId) {
+  if (!auth) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -105,7 +120,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Key ID is required" }, { status: 400 });
     }
 
-    const success = await revokeApiKey(userId, keyId);
+    const success = await revokeApiKey(auth.userId, keyId);
 
     if (!success) {
       return NextResponse.json(
@@ -113,6 +128,10 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Log the activity
+    const userEmail = auth.email || await getUserEmail(auth.userId);
+    await logApiKeyRevoked(auth.userId, userEmail, keyId, "");
 
     return NextResponse.json({ revoked: true });
   } catch (error) {
