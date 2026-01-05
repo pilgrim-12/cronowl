@@ -88,10 +88,17 @@ function FAQ() {
   );
 }
 
+interface ScheduledChange {
+  plan: PlanType | null;
+  effectiveAt: Date | null;
+  action: "downgrade" | "cancel" | null;
+}
+
 export default function PricingPage() {
   const { user } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<PlanType | undefined>(undefined);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [scheduledChange, setScheduledChange] = useState<ScheduledChange | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -110,6 +117,30 @@ export default function PricingPage() {
             data.subscription?.status === "active" ||
             data.subscription?.status === "past_due"
           );
+
+          // Check for scheduled changes
+          const subscription = data.subscription;
+          if (subscription?.scheduledChange) {
+            setScheduledChange({
+              plan: subscription.scheduledChange.plan || null,
+              effectiveAt: subscription.scheduledChange.effectiveAt
+                ? new Date(subscription.scheduledChange.effectiveAt)
+                : null,
+              action: subscription.scheduledChange.action === "cancel" ? "cancel" : "downgrade",
+            });
+          } else if (subscription?.scheduledDowngrade) {
+            setScheduledChange({
+              plan: subscription.scheduledDowngrade as PlanType,
+              effectiveAt: subscription.scheduledDowngradeAt?.toDate?.() || null,
+              action: "downgrade",
+            });
+          } else if (subscription?.status === "canceled" && subscription?.effectiveEndDate) {
+            setScheduledChange({
+              plan: "free",
+              effectiveAt: subscription.effectiveEndDate.toDate?.() || new Date(subscription.effectiveEndDate),
+              action: "cancel",
+            });
+          }
         } else {
           setCurrentPlan("free");
         }
@@ -165,6 +196,7 @@ export default function PricingPage() {
               planKey="free"
               currentPlan={currentPlan}
               hasActiveSubscription={hasActiveSubscription}
+              scheduledChange={scheduledChange}
             />
             <PricingCard
               plan={PLANS.starter}
@@ -172,12 +204,14 @@ export default function PricingPage() {
               isPopular
               currentPlan={currentPlan}
               hasActiveSubscription={hasActiveSubscription}
+              scheduledChange={scheduledChange}
             />
             <PricingCard
               plan={PLANS.pro}
               planKey="pro"
               currentPlan={currentPlan}
               hasActiveSubscription={hasActiveSubscription}
+              scheduledChange={scheduledChange}
             />
           </div>
         )}

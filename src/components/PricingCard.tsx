@@ -23,18 +23,26 @@ const PLAN_ORDER: Record<PlanType, number> = {
   pro: 2,
 };
 
+interface ScheduledChange {
+  plan: PlanType | null;
+  effectiveAt: Date | null;
+  action: "downgrade" | "cancel" | null;
+}
+
 export function PricingCard({
   plan,
   planKey,
   isPopular = false,
   currentPlan,
   hasActiveSubscription = false,
+  scheduledChange = null,
 }: {
   plan: typeof PLANS[PlanType];
   planKey: PlanType;
   isPopular?: boolean;
   currentPlan?: PlanType;
   hasActiveSubscription?: boolean;
+  scheduledChange?: ScheduledChange | null;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -47,6 +55,10 @@ export function PricingCard({
   const isCurrentPlan = currentPlan === planKey;
   const isUpgrade = currentPlan ? PLAN_ORDER[planKey] > PLAN_ORDER[currentPlan] : false;
   const isDowngrade = currentPlan ? PLAN_ORDER[planKey] < PLAN_ORDER[currentPlan] : false;
+
+  // Check if this plan is the scheduled target
+  const isScheduledTarget = scheduledChange?.plan === planKey;
+  const hasScheduledChange = scheduledChange !== null && scheduledChange.effectiveAt !== null;
 
   const handleUpgrade = async () => {
     if (!user) {
@@ -250,9 +262,18 @@ export function PricingCard({
 
   const buttonConfig = getButtonConfig();
 
+  // Format date for display
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <>
-      <div className={`relative bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 ${isPopular && !isCurrentPlan ? "ring-2 ring-blue-500" : ""} ${isCurrentPlan ? "ring-2 ring-green-500" : ""}`}>
+      <div className={`relative bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 ${isPopular && !isCurrentPlan && !isScheduledTarget ? "ring-2 ring-blue-500" : ""} ${isCurrentPlan ? "ring-2 ring-green-500" : ""} ${isScheduledTarget && !isCurrentPlan ? "ring-2 ring-yellow-500" : ""}`}>
         {/* Current Plan Badge */}
         {isCurrentPlan && (
           <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -262,8 +283,17 @@ export function PricingCard({
           </div>
         )}
 
-        {/* Most Popular Badge (only if not current plan) */}
-        {isPopular && !isCurrentPlan && (
+        {/* Scheduled Target Badge */}
+        {isScheduledTarget && !isCurrentPlan && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+            <span className="bg-yellow-500 text-black text-sm font-medium px-4 py-1 rounded-full">
+              Switching Soon
+            </span>
+          </div>
+        )}
+
+        {/* Most Popular Badge (only if not current plan and not scheduled) */}
+        {isPopular && !isCurrentPlan && !isScheduledTarget && (
           <div className="absolute -top-4 left-1/2 -translate-x-1/2">
             <span className="bg-blue-500 text-white text-sm font-medium px-4 py-1 rounded-full">
               Most Popular
@@ -303,8 +333,26 @@ export function PricingCard({
           {buttonConfig.text}
         </button>
 
+        {/* Scheduled change notice on current plan */}
+        {isCurrentPlan && hasScheduledChange && scheduledChange?.effectiveAt && (
+          <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <p className="text-yellow-600 dark:text-yellow-400 text-xs text-center">
+              Switching to {scheduledChange.plan === "free" ? "Free" : (scheduledChange.plan ? scheduledChange.plan.charAt(0).toUpperCase() + scheduledChange.plan.slice(1) : "Unknown")} on {formatDate(scheduledChange.effectiveAt)}
+            </p>
+          </div>
+        )}
+
+        {/* Scheduled target notice */}
+        {isScheduledTarget && !isCurrentPlan && scheduledChange?.effectiveAt && (
+          <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+            <p className="text-yellow-600 dark:text-yellow-400 text-xs text-center">
+              Starting {formatDate(scheduledChange.effectiveAt)}
+            </p>
+          </div>
+        )}
+
         {/* Manage link for current paid plan */}
-        {isCurrentPlan && isPaidPlan && (
+        {isCurrentPlan && isPaidPlan && !hasScheduledChange && (
           <Link
             href="/settings"
             className="block text-center text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm mt-3"
