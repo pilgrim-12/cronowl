@@ -1,5 +1,11 @@
+"use client";
+
 import Link from "next/link";
-import { PLANS } from "@/lib/plans";
+import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
+import { PLANS, PlanType } from "@/lib/plans";
 import { PricingCard } from "@/components/PricingCard";
 import { PublicHeader } from "@/components/PublicHeader";
 
@@ -83,6 +89,41 @@ function FAQ() {
 }
 
 export default function PricingPage() {
+  const { user } = useAuth();
+  const [currentPlan, setCurrentPlan] = useState<PlanType | undefined>(undefined);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUserPlan() {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setCurrentPlan((data.plan as PlanType) || "free");
+          setHasActiveSubscription(
+            data.subscription?.status === "active" ||
+            data.subscription?.status === "past_due"
+          );
+        } else {
+          setCurrentPlan("free");
+        }
+      } catch (error) {
+        console.error("Failed to load user plan:", error);
+        setCurrentPlan("free");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadUserPlan();
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <PublicHeader />
@@ -102,11 +143,44 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="max-w-5xl mx-auto px-4 pb-12">
-        <div className="grid md:grid-cols-3 gap-8">
-          <PricingCard plan={PLANS.free} planKey="free" />
-          <PricingCard plan={PLANS.starter} planKey="starter" isPopular />
-          <PricingCard plan={PLANS.pro} planKey="pro" />
-        </div>
+        {loading ? (
+          <div className="grid md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 animate-pulse">
+                <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-1/2 mx-auto mb-4"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-800 rounded w-1/3 mx-auto mb-6"></div>
+                <div className="space-y-3 mb-8">
+                  {[1, 2, 3, 4].map((j) => (
+                    <div key={j} className="h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                  ))}
+                </div>
+                <div className="h-12 bg-gray-200 dark:bg-gray-800 rounded"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-8">
+            <PricingCard
+              plan={PLANS.free}
+              planKey="free"
+              currentPlan={currentPlan}
+              hasActiveSubscription={hasActiveSubscription}
+            />
+            <PricingCard
+              plan={PLANS.starter}
+              planKey="starter"
+              isPopular
+              currentPlan={currentPlan}
+              hasActiveSubscription={hasActiveSubscription}
+            />
+            <PricingCard
+              plan={PLANS.pro}
+              planKey="pro"
+              currentPlan={currentPlan}
+              hasActiveSubscription={hasActiveSubscription}
+            />
+          </div>
+        )}
       </section>
 
       {/* Detailed Limits Comparison */}
