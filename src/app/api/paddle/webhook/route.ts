@@ -230,7 +230,22 @@ async function updateUserSubscription(userId: string, data: any) {
     console.log(`Subscription has scheduled change for user ${userId}:`, scheduledChange);
 
     const scheduledPriceId = scheduledChange.items?.[0]?.price?.id;
-    const scheduledPlan = scheduledPriceId ? getPlanFromPriceId(scheduledPriceId) : null;
+    let scheduledPlan = scheduledPriceId ? getPlanFromPriceId(scheduledPriceId) : null;
+
+    // If action is cancel, plan will be free
+    if (scheduledChange.action === "cancel") {
+      scheduledPlan = "free" as any;
+    }
+
+    // Try to determine plan from price comparison if still null
+    if (!scheduledPlan && scheduledPriceId) {
+      // Check if it contains 'starter' or 'pro' in the ID (fallback)
+      if (scheduledPriceId.toLowerCase().includes("starter")) {
+        scheduledPlan = "starter";
+      } else if (scheduledPriceId.toLowerCase().includes("pro")) {
+        scheduledPlan = "pro";
+      }
+    }
 
     await adminDb
       .collection("users")
@@ -248,7 +263,7 @@ async function updateUserSubscription(userId: string, data: any) {
         },
       });
 
-    console.log(`Subscription updated (scheduled change pending) for user ${userId}`);
+    console.log(`Subscription updated (scheduled change pending) for user ${userId}, plan: ${scheduledPlan}`);
     return;
   }
 
