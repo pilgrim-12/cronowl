@@ -112,14 +112,21 @@ export default function PricingPage() {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
-          setCurrentPlan((data.plan as PlanType) || "free");
+          const subscription = data.subscription;
+
+          // Use subscription.plan if available and subscription is active
+          // This is more reliable as webhook may update top-level plan incorrectly
+          const activePlan = (subscription?.status === "active" || subscription?.status === "past_due")
+            ? (subscription?.plan as PlanType) || (data.plan as PlanType) || "free"
+            : (data.plan as PlanType) || "free";
+
+          setCurrentPlan(activePlan);
           setHasActiveSubscription(
-            data.subscription?.status === "active" ||
-            data.subscription?.status === "past_due"
+            subscription?.status === "active" ||
+            subscription?.status === "past_due"
           );
 
           // Check for scheduled changes
-          const subscription = data.subscription;
           if (subscription?.scheduledChange) {
             setScheduledChange({
               plan: subscription.scheduledChange.plan || null,
