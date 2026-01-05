@@ -114,11 +114,29 @@ export default function PricingPage() {
           const data = userDoc.data();
           const subscription = data.subscription;
 
-          // Use subscription.plan if available and subscription is active
-          // This is more reliable as webhook may update top-level plan incorrectly
-          const activePlan = (subscription?.status === "active" || subscription?.status === "past_due")
-            ? (subscription?.plan as PlanType) || (data.plan as PlanType) || "free"
-            : (data.plan as PlanType) || "free";
+          // Determine current active plan
+          // If there's a scheduled downgrade, the current plan must be higher than the scheduled one
+          let activePlan: PlanType = (subscription?.plan as PlanType) || (data.plan as PlanType) || "free";
+
+          // Fix: if scheduledDowngrade exists, current plan should be higher
+          if (subscription?.scheduledDowngrade) {
+            const scheduledPlan = subscription.scheduledDowngrade as PlanType;
+            // If current plan equals scheduled downgrade, it's wrong - should be higher
+            if (activePlan === scheduledPlan || activePlan === "free") {
+              // Infer the correct current plan
+              if (scheduledPlan === "starter") activePlan = "pro";
+              else if (scheduledPlan === "free") activePlan = "starter";
+            }
+          }
+
+          // Same fix for scheduledChange
+          if (subscription?.scheduledChange?.plan) {
+            const scheduledPlan = subscription.scheduledChange.plan as PlanType;
+            if (subscription.scheduledChange.action !== "cancel" && activePlan === scheduledPlan) {
+              if (scheduledPlan === "starter") activePlan = "pro";
+              else if (scheduledPlan === "free") activePlan = "starter";
+            }
+          }
 
           setCurrentPlan(activePlan);
           setHasActiveSubscription(
