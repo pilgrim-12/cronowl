@@ -221,6 +221,25 @@ export function PricingCard({
       return {
         text: "Current Plan",
         className: "bg-green-600 text-white cursor-default",
+        disabled: true,
+      };
+    }
+
+    // If this plan is already scheduled, show "Scheduled" instead of action
+    if (isScheduledTarget) {
+      return {
+        text: "Scheduled",
+        className: "bg-yellow-600 text-white cursor-default",
+        disabled: true,
+      };
+    }
+
+    // If there's already a scheduled change, disable downgrade buttons
+    if (hasScheduledChange && isDowngrade) {
+      return {
+        text: planKey === "free" ? "Cancel Subscription" : "Downgrade",
+        className: "bg-gray-400 text-white cursor-not-allowed",
+        disabled: true,
       };
     }
 
@@ -327,7 +346,7 @@ export function PricingCard({
 
         <button
           onClick={handleClick}
-          disabled={isLoading}
+          disabled={isLoading || buttonConfig.disabled}
           className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${buttonConfig.className}`}
         >
           {buttonConfig.text}

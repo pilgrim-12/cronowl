@@ -154,9 +154,21 @@ export default function PricingPage() {
               action: subscription.scheduledChange.action === "cancel" ? "cancel" : "downgrade",
             });
           } else if (subscription?.scheduledDowngrade) {
+            // Use scheduledDowngradeAt, or fall back to currentPeriodEnd (when billing period ends)
+            let effectiveDate: Date | null = null;
+            if (subscription.scheduledDowngradeAt?.toDate) {
+              effectiveDate = subscription.scheduledDowngradeAt.toDate();
+            } else if (subscription.scheduledDowngradeAt) {
+              effectiveDate = new Date(subscription.scheduledDowngradeAt);
+            } else if (subscription.currentPeriodEnd?.toDate) {
+              effectiveDate = subscription.currentPeriodEnd.toDate();
+            } else if (subscription.currentPeriodEnd) {
+              effectiveDate = new Date(subscription.currentPeriodEnd);
+            }
+
             setScheduledChange({
               plan: subscription.scheduledDowngrade as PlanType,
-              effectiveAt: subscription.scheduledDowngradeAt?.toDate?.() || null,
+              effectiveAt: effectiveDate,
               action: "downgrade",
             });
           } else if (subscription?.status === "canceled" && subscription?.effectiveEndDate) {
