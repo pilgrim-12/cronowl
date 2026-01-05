@@ -314,12 +314,14 @@ export default function Home() {
                   <span>✓</span> 30 days history
                 </li>
               </ul>
-              <Link
-                href="/signup"
+              <a
+                href="https://yurachernov.gumroad.com/l/rgaar"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block text-center bg-white text-blue-600 rounded-lg px-4 py-2.5 font-medium hover:bg-gray-100 transition-colors"
               >
-                Start Free Trial
-              </Link>
+                Subscribe
+              </a>
             </div>
             {/* Pro */}
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
@@ -341,12 +343,14 @@ export default function Home() {
                   <span className="text-green-500">✓</span> Team (3 users)
                 </li>
               </ul>
-              <Link
-                href="/signup"
+              <a
+                href="https://yurachernov.gumroad.com/l/rgaar"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block text-center border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                Start Free Trial
-              </Link>
+                Subscribe
+              </a>
             </div>
           </div>
           <div className="text-center mt-8">

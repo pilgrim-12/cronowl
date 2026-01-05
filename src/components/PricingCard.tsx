@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { openCheckout, PaddlePlan } from "@/lib/paddle";
+import Link from "next/link";
 import { PLANS, PlanType } from "@/lib/plans";
+
+// Gumroad membership links
+const GUMROAD_LINKS = {
+  starter: "https://yurachernov.gumroad.com/l/rgaar",
+  pro: "https://yurachernov.gumroad.com/l/rgaar",
+} as const;
 
 function CheckIcon() {
   return (
@@ -23,35 +26,16 @@ export function PricingCard({
   planKey: PlanType;
   isPopular?: boolean;
 }) {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const isProPlan = planKey === "pro";
   const isPaidPlan = planKey === "starter" || planKey === "pro";
 
-  const handleClick = async () => {
-    if (planKey === "free") {
-      router.push("/signup");
-      return;
-    }
-
-    // For paid plans, check if user is logged in
-    if (!user) {
-      // Redirect to signup with plan info
-      router.push(`/signup?plan=${planKey}`);
-      return;
-    }
-
-    // User is logged in, open Paddle checkout
-    setIsLoading(true);
-    try {
-      await openCheckout(planKey as PaddlePlan, user.uid, user.email || "");
-    } catch (error) {
-      console.error("Failed to open checkout:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const buttonClasses = `block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors ${
+    isPopular
+      ? "bg-blue-600 text-white hover:bg-blue-700"
+      : isProPlan
+      ? "bg-purple-600 text-white hover:bg-purple-700"
+      : "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:border-gray-700"
+  }`;
 
   return (
     <div className={`relative bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 ${isPopular ? "ring-2 ring-blue-500" : ""}`}>
@@ -87,31 +71,20 @@ export function PricingCard({
         ))}
       </ul>
 
-      <button
-        onClick={handleClick}
-        disabled={isLoading}
-        className={`block w-full text-center py-3 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-          isPopular
-            ? "bg-blue-600 text-white hover:bg-blue-700"
-            : isProPlan
-            ? "bg-purple-600 text-white hover:bg-purple-700"
-            : "bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:border-gray-700"
-        }`}
-      >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            Loading...
-          </span>
-        ) : plan.price === 0 ? (
-          "Get Started"
-        ) : (
-          "Start Free Trial"
-        )}
-      </button>
+      {isPaidPlan ? (
+        <a
+          href={GUMROAD_LINKS[planKey as keyof typeof GUMROAD_LINKS]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonClasses}
+        >
+          Subscribe
+        </a>
+      ) : (
+        <Link href="/signup" className={buttonClasses}>
+          Get Started
+        </Link>
+      )}
     </div>
   );
 }
