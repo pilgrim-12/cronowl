@@ -1098,8 +1098,8 @@ jobs:
                 <tr className="border-b border-gray-200 dark:border-gray-800">
                   <th className="text-left py-3 px-4 text-gray-500 dark:text-gray-400">Feature</th>
                   <th className="text-center py-3 px-4 text-gray-500 dark:text-gray-400">Free</th>
-                  <th className="text-center py-3 px-4 text-gray-500 dark:text-gray-400">Starter ($5/mo)</th>
-                  <th className="text-center py-3 px-4 text-gray-500 dark:text-gray-400">Pro ($10/mo)</th>
+                  <th className="text-center py-3 px-4 text-gray-500 dark:text-gray-400">Starter ($4/mo)</th>
+                  <th className="text-center py-3 px-4 text-gray-500 dark:text-gray-400">Pro ($9/mo)</th>
                 </tr>
               </thead>
               <tbody className="text-gray-700 dark:text-gray-300">

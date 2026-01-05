@@ -298,7 +298,7 @@ export default function Home() {
               </div>
               <h4 className="text-xl font-semibold text-white mb-2">Starter</h4>
               <div className="text-3xl font-bold text-white mb-4">
-                $5<span className="text-lg font-normal">/mo</span>
+                $4<span className="text-lg font-normal">/mo</span>
               </div>
               <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-white flex items-center gap-2">
@@ -314,20 +314,18 @@ export default function Home() {
                   <span>✓</span> 30 days history
                 </li>
               </ul>
-              <a
-                href="https://yurachernov.gumroad.com/l/rgaar"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/signup"
                 className="block text-center bg-white text-blue-600 rounded-lg px-4 py-2.5 font-medium hover:bg-gray-100 transition-colors"
               >
-                Subscribe
-              </a>
+                Start Free Trial
+              </Link>
             </div>
             {/* Pro */}
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
               <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Pro</h4>
               <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                $10<span className="text-lg font-normal">/mo</span>
+                $9<span className="text-lg font-normal">/mo</span>
               </div>
               <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -343,14 +341,12 @@ export default function Home() {
                   <span className="text-green-500">✓</span> Team (3 users)
                 </li>
               </ul>
-              <a
-                href="https://yurachernov.gumroad.com/l/rgaar"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/signup"
                 className="block text-center border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 py-2.5 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                Subscribe
-              </a>
+                Start Free Trial
+              </Link>
             </div>
           </div>
           <div className="text-center mt-8">

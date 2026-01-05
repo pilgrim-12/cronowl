@@ -22,7 +22,7 @@ export const PLANS = {
   },
   starter: {
     name: "Starter",
-    price: 5,
+    price: 4,
     checksLimit: 100,
     historyDays: 30,
     apiKeysLimit: 3,
@@ -43,7 +43,7 @@ export const PLANS = {
   },
   pro: {
     name: "Pro",
-    price: 10,
+    price: 9,
     checksLimit: 500,
     historyDays: 90,
     apiKeysLimit: 10,
