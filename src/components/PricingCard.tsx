@@ -163,6 +163,40 @@ export function PricingCard({
     }
   };
 
+  const handleCancelScheduledChange = async () => {
+    if (!user) return;
+
+    const confirmed = await confirm({
+      title: "Keep Current Plan",
+      message: `Are you sure you want to cancel the scheduled change and keep your ${currentPlan === "pro" ? "Pro" : "Starter"} plan?`,
+      confirmText: "Keep Current Plan",
+      cancelText: "Cancel",
+      variant: "info",
+    });
+    if (!confirmed) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/subscription/cancel-scheduled-change", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.uid }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to cancel scheduled change");
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to cancel scheduled change:", error);
+      alert(error instanceof Error ? error.message : "Failed to cancel scheduled change. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleClick = async () => {
     // Not logged in - redirect to signup
     if (!user) {
@@ -352,12 +386,19 @@ export function PricingCard({
           {buttonConfig.text}
         </button>
 
-        {/* Scheduled change notice on current plan */}
+        {/* Scheduled change notice on current plan with cancel option */}
         {isCurrentPlan && hasScheduledChange && scheduledChange?.effectiveAt && (
           <div className="mt-3 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
             <p className="text-yellow-600 dark:text-yellow-400 text-xs text-center">
               Switching to {scheduledChange.plan === "free" ? "Free" : (scheduledChange.plan ? scheduledChange.plan.charAt(0).toUpperCase() + scheduledChange.plan.slice(1) : "Unknown")} on {formatDate(scheduledChange.effectiveAt)}
             </p>
+            <button
+              onClick={handleCancelScheduledChange}
+              disabled={isLoading}
+              className="mt-2 w-full text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline disabled:opacity-50"
+            >
+              Keep {currentPlan === "pro" ? "Pro" : "Starter"} instead
+            </button>
           </div>
         )}
 
