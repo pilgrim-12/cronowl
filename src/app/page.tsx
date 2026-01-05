@@ -298,7 +298,7 @@ export default function Home() {
               </div>
               <h4 className="text-xl font-semibold text-white mb-2">Starter</h4>
               <div className="text-3xl font-bold text-white mb-4">
-                $4<span className="text-lg font-normal">/mo</span>
+                $5<span className="text-lg font-normal">/mo</span>
               </div>
               <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-white flex items-center gap-2">
@@ -325,7 +325,7 @@ export default function Home() {
             <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6">
               <h4 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Pro</h4>
               <div className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                $9<span className="text-lg font-normal">/mo</span>
+                $10<span className="text-lg font-normal">/mo</span>
               </div>
               <ul className="space-y-2 mb-6 text-sm">
                 <li className="text-gray-700 dark:text-gray-300 flex items-center gap-2">

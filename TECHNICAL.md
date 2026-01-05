@@ -312,8 +312,8 @@ NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=YourBotUsername
 
 1. **Create Paddle account** (sandbox for testing, production for live)
 2. **Create Products** → Create pricing:
-   - Starter Plan: $4/month (or your price)
-   - Pro Plan: $9/month (or your price)
+   - Starter Plan: $5/month (or your price)
+   - Pro Plan: $10/month (or your price)
 3. **Get credentials**:
    - Client-side token (for Paddle.js)
    - API Key (for server-side calls)
@@ -387,8 +387,8 @@ PADDLE_WEBHOOK_SECRET=pdl_ntfset_xxx...
 
 | Plan | Monthly | Annual (20% off) |
 |------|---------|-----------------|
-| Starter | $4 | $38.40 |
-| Pro | $9 | $86.40 |
+| Starter | $5 | $48 |
+| Pro | $10 | $96 |
 
 ---
 
