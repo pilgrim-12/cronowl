@@ -50,6 +50,40 @@ export async function POST(req: NextRequest) {
     // Determine the new price ID
     const newPriceId = targetPlan === "pro" ? PRICE_PRO : PRICE_STARTER;
 
+    // First, check if there's a scheduled change and clear it
+    // User is upgrading, so any pending downgrade should be canceled
+    const getResponse = await fetch(
+      `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${PADDLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (getResponse.ok) {
+      const subData = await getResponse.json();
+      if (subData.data?.scheduled_change) {
+        // Clear the scheduled change first
+        console.log(`Clearing scheduled change before upgrade for subscription ${subscriptionId}`);
+        await fetch(
+          `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Authorization": `Bearer ${PADDLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              scheduled_change: null,
+            }),
+          }
+        );
+      }
+    }
+
     // Call Paddle API to update subscription
     const response = await fetch(
       `${PADDLE_API_URL}/subscriptions/${subscriptionId}`,

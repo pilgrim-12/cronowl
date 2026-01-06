@@ -225,6 +225,13 @@ async function updateUserSubscription(userId: string, data: any) {
   // The plan should only change when the scheduled change takes effect
   const scheduledChange = data.scheduled_change;
 
+  // Also check Firestore for existing scheduled downgrade that Paddle webhook might not include
+  const userDoc = await adminDb.collection("users").doc(userId).get();
+  const userData = userDoc.data();
+  const existingScheduledDowngrade = userData?.subscription?.scheduledDowngrade;
+  const existingScheduledChange = userData?.subscription?.scheduledChange;
+  const currentStoredPlan = userData?.subscription?.plan || userData?.plan;
+
   if (scheduledChange) {
     // There's a scheduled change - only update metadata, not the actual plan
     console.log(`Subscription has scheduled change for user ${userId}:`, scheduledChange);
@@ -267,6 +274,37 @@ async function updateUserSubscription(userId: string, data: any) {
     return;
   }
 
+  // No scheduled change from Paddle, but check if we have a pending scheduled downgrade in Firestore
+  // This can happen when Paddle sends webhook without scheduled_change but user requested a downgrade
+  const hasExistingScheduledDowngrade = existingScheduledDowngrade || existingScheduledChange?.plan;
+
+  if (hasExistingScheduledDowngrade && plan !== currentStoredPlan) {
+    // There's a scheduled downgrade in Firestore - Paddle is telling us about the new plan
+    // but we should NOT apply it yet until the billing period ends
+    // The plan from Paddle might be the scheduled plan, not the current active plan
+    const scheduledDowngradePlan = existingScheduledDowngrade || existingScheduledChange?.plan;
+
+    if (plan === scheduledDowngradePlan) {
+      // Paddle is sending us the scheduled plan - don't update the current plan yet
+      // Only update metadata, keep the current plan and scheduled change info
+      console.log(`Subscription update received for user ${userId}, but keeping current plan (${currentStoredPlan}) - scheduled downgrade to ${plan} pending`);
+
+      await adminDb
+        .collection("users")
+        .doc(userId)
+        .update({
+          "subscription.status": status,
+          "subscription.currentPeriodEnd": data.current_billing_period?.ends_at
+            ? new Date(data.current_billing_period.ends_at)
+            : null,
+          "subscription.updatedAt": FieldValue.serverTimestamp(),
+          // Keep existing scheduled downgrade info, don't clear it
+        });
+
+      return;
+    }
+  }
+
   // No scheduled change - apply the plan change immediately
   await adminDb
     .collection("users")
@@ -279,6 +317,8 @@ async function updateUserSubscription(userId: string, data: any) {
         : null,
       "subscription.updatedAt": FieldValue.serverTimestamp(),
       "subscription.scheduledChange": null, // Clear any previous scheduled change
+      "subscription.scheduledDowngrade": null,
+      "subscription.scheduledDowngradeAt": null,
       limits,
       plan,
     });
