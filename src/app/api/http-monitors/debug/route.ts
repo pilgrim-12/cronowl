@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getMonitorsDueForCheck } from "@/lib/http-monitors";
+
+interface MonitorDoc extends DocumentData {
+  name?: string;
+  isEnabled?: boolean;
+  status?: string;
+  lastCheckedAt?: { toDate: () => Date } | null;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -17,7 +24,7 @@ export async function GET(request: NextRequest) {
     const allSnapshot = await getDocs(allMonitorsQuery);
     const allMonitors = allSnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...(doc.data() as MonitorDoc)
     }));
 
     // Query with isEnabled filter
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
     const enabledSnapshot = await getDocs(enabledQuery);
     const enabledMonitors = enabledSnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...(doc.data() as MonitorDoc)
     }));
 
     // Use the library function
