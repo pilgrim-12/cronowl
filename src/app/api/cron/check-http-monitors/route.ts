@@ -36,8 +36,20 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get all monitors due for check
-    const monitors = await getMonitorsDueForCheck();
-    logger.info(`Found ${monitors.length} HTTP monitors due for check`);
+    let monitors;
+    try {
+      monitors = await getMonitorsDueForCheck();
+      logger.info(`Found ${monitors.length} HTTP monitors due for check`);
+    } catch (fetchError) {
+      logger.error("Error fetching monitors due for check", undefined, fetchError instanceof Error ? fetchError : new Error(String(fetchError)));
+      return NextResponse.json({
+        ok: false,
+        error: "Failed to fetch monitors",
+        message: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        durationMs: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
 
     // Process monitors in parallel with concurrency limit
     const CONCURRENCY_LIMIT = 10;
