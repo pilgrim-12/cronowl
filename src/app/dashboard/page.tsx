@@ -1635,7 +1635,7 @@ export default function DashboardPage() {
           onSave={handleCreateHttpMonitor}
           title="Create HTTP Monitor"
           existingTags={allMonitorTags}
-          userPlan={httpMonitorUsage?.plan || "free"}
+          userPlan={planUsage?.plan || "free"}
         />
       )}
 
@@ -1645,7 +1645,7 @@ export default function DashboardPage() {
           onSave={handleEditHttpMonitor}
           title="Edit HTTP Monitor"
           existingTags={allMonitorTags}
-          userPlan={httpMonitorUsage?.plan || "free"}
+          userPlan={planUsage?.plan || "free"}
           initialData={{
             name: editingHttpMonitor.name,
             url: editingHttpMonitor.url,
