@@ -23,6 +23,25 @@ import {
   isValidCronExpression,
   getNextRunTime,
 } from "@/lib/checks";
+import {
+  HttpMonitor,
+  HttpMonitorCheck,
+  HttpMonitorStatusEvent,
+  HttpMethod,
+  ContentType,
+  HttpMonitorLimitResult,
+  CreateHttpMonitorData,
+  getUserHttpMonitors,
+  createHttpMonitor,
+  deleteHttpMonitor,
+  updateHttpMonitor,
+  pauseHttpMonitor,
+  resumeHttpMonitor,
+  canCreateHttpMonitor,
+  getHttpMonitorChecks,
+  getHttpMonitorStatusHistory,
+} from "@/lib/http-monitors";
+import { validateMonitorUrl } from "@/lib/http-monitor-checker";
 import { PLANS } from "@/lib/plans";
 import { SCHEDULE_OPTIONS, CRON_PRESETS, TIMEZONE_OPTIONS } from "@/lib/constants";
 import Link from "next/link";
@@ -32,10 +51,22 @@ import { Header } from "@/components/Header";
 import { OwlLogo } from "@/components/OwlLogo";
 import { useConfirm } from "@/components/ConfirmDialog";
 
+type DashboardTab = "checks" | "http-monitors";
+
 export default function DashboardPage() {
   const { user, loading, signOut, isAdmin } = useAuth();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<DashboardTab>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("cronowl-dashboard-tab") as DashboardTab) || "checks";
+    }
+    return "checks";
+  });
+
+  // Checks state
   const [checks, setChecks] = useState<Check[]>([]);
   const [loadingChecks, setLoadingChecks] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -64,6 +95,17 @@ export default function DashboardPage() {
   const [showRefreshDropdown, setShowRefreshDropdown] = useState(false);
   const refreshDropdownRef = useRef<HTMLDivElement>(null);
 
+  // HTTP Monitors state
+  const [httpMonitors, setHttpMonitors] = useState<HttpMonitor[]>([]);
+  const [loadingMonitors, setLoadingMonitors] = useState(true);
+  const [showCreateHttpMonitorModal, setShowCreateHttpMonitorModal] = useState(false);
+  const [editingHttpMonitor, setEditingHttpMonitor] = useState<HttpMonitor | null>(null);
+  const [expandedMonitor, setExpandedMonitor] = useState<string | null>(null);
+  const [monitorChecks, setMonitorChecks] = useState<Record<string, HttpMonitorCheck[]>>({});
+  const [monitorStatusHistory, setMonitorStatusHistory] = useState<Record<string, HttpMonitorStatusEvent[]>>({});
+  const [httpMonitorUsage, setHttpMonitorUsage] = useState<HttpMonitorLimitResult | null>(null);
+  const [selectedMonitorTag, setSelectedMonitorTag] = useState<string | null>(null);
+
   // Get all unique tags from checks
   const allTags = Array.from(
     new Set(checks.flatMap(check => check.tags || []))
@@ -73,6 +115,21 @@ export default function DashboardPage() {
   const filteredChecks = selectedTag
     ? checks.filter(check => check.tags?.includes(selectedTag))
     : checks;
+
+  // Get all unique tags from HTTP monitors
+  const allMonitorTags = Array.from(
+    new Set(httpMonitors.flatMap(monitor => monitor.tags || []))
+  ).sort();
+
+  // Filter HTTP monitors by selected tag
+  const filteredMonitors = selectedMonitorTag
+    ? httpMonitors.filter(monitor => monitor.tags?.includes(selectedMonitorTag))
+    : httpMonitors;
+
+  // Save tab preference
+  useEffect(() => {
+    localStorage.setItem("cronowl-dashboard-tab", activeTab);
+  }, [activeTab]);
 
   // Save preferences to localStorage
   useEffect(() => {
@@ -121,17 +178,42 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+  const loadHttpMonitors = useCallback(async (silent = false) => {
+    if (!user) return;
+    if (!silent) {
+      setLoadingMonitors(true);
+    }
+    try {
+      const monitors = await getUserHttpMonitors(user.uid);
+      setHttpMonitors(monitors);
+      setLastUpdated(new Date());
+      // Load HTTP monitor plan usage
+      const usage = await canCreateHttpMonitor(user.uid);
+      setHttpMonitorUsage(usage);
+    } catch (error) {
+      console.error("Failed to load HTTP monitors:", error);
+    } finally {
+      if (!silent) {
+        setLoadingMonitors(false);
+      }
+    }
+  }, [user]);
+
+  const loadAll = useCallback(async (silent = false) => {
+    await Promise.all([loadChecks(silent), loadHttpMonitors(silent)]);
+  }, [loadChecks, loadHttpMonitors]);
+
   useEffect(() => {
     if (!user) return;
 
-    loadChecks();
+    loadAll();
     setCountdown(refreshInterval);
 
     // Countdown timer (every second)
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          loadChecks(true);
+          loadAll(true);
           return refreshInterval;
         }
         return prev - 1;
@@ -143,7 +225,7 @@ export default function DashboardPage() {
         clearInterval(countdownRef.current);
       }
     };
-  }, [user, loadChecks, refreshInterval]);
+  }, [user, loadAll, refreshInterval]);
 
   const loadPings = async (checkId: string) => {
     try {
@@ -171,6 +253,61 @@ export default function DashboardPage() {
       // Always reload data when expanding to get fresh metrics
       loadPings(checkId);
       loadStatusHistory(checkId);
+    }
+  };
+
+  // HTTP Monitor helpers
+  const loadMonitorChecks = async (monitorId: string) => {
+    try {
+      const checks = await getHttpMonitorChecks(monitorId, 50);
+      setMonitorChecks((prev) => ({ ...prev, [monitorId]: checks }));
+    } catch (error) {
+      console.error("Failed to load monitor checks:", error);
+    }
+  };
+
+  const loadMonitorStatusHistory = async (monitorId: string) => {
+    try {
+      const history = await getHttpMonitorStatusHistory(monitorId, 20);
+      setMonitorStatusHistory((prev) => ({ ...prev, [monitorId]: history }));
+    } catch (error) {
+      console.error("Failed to load monitor status history:", error);
+    }
+  };
+
+  const toggleMonitorExpand = (monitorId: string) => {
+    if (expandedMonitor === monitorId) {
+      setExpandedMonitor(null);
+    } else {
+      setExpandedMonitor(monitorId);
+      loadMonitorChecks(monitorId);
+      loadMonitorStatusHistory(monitorId);
+    }
+  };
+
+  const getMonitorStatusColor = (status: HttpMonitor["status"]) => {
+    switch (status) {
+      case "up":
+        return "bg-green-500";
+      case "down":
+        return "bg-red-500";
+      case "degraded":
+        return "bg-yellow-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getMonitorStatusText = (status: HttpMonitor["status"]) => {
+    switch (status) {
+      case "up":
+        return "UP";
+      case "down":
+        return "DOWN";
+      case "degraded":
+        return "DEGRADED";
+      default:
+        return "PENDING";
     }
   };
 
@@ -272,6 +409,70 @@ export default function DashboardPage() {
       await loadChecks();
     } catch (error) {
       console.error("Failed to delete check:", error);
+    }
+  };
+
+  // HTTP Monitor handlers
+  const handleCreateHttpMonitor = async (data: CreateHttpMonitorData) => {
+    if (!user) return;
+    setLimitError(null);
+    try {
+      const limitCheck = await canCreateHttpMonitor(user.uid);
+      if (!limitCheck.allowed) {
+        setLimitError(limitCheck.reason || "HTTP monitor limit reached");
+        return;
+      }
+      await createHttpMonitor(user.uid, data);
+      await loadHttpMonitors();
+      setShowCreateHttpMonitorModal(false);
+    } catch (error) {
+      console.error("Failed to create HTTP monitor:", error);
+    }
+  };
+
+  const handleEditHttpMonitor = async (data: CreateHttpMonitorData) => {
+    if (!editingHttpMonitor) return;
+    try {
+      await updateHttpMonitor(editingHttpMonitor.id, data);
+      await loadHttpMonitors();
+      setEditingHttpMonitor(null);
+    } catch (error) {
+      console.error("Failed to update HTTP monitor:", error);
+    }
+  };
+
+  const handleDeleteHttpMonitor = async (monitorId: string) => {
+    const confirmed = await confirm({
+      title: "Delete HTTP Monitor",
+      message: "Are you sure you want to delete this HTTP monitor? This action cannot be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      variant: "danger",
+    });
+    if (!confirmed) return;
+    try {
+      await deleteHttpMonitor(monitorId);
+      await loadHttpMonitors();
+    } catch (error) {
+      console.error("Failed to delete HTTP monitor:", error);
+    }
+  };
+
+  const handlePauseMonitor = async (monitorId: string) => {
+    try {
+      await pauseHttpMonitor(monitorId);
+      await loadHttpMonitors();
+    } catch (error) {
+      console.error("Failed to pause monitor:", error);
+    }
+  };
+
+  const handleResumeMonitor = async (monitorId: string) => {
+    try {
+      await resumeHttpMonitor(monitorId);
+      await loadHttpMonitors();
+    } catch (error) {
+      console.error("Failed to resume monitor:", error);
     }
   };
 
@@ -391,6 +592,45 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-1 mb-6 border-b border-gray-200 dark:border-gray-800">
+          <button
+            onClick={() => setActiveTab("checks")}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+              activeTab === "checks"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            Cron Checks
+            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">
+              {checks.length}
+            </span>
+            {activeTab === "checks" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab("http-monitors")}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+              activeTab === "http-monitors"
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            }`}
+          >
+            HTTP Monitors
+            <span className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800">
+              {httpMonitors.length}
+            </span>
+            {activeTab === "http-monitors" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Checks Tab Content */}
+        {activeTab === "checks" && (
+          <>
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div>
@@ -1023,6 +1263,338 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+          </>
+        )}
+
+        {/* HTTP Monitors Tab Content */}
+        {activeTab === "http-monitors" && (
+          <>
+            {/* HTTP Monitors Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">HTTP Monitors</h2>
+                {lastUpdated && (
+                  <p className="text-gray-500 text-xs mt-1">
+                    Last updated: {lastUpdated.toLocaleTimeString()} • Refresh in {countdown}s
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowCreateHttpMonitorModal(true)}
+                  className="bg-blue-600 text-white rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base font-medium hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/25 active:bg-blue-700 transition-all"
+                >
+                  + New Monitor
+                </button>
+              </div>
+            </div>
+
+            {/* HTTP Monitor Usage */}
+            {httpMonitorUsage && (
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 max-w-xs">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all ${
+                          httpMonitorUsage.current / httpMonitorUsage.limit > 0.9
+                            ? "bg-red-500"
+                            : httpMonitorUsage.current / httpMonitorUsage.limit > 0.7
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
+                        }`}
+                        style={{
+                          width: `${Math.min((httpMonitorUsage.current / httpMonitorUsage.limit) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap">
+                    {httpMonitorUsage.current} / {httpMonitorUsage.limit} monitors
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Monitor Tag Filter */}
+            {allMonitorTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="text-gray-500 text-sm">Filter:</span>
+                <button
+                  onClick={() => setSelectedMonitorTag(null)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    selectedMonitorTag === null
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  All ({httpMonitors.length})
+                </button>
+                {allMonitorTags.map((tag) => {
+                  const count = httpMonitors.filter(m => m.tags?.includes(tag)).length;
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedMonitorTag(selectedMonitorTag === tag ? null : tag)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedMonitorTag === tag
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {tag} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* HTTP Monitors List */}
+            {loadingMonitors ? (
+              <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                Loading HTTP monitors...
+              </div>
+            ) : httpMonitors.length === 0 ? (
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8 text-center">
+                <div className="flex justify-center mb-4">
+                  <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                  No HTTP monitors yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  Monitor your web endpoints and get alerted when they go down
+                </p>
+                <button
+                  onClick={() => setShowCreateHttpMonitorModal(true)}
+                  className="bg-blue-600 text-white rounded-lg px-6 py-2.5 font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Create your first HTTP monitor
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredMonitors.map((monitor) => (
+                  <div key={monitor.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${getMonitorStatusColor(monitor.status)}`} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-gray-900 dark:text-white font-medium truncate">{monitor.name}</h3>
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                              monitor.status === "up" ? "bg-green-500/20 text-green-600 dark:text-green-400" :
+                              monitor.status === "down" ? "bg-red-500/20 text-red-600 dark:text-red-400" :
+                              monitor.status === "degraded" ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" :
+                              "bg-gray-500/20 text-gray-600 dark:text-gray-400"
+                            }`}>
+                              {getMonitorStatusText(monitor.status)}
+                            </span>
+                            {!monitor.isEnabled && (
+                              <span className="text-xs px-1.5 py-0.5 rounded bg-gray-500/20 text-gray-600 dark:text-gray-400">
+                                PAUSED
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-500 dark:text-gray-400 text-sm truncate">
+                            {monitor.method} {monitor.url}
+                          </p>
+                          <p className="text-gray-500 text-xs mt-1">
+                            Every {monitor.intervalSeconds >= 60 ? `${monitor.intervalSeconds / 60}min` : `${monitor.intervalSeconds}s`}
+                            {monitor.lastResponseTimeMs && ` • ${monitor.lastResponseTimeMs}ms`}
+                            {monitor.lastStatusCode && ` • ${monitor.lastStatusCode}`}
+                          </p>
+                          {monitor.tags && monitor.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {monitor.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  onClick={() => setSelectedMonitorTag(tag)}
+                                  className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => toggleMonitorExpand(monitor.id)}
+                          className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-xs sm:text-sm px-2 sm:px-3 py-1"
+                        >
+                          {expandedMonitor === monitor.id ? "Hide" : "History"}
+                        </button>
+                        {monitor.isEnabled ? (
+                          <button
+                            onClick={() => handlePauseMonitor(monitor.id)}
+                            className="text-yellow-500 dark:text-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                          >
+                            Pause
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleResumeMonitor(monitor.id)}
+                            className="text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                          >
+                            Resume
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setEditingHttpMonitor(monitor)}
+                          className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteHttpMonitor(monitor.id)}
+                          className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 text-xs sm:text-sm px-2 sm:px-3 py-1"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Monitor Error */}
+                    {monitor.lastError && monitor.status === "down" && (
+                      <div className="mt-3 bg-red-500/10 border border-red-500/20 rounded p-2">
+                        <p className="text-red-500 dark:text-red-400 text-sm">{monitor.lastError}</p>
+                      </div>
+                    )}
+
+                    {/* Expanded Monitor History */}
+                    {expandedMonitor === monitor.id && (
+                      <div className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-4">
+                        {/* Response Time Chart */}
+                        {monitorChecks[monitor.id] && monitorChecks[monitor.id].some(c => c.responseTimeMs !== undefined) && (
+                          <div className="mb-6">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Response Time</h4>
+                            <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-4">
+                              <div className="flex items-end gap-1 h-16">
+                                {monitorChecks[monitor.id]
+                                  .filter(c => c.responseTimeMs !== undefined)
+                                  .slice(0, 30)
+                                  .reverse()
+                                  .map((check, _i, arr) => {
+                                    const maxTime = Math.max(...arr.map(c => c.responseTimeMs || 0));
+                                    const height = maxTime > 0 ? ((check.responseTimeMs || 0) / maxTime) * 100 : 0;
+                                    return (
+                                      <div
+                                        key={check.id}
+                                        className={`flex-1 rounded-t transition-all ${
+                                          check.status === "failure" ? "bg-red-500" : "bg-blue-500"
+                                        }`}
+                                        style={{ height: `${Math.max(height, 4)}%` }}
+                                        title={`${check.responseTimeMs}ms - ${check.status}`}
+                                      />
+                                    );
+                                  })}
+                              </div>
+                              <div className="flex justify-between text-gray-500 text-xs mt-2">
+                                <span>Older</span>
+                                <span>
+                                  Avg: {Math.round(
+                                    monitorChecks[monitor.id]
+                                      .filter(c => c.responseTimeMs !== undefined)
+                                      .reduce((sum, c) => sum + (c.responseTimeMs || 0), 0) /
+                                    monitorChecks[monitor.id].filter(c => c.responseTimeMs !== undefined).length
+                                  )}ms
+                                </span>
+                                <span>Recent</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Status History */}
+                        <div className="mb-6">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Status History</h4>
+                          {!monitorStatusHistory[monitor.id] ? (
+                            <p className="text-gray-500 text-sm">Loading...</p>
+                          ) : monitorStatusHistory[monitor.id].length === 0 ? (
+                            <p className="text-gray-500 text-sm">No status changes recorded yet</p>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {monitorStatusHistory[monitor.id].slice(0, 10).map((event) => (
+                                <div
+                                  key={event.id}
+                                  className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 ${
+                                    event.status === "up" ? "bg-green-500/10 border border-green-500/20" :
+                                    event.status === "down" ? "bg-red-500/10 border border-red-500/20" :
+                                    "bg-yellow-500/10 border border-yellow-500/20"
+                                  }`}
+                                >
+                                  <div className={`w-2 h-2 rounded-full ${getMonitorStatusColor(event.status)}`} />
+                                  <div className="flex flex-col">
+                                    <span className={`text-xs font-medium ${
+                                      event.status === "up" ? "text-green-400" :
+                                      event.status === "down" ? "text-red-400" :
+                                      "text-yellow-400"
+                                    }`}>
+                                      {getMonitorStatusText(event.status)}
+                                    </span>
+                                    <span className="text-gray-500 text-xs">
+                                      {new Date(event.timestamp.toDate()).toLocaleDateString()}{" "}
+                                      {new Date(event.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                  </div>
+                                  {event.duration && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">
+                                      {formatDuration(event.duration)}
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Recent Checks */}
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Recent Checks</h4>
+                          {!monitorChecks[monitor.id] ? (
+                            <p className="text-gray-500 text-sm">Loading...</p>
+                          ) : monitorChecks[monitor.id].length === 0 ? (
+                            <p className="text-gray-500 text-sm">No checks yet</p>
+                          ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                              {monitorChecks[monitor.id].slice(0, 12).map((check) => (
+                                <div
+                                  key={check.id}
+                                  className={`bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-2 text-center border ${
+                                    check.status === "failure" ? "border-red-500/30" : "border-transparent"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-center gap-1">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${
+                                      check.status === "failure" ? "bg-red-500" : "bg-green-500"
+                                    }`} />
+                                    <span className="text-gray-700 dark:text-gray-300 text-xs">
+                                      {check.statusCode || "ERR"}
+                                    </span>
+                                  </div>
+                                  <div className="text-gray-500 text-xs">
+                                    {check.responseTimeMs}ms
+                                  </div>
+                                  <div className="text-gray-500 text-xs">
+                                    {new Date(check.timestamp.toDate()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </main>
 
       {showCreateModal && (
@@ -1056,8 +1628,441 @@ export default function DashboardPage() {
         />
       )}
 
+      {/* HTTP Monitor Modals */}
+      {showCreateHttpMonitorModal && (
+        <HttpMonitorModal
+          onClose={() => setShowCreateHttpMonitorModal(false)}
+          onSave={handleCreateHttpMonitor}
+          title="Create HTTP Monitor"
+          existingTags={allMonitorTags}
+          userPlan={httpMonitorUsage?.plan || "free"}
+        />
+      )}
+
+      {editingHttpMonitor && (
+        <HttpMonitorModal
+          onClose={() => setEditingHttpMonitor(null)}
+          onSave={handleEditHttpMonitor}
+          title="Edit HTTP Monitor"
+          existingTags={allMonitorTags}
+          userPlan={httpMonitorUsage?.plan || "free"}
+          initialData={{
+            name: editingHttpMonitor.name,
+            url: editingHttpMonitor.url,
+            method: editingHttpMonitor.method,
+            expectedStatusCodes: editingHttpMonitor.expectedStatusCodes,
+            timeoutMs: editingHttpMonitor.timeoutMs,
+            intervalSeconds: editingHttpMonitor.intervalSeconds,
+            alertAfterFailures: editingHttpMonitor.alertAfterFailures,
+            tags: editingHttpMonitor.tags,
+            webhookUrl: editingHttpMonitor.webhookUrl,
+            assertions: editingHttpMonitor.assertions,
+          }}
+        />
+      )}
+
       <InstallPrompt />
       {ConfirmDialog}
+    </div>
+  );
+}
+
+// HTTP Monitor Modal Component
+function HttpMonitorModal({
+  onClose,
+  onSave,
+  title,
+  initialData,
+  existingTags = [],
+  userPlan = "free",
+}: {
+  onClose: () => void;
+  onSave: (data: CreateHttpMonitorData) => void;
+  title: string;
+  initialData?: {
+    name?: string;
+    url?: string;
+    method?: HttpMethod;
+    expectedStatusCodes?: number[];
+    timeoutMs?: number;
+    intervalSeconds?: number;
+    alertAfterFailures?: number;
+    tags?: string[];
+    webhookUrl?: string;
+    assertions?: {
+      maxResponseTimeMs?: number;
+      bodyContains?: string;
+      bodyNotContains?: string;
+    };
+  };
+  existingTags?: string[];
+  userPlan?: keyof typeof PLANS;
+}) {
+  const planLimits = PLANS[userPlan];
+  const minInterval = planLimits.minHttpIntervalSeconds;
+
+  const [name, setName] = useState(initialData?.name || "");
+  const [url, setUrl] = useState(initialData?.url || "");
+  const [method, setMethod] = useState<HttpMethod>(initialData?.method || "GET");
+  const [expectedStatusCodes, setExpectedStatusCodes] = useState(
+    initialData?.expectedStatusCodes?.join(", ") || "200, 201, 204"
+  );
+  const [timeoutMs, setTimeoutMs] = useState(initialData?.timeoutMs || 10000);
+  const [intervalSeconds, setIntervalSeconds] = useState(
+    initialData?.intervalSeconds || Math.max(300, minInterval)
+  );
+  const [alertAfterFailures, setAlertAfterFailures] = useState(
+    initialData?.alertAfterFailures || 2
+  );
+  const [webhookUrl, setWebhookUrl] = useState(initialData?.webhookUrl || "");
+  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
+  const [tagInput, setTagInput] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [maxResponseTimeMs, setMaxResponseTimeMs] = useState(
+    initialData?.assertions?.maxResponseTimeMs || 0
+  );
+  const [bodyContains, setBodyContains] = useState(
+    initialData?.assertions?.bodyContains || ""
+  );
+  const [bodyNotContains, setBodyNotContains] = useState(
+    initialData?.assertions?.bodyNotContains || ""
+  );
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  const validateUrl = (urlToValidate: string) => {
+    if (!urlToValidate) {
+      setUrlError(null);
+      return;
+    }
+    const result = validateMonitorUrl(urlToValidate);
+    setUrlError(result.valid ? null : result.error || "Invalid URL");
+  };
+
+  const handleSubmit = () => {
+    if (!name.trim() || !url.trim()) return;
+
+    const urlValidation = validateMonitorUrl(url);
+    if (!urlValidation.valid) {
+      setUrlError(urlValidation.error || "Invalid URL");
+      return;
+    }
+
+    const statusCodes = expectedStatusCodes
+      .split(",")
+      .map(s => parseInt(s.trim()))
+      .filter(n => !isNaN(n) && n >= 100 && n < 600);
+
+    const data: CreateHttpMonitorData = {
+      name: name.trim(),
+      url: url.trim(),
+      method,
+      expectedStatusCodes: statusCodes.length > 0 ? statusCodes : [200, 201, 204],
+      timeoutMs,
+      intervalSeconds: Math.max(intervalSeconds, minInterval),
+      alertAfterFailures,
+      tags: tags.length > 0 ? tags : undefined,
+      webhookUrl: webhookUrl.trim() || undefined,
+      assertions: showAdvanced && (maxResponseTimeMs > 0 || bodyContains || bodyNotContains)
+        ? {
+            maxResponseTimeMs: maxResponseTimeMs > 0 ? maxResponseTimeMs : undefined,
+            bodyContains: bodyContains || undefined,
+            bodyNotContains: bodyNotContains || undefined,
+          }
+        : undefined,
+    };
+
+    onSave(data);
+  };
+
+  const addTag = () => {
+    const tag = tagInput.trim().toLowerCase();
+    if (tag && !tags.includes(tag) && tags.length < 5) {
+      setTags([...tags, tag]);
+      setTagInput("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name *
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Production API"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* URL */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                URL *
+              </label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  validateUrl(e.target.value);
+                }}
+                placeholder="https://api.example.com/health"
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  urlError ? "border-red-500" : "border-gray-300 dark:border-gray-700"
+                }`}
+              />
+              {urlError && <p className="text-red-500 text-sm mt-1">{urlError}</p>}
+            </div>
+
+            {/* Method and Timeout */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Method
+                </label>
+                <select
+                  value={method}
+                  onChange={(e) => setMethod(e.target.value as HttpMethod)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="GET">GET</option>
+                  <option value="HEAD">HEAD</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Timeout (ms)
+                </label>
+                <input
+                  type="number"
+                  value={timeoutMs}
+                  onChange={(e) => setTimeoutMs(Math.max(1000, Math.min(30000, parseInt(e.target.value) || 10000)))}
+                  min={1000}
+                  max={30000}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Interval and Alert Threshold */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Check Interval
+                </label>
+                <select
+                  value={intervalSeconds}
+                  onChange={(e) => setIntervalSeconds(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                >
+                  {minInterval <= 60 && <option value={60}>Every 1 minute</option>}
+                  {minInterval <= 120 && <option value={120}>Every 2 minutes</option>}
+                  <option value={300}>Every 5 minutes</option>
+                  <option value={600}>Every 10 minutes</option>
+                  <option value={900}>Every 15 minutes</option>
+                  <option value={1800}>Every 30 minutes</option>
+                  <option value={3600}>Every 1 hour</option>
+                </select>
+                {minInterval > 60 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Min interval: {minInterval / 60}min ({planLimits.name} plan)
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Alert after failures
+                </label>
+                <select
+                  value={alertAfterFailures}
+                  onChange={(e) => setAlertAfterFailures(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={1}>1 failure</option>
+                  <option value={2}>2 failures</option>
+                  <option value={3}>3 failures</option>
+                  <option value={5}>5 failures</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Expected Status Codes */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Expected Status Codes
+              </label>
+              <input
+                type="text"
+                value={expectedStatusCodes}
+                onChange={(e) => setExpectedStatusCodes(e.target.value)}
+                placeholder="200, 201, 204"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">Comma-separated list of valid HTTP status codes</p>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tags (optional)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                  placeholder="Add tag..."
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  list="existing-tags"
+                />
+                <datalist id="existing-tags">
+                  {existingTags.filter(t => !tags.includes(t)).map(tag => (
+                    <option key={tag} value={tag} />
+                  ))}
+                </datalist>
+                <button
+                  type="button"
+                  onClick={addTag}
+                  className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  Add
+                </button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-sm"
+                    >
+                      {tag}
+                      <button onClick={() => removeTag(tag)} className="hover:text-red-500">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Advanced Settings Toggle */}
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${showAdvanced ? "rotate-90" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Advanced Settings
+            </button>
+
+            {showAdvanced && (
+              <div className="space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+                {/* Response Time Threshold */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Max Response Time (ms)
+                  </label>
+                  <input
+                    type="number"
+                    value={maxResponseTimeMs || ""}
+                    onChange={(e) => setMaxResponseTimeMs(parseInt(e.target.value) || 0)}
+                    placeholder="2000"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Alert when response time exceeds this (0 = disabled)</p>
+                </div>
+
+                {/* Body Contains */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Response Body Contains
+                  </label>
+                  <input
+                    type="text"
+                    value={bodyContains}
+                    onChange={(e) => setBodyContains(e.target.value)}
+                    placeholder='e.g. "status": "ok"'
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Body Not Contains */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Response Body Must NOT Contain
+                  </label>
+                  <input
+                    type="text"
+                    value={bodyNotContains}
+                    onChange={(e) => setBodyNotContains(e.target.value)}
+                    placeholder="error"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Webhook URL */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Webhook URL (optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={webhookUrl}
+                    onChange={(e) => setWebhookUrl(e.target.value)}
+                    placeholder="https://hooks.slack.com/..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={!name.trim() || !url.trim() || !!urlError}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {initialData ? "Save Changes" : "Create Monitor"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

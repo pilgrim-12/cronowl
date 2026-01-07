@@ -11,6 +11,10 @@ export const PLANS = {
     teamMembers: 0,
     customBranding: false, // Custom branding only for Pro
     activeIncidentsLimit: 1, // Max active incidents per status page
+    // HTTP Monitors limits
+    httpMonitorsLimit: 5,
+    minHttpIntervalSeconds: 300, // 5 minutes
+    httpHistoryDays: 1, // 24 hours
     features: [
       "25 checks",
       "Email alerts",
@@ -18,6 +22,7 @@ export const PLANS = {
       "Telegram alerts",
       "7 days history",
       "1 status page",
+      "5 HTTP monitors",
     ],
   },
   starter: {
@@ -32,6 +37,10 @@ export const PLANS = {
     teamMembers: 0,
     customBranding: false,
     activeIncidentsLimit: 3,
+    // HTTP Monitors limits
+    httpMonitorsLimit: 25,
+    minHttpIntervalSeconds: 120, // 2 minutes
+    httpHistoryDays: 7,
     features: [
       "100 checks",
       "Everything in Free",
@@ -39,6 +48,7 @@ export const PLANS = {
       "Slack integration",
       "30 days history",
       "3 status pages",
+      "25 HTTP monitors",
     ],
   },
   pro: {
@@ -53,6 +63,10 @@ export const PLANS = {
     teamMembers: 3,
     customBranding: true, // Custom branding available
     activeIncidentsLimit: 100, // Effectively unlimited
+    // HTTP Monitors limits
+    httpMonitorsLimit: 50,
+    minHttpIntervalSeconds: 60, // 1 minute
+    httpHistoryDays: 30,
     features: [
       "500 checks",
       "Everything in Starter",
@@ -61,6 +75,7 @@ export const PLANS = {
       "Team members (3 users)",
       "Custom branding",
       "Priority support",
+      "50 HTTP monitors",
     ],
   },
 } as const;

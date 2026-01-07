@@ -19,7 +19,9 @@
       "Bash(k6 version:*)",
       "Bash(find:*)",
       "Bash(git checkout:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []

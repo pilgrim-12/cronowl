@@ -113,3 +113,197 @@ export async function sendPaymentFailedAlert(to: string, planName: string) {
     return false;
   }
 }
+
+// ==================== HTTP Monitor Alerts ====================
+
+export interface HttpMonitorAlertData {
+  name: string;
+  url: string;
+  statusCode?: number;
+  responseTimeMs?: number;
+  error?: string;
+  responseBody?: string;
+  failedChecks?: number;
+  downtimeDuration?: string;
+  maxResponseTimeMs?: number;
+}
+
+export async function sendHttpMonitorDownAlert(to: string, data: HttpMonitorAlertData) {
+  const statusText = data.statusCode ? `${data.statusCode} ${getStatusText(data.statusCode)}` : "Connection Failed";
+  try {
+    await resend.emails.send({
+      from: "CronOwl <noreply@cronowl.com>",
+      to,
+      subject: `🔴 [DOWN] ${data.name}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #ef4444;">🦉 HTTP Monitor Alert</h1>
+          <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0;">
+            <h2 style="color: #ef4444; margin: 0 0 16px 0;">[DOWN] ${escapeHtml(data.name)}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; width: 120px;">URL:</td>
+                <td style="padding: 8px 0; color: #333;">${escapeHtml(data.url)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Status:</td>
+                <td style="padding: 8px 0; color: #ef4444; font-weight: bold;">${statusText}</td>
+              </tr>
+              ${data.responseTimeMs ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Response time:</td>
+                <td style="padding: 8px 0; color: #333;">${data.responseTimeMs}ms</td>
+              </tr>
+              ` : ''}
+              ${data.failedChecks ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Failed checks:</td>
+                <td style="padding: 8px 0; color: #333;">${data.failedChecks}</td>
+              </tr>
+              ` : ''}
+              ${data.error ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Error:</td>
+                <td style="padding: 8px 0; color: #ef4444;">${escapeHtml(data.error)}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          ${data.responseBody ? `
+          <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 24px 0;">
+            <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Response preview:</p>
+            <pre style="margin: 0; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.responseBody)}</pre>
+          </div>
+          ` : ''}
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #999; font-size: 14px;">
+            <a href="https://cronowl.com/dashboard" style="color: #3b82f6;">View Dashboard</a>
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to send HTTP monitor down email:", error);
+    return false;
+  }
+}
+
+export async function sendHttpMonitorRecoveryAlert(to: string, data: HttpMonitorAlertData) {
+  const statusText = data.statusCode ? `${data.statusCode} ${getStatusText(data.statusCode)}` : "OK";
+  try {
+    await resend.emails.send({
+      from: "CronOwl <noreply@cronowl.com>",
+      to,
+      subject: `🟢 [RECOVERED] ${data.name}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #22c55e;">🦉 HTTP Monitor Recovery</h1>
+          <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 16px; margin: 24px 0;">
+            <h2 style="color: #22c55e; margin: 0 0 16px 0;">[RECOVERED] ${escapeHtml(data.name)}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; width: 120px;">URL:</td>
+                <td style="padding: 8px 0; color: #333;">${escapeHtml(data.url)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Status:</td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">${statusText}</td>
+              </tr>
+              ${data.responseTimeMs ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Response time:</td>
+                <td style="padding: 8px 0; color: #333;">${data.responseTimeMs}ms</td>
+              </tr>
+              ` : ''}
+              ${data.downtimeDuration ? `
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Downtime:</td>
+                <td style="padding: 8px 0; color: #333;">${data.downtimeDuration}</td>
+              </tr>
+              ` : ''}
+            </table>
+          </div>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #999; font-size: 14px;">
+            <a href="https://cronowl.com/dashboard" style="color: #3b82f6;">View Dashboard</a>
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to send HTTP monitor recovery email:", error);
+    return false;
+  }
+}
+
+export async function sendHttpMonitorDegradedAlert(to: string, data: HttpMonitorAlertData) {
+  const statusText = data.statusCode ? `${data.statusCode} ${getStatusText(data.statusCode)}` : "OK";
+  try {
+    await resend.emails.send({
+      from: "CronOwl <noreply@cronowl.com>",
+      to,
+      subject: `🟡 [DEGRADED] ${data.name}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #f97316;">🦉 HTTP Monitor Alert</h1>
+          <div style="background: #fffbeb; border-left: 4px solid #f97316; padding: 16px; margin: 24px 0;">
+            <h2 style="color: #f97316; margin: 0 0 16px 0;">[DEGRADED] ${escapeHtml(data.name)}</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666; width: 120px;">URL:</td>
+                <td style="padding: 8px 0; color: #333;">${escapeHtml(data.url)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Status:</td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">${statusText}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Response time:</td>
+                <td style="padding: 8px 0; color: #f97316; font-weight: bold;">${data.responseTimeMs}ms (threshold: ${data.maxResponseTimeMs}ms)</td>
+              </tr>
+            </table>
+          </div>
+          <p style="color: #666;">The endpoint is responding but slower than expected. This may indicate performance issues.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+          <p style="color: #999; font-size: 14px;">
+            <a href="https://cronowl.com/dashboard" style="color: #3b82f6;">View Dashboard</a>
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to send HTTP monitor degraded email:", error);
+    return false;
+  }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getStatusText(code: number): string {
+  const statusTexts: Record<number, string> = {
+    200: "OK",
+    201: "Created",
+    204: "No Content",
+    301: "Moved Permanently",
+    302: "Found",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+  };
+  return statusTexts[code] || "Unknown";
+}

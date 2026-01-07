@@ -2,12 +2,20 @@
 // Sends POST requests to user-configured URLs when check status changes
 
 export interface WebhookPayload {
-  event: "check.down" | "check.up" | "check.recovery" | "check.slow";
-  check: {
+  event: "check.down" | "check.up" | "check.recovery" | "check.slow" | "http_monitor.down" | "http_monitor.up" | "http_monitor.degraded";
+  check?: {
     id: string;
     name: string;
     slug: string;
     status: "up" | "down" | "new";
+  };
+  httpMonitor?: {
+    id: string;
+    name: string;
+    url: string;
+    status: "up" | "down" | "degraded" | "pending";
+    statusCode?: number;
+    responseTimeMs?: number;
   };
   timestamp: string;
   message: string;
@@ -33,10 +41,20 @@ function isDiscordWebhook(url: string): boolean {
  * Format payload for specific webhook service
  */
 function formatPayloadForService(url: string, payload: WebhookPayload): unknown {
+  // Determine if this is an HTTP monitor or cron check event
+  const isHttpMonitor = payload.event.startsWith("http_monitor.");
+
+  // Get the item name and status
+  const itemName = isHttpMonitor ? payload.httpMonitor?.name : payload.check?.name;
+  const itemStatus = isHttpMonitor ? payload.httpMonitor?.status : payload.check?.status;
+  const itemLabel = isHttpMonitor ? "Monitor" : "Check";
+
   if (isSlackWebhook(url)) {
     // Slack format with rich formatting
-    const emoji = payload.event === "check.down" ? "🔴" : payload.event === "check.slow" ? "🟡" : "🟢";
-    const color = payload.event === "check.down" ? "#dc2626" : payload.event === "check.slow" ? "#f97316" : "#16a34a";
+    const isDown = payload.event === "check.down" || payload.event === "http_monitor.down";
+    const isDegraded = payload.event === "check.slow" || payload.event === "http_monitor.degraded";
+    const emoji = isDown ? "🔴" : isDegraded ? "🟡" : "🟢";
+    const color = isDown ? "#dc2626" : isDegraded ? "#f97316" : "#16a34a";
     return {
       attachments: [
         {
@@ -54,7 +72,7 @@ function formatPayloadForService(url: string, payload: WebhookPayload): unknown 
               elements: [
                 {
                   type: "mrkdwn",
-                  text: `Check: \`${payload.check.name}\` | Status: \`${payload.check.status}\` | ${payload.timestamp}`,
+                  text: `${itemLabel}: \`${itemName || "Unknown"}\` | Status: \`${itemStatus || "Unknown"}\` | ${payload.timestamp}`,
                 },
               ],
             },
@@ -66,15 +84,17 @@ function formatPayloadForService(url: string, payload: WebhookPayload): unknown 
 
   if (isDiscordWebhook(url)) {
     // Discord format with embed
-    const color = payload.event === "check.down" ? 0xdc2626 : payload.event === "check.slow" ? 0xf97316 : 0x16a34a;
+    const isDown = payload.event === "check.down" || payload.event === "http_monitor.down";
+    const isDegraded = payload.event === "check.slow" || payload.event === "http_monitor.degraded";
+    const color = isDown ? 0xdc2626 : isDegraded ? 0xf97316 : 0x16a34a;
     return {
       embeds: [
         {
           title: payload.message,
           color,
           fields: [
-            { name: "Check", value: payload.check.name, inline: true },
-            { name: "Status", value: payload.check.status, inline: true },
+            { name: itemLabel, value: itemName || "Unknown", inline: true },
+            { name: "Status", value: itemStatus || "Unknown", inline: true },
           ],
           timestamp: payload.timestamp,
           footer: { text: "CronOwl" },
@@ -265,4 +285,100 @@ export function validateWebhookUrl(url: string): WebhookValidationResult {
  */
 export function isValidWebhookUrl(url: string): boolean {
   return validateWebhookUrl(url).valid;
+}
+
+// ==================== HTTP Monitor Webhook Alerts ====================
+
+export interface HttpMonitorWebhookData {
+  id: string;
+  name: string;
+  url: string;
+  status: "up" | "down" | "degraded" | "pending";
+  statusCode?: number;
+  responseTimeMs?: number;
+  error?: string;
+  failedChecks?: number;
+  downtimeDuration?: string;
+  maxResponseTimeMs?: number;
+}
+
+/**
+ * Send HTTP monitor down webhook alert
+ */
+export async function sendWebhookHttpMonitorDownAlert(
+  webhookUrl: string,
+  data: HttpMonitorWebhookData
+): Promise<boolean> {
+  const statusText = data.statusCode ? `${data.statusCode}` : "Connection Failed";
+  let message = `HTTP Monitor "${data.name}" is DOWN - ${statusText}`;
+  if (data.error) {
+    message += ` - ${data.error}`;
+  }
+
+  return sendWebhook(webhookUrl, {
+    event: "http_monitor.down",
+    httpMonitor: {
+      id: data.id,
+      name: data.name,
+      url: data.url,
+      status: data.status,
+      statusCode: data.statusCode,
+      responseTimeMs: data.responseTimeMs,
+    },
+    timestamp: new Date().toISOString(),
+    message,
+  });
+}
+
+/**
+ * Send HTTP monitor recovery webhook alert
+ */
+export async function sendWebhookHttpMonitorRecoveryAlert(
+  webhookUrl: string,
+  data: HttpMonitorWebhookData
+): Promise<boolean> {
+  const statusText = data.statusCode ? `${data.statusCode}` : "OK";
+  let message = `HTTP Monitor "${data.name}" is BACK UP - ${statusText}`;
+  if (data.downtimeDuration) {
+    message += ` (downtime: ${data.downtimeDuration})`;
+  }
+
+  return sendWebhook(webhookUrl, {
+    event: "http_monitor.up",
+    httpMonitor: {
+      id: data.id,
+      name: data.name,
+      url: data.url,
+      status: data.status,
+      statusCode: data.statusCode,
+      responseTimeMs: data.responseTimeMs,
+    },
+    timestamp: new Date().toISOString(),
+    message,
+  });
+}
+
+/**
+ * Send HTTP monitor degraded webhook alert
+ */
+export async function sendWebhookHttpMonitorDegradedAlert(
+  webhookUrl: string,
+  data: HttpMonitorWebhookData
+): Promise<boolean> {
+  const message = `HTTP Monitor "${data.name}" is DEGRADED - Response time ${data.responseTimeMs}ms exceeds threshold ${data.maxResponseTimeMs}ms`;
+
+  return sendWebhook(webhookUrl, {
+    event: "http_monitor.degraded",
+    httpMonitor: {
+      id: data.id,
+      name: data.name,
+      url: data.url,
+      status: data.status,
+      statusCode: data.statusCode,
+      responseTimeMs: data.responseTimeMs,
+    },
+    timestamp: new Date().toISOString(),
+    message,
+    maxDuration: data.maxResponseTimeMs,
+  });
 }

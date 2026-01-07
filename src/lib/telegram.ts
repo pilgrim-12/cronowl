@@ -131,3 +131,109 @@ export function generateLinkingCode(): string {
   }
   return code;
 }
+
+// ==================== HTTP Monitor Alerts ====================
+
+export interface HttpMonitorTelegramData {
+  name: string;
+  url: string;
+  statusCode?: number;
+  responseTimeMs?: number;
+  error?: string;
+  failedChecks?: number;
+  downtimeDuration?: string;
+  maxResponseTimeMs?: number;
+}
+
+/**
+ * Send HTTP monitor down alert via Telegram
+ */
+export async function sendTelegramHttpMonitorDownAlert(
+  chatId: string,
+  data: HttpMonitorTelegramData
+): Promise<boolean> {
+  const statusText = data.statusCode
+    ? `${data.statusCode} ${getStatusText(data.statusCode)}`
+    : "Connection Failed";
+
+  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  if (data.responseTimeMs) {
+    body += `\nResponse time: ${data.responseTimeMs}ms`;
+  }
+  if (data.failedChecks) {
+    body += `\nFailed checks: ${data.failedChecks}`;
+  }
+  if (data.error) {
+    body += `\nError: ${data.error}`;
+  }
+
+  return sendTelegramMessage(chatId, {
+    title: `[DOWN] ${data.name}`,
+    body,
+    type: "down",
+  });
+}
+
+/**
+ * Send HTTP monitor recovery alert via Telegram
+ */
+export async function sendTelegramHttpMonitorRecoveryAlert(
+  chatId: string,
+  data: HttpMonitorTelegramData
+): Promise<boolean> {
+  const statusText = data.statusCode
+    ? `${data.statusCode} ${getStatusText(data.statusCode)}`
+    : "OK";
+
+  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  if (data.responseTimeMs) {
+    body += `\nResponse time: ${data.responseTimeMs}ms`;
+  }
+  if (data.downtimeDuration) {
+    body += `\nDowntime duration: ${data.downtimeDuration}`;
+  }
+
+  return sendTelegramMessage(chatId, {
+    title: `[RECOVERED] ${data.name}`,
+    body,
+    type: "recovery",
+  });
+}
+
+/**
+ * Send HTTP monitor degraded alert via Telegram
+ */
+export async function sendTelegramHttpMonitorDegradedAlert(
+  chatId: string,
+  data: HttpMonitorTelegramData
+): Promise<boolean> {
+  const statusText = data.statusCode
+    ? `${data.statusCode} ${getStatusText(data.statusCode)}`
+    : "OK";
+
+  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  body += `\nResponse time: ${data.responseTimeMs}ms (threshold: ${data.maxResponseTimeMs}ms)`;
+
+  return sendTelegramMessage(chatId, {
+    title: `[DEGRADED] ${data.name}`,
+    body,
+    type: "slow",
+  });
+}
+
+function getStatusText(code: number): string {
+  const statusTexts: Record<number, string> = {
+    200: "OK",
+    201: "Created",
+    204: "No Content",
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+  };
+  return statusTexts[code] || "Unknown";
+}

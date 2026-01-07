@@ -364,6 +364,255 @@ export default function ApiDocsPage() {
           </Endpoint>
         </section>
 
+        {/* HTTP Monitors Endpoints */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">HTTP Monitors</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Monitor your HTTP endpoints for availability and performance. Get alerted when your services go down or become slow.
+          </p>
+
+          <Endpoint method="GET" path="/api/v1/http-monitors" description="List all HTTP monitors with optional filtering">
+            <h4 className="text-gray-900 dark:text-white font-medium mb-2">Query Parameters</h4>
+            <table className="w-full text-sm mb-4">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Parameter</th>
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Description</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>page</code></td>
+                  <td className="py-2">Page number (default: 1)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>limit</code></td>
+                  <td className="py-2">Results per page (default: 20, max: 100)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>status</code></td>
+                  <td className="py-2">Filter by status: up, down, degraded, pending</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>tag</code></td>
+                  <td className="py-2">Filter by tag</td>
+                </tr>
+              </tbody>
+            </table>
+            <CodeBlock title="Example">
+{`curl -H "Authorization: Bearer sk_live_xxx" \\
+  "https://cronowl.com/api/v1/http-monitors?status=up"`}
+            </CodeBlock>
+          </Endpoint>
+
+          <Endpoint method="POST" path="/api/v1/http-monitors" description="Create a new HTTP monitor">
+            <h4 className="text-gray-900 dark:text-white font-medium mb-2">Request Body</h4>
+            <table className="w-full text-sm mb-4">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Field</th>
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Type</th>
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Description</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>name</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">Monitor name (required)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>url</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">URL to monitor (required, https recommended)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>method</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">HTTP method: GET, HEAD, POST, PUT (default: GET)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>expectedStatusCodes</code></td>
+                  <td className="py-2">number[]</td>
+                  <td className="py-2">Expected status codes (default: [200, 201, 204])</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>timeoutMs</code></td>
+                  <td className="py-2">number</td>
+                  <td className="py-2">Request timeout in ms (1000-30000, default: 10000)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>intervalSeconds</code></td>
+                  <td className="py-2">number</td>
+                  <td className="py-2">Check interval in seconds (plan dependent)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>headers</code></td>
+                  <td className="py-2">object</td>
+                  <td className="py-2">Custom headers (sensitive values encrypted)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>body</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">Request body for POST/PUT</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>contentType</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">Content-Type: application/json, text/plain, etc.</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>assertions</code></td>
+                  <td className="py-2">object</td>
+                  <td className="py-2">Response assertions (see below)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>alertAfterFailures</code></td>
+                  <td className="py-2">number</td>
+                  <td className="py-2">Failures before alerting (1-10, default: 2)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>tags</code></td>
+                  <td className="py-2">string[]</td>
+                  <td className="py-2">Tags for organization (max 10)</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>webhookUrl</code></td>
+                  <td className="py-2">string</td>
+                  <td className="py-2">Webhook URL for alerts</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 className="text-gray-900 dark:text-white font-medium mb-2 mt-4">Assertions Object</h4>
+            <table className="w-full text-sm mb-4">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Field</th>
+                  <th className="text-left py-2 text-gray-500 dark:text-gray-400">Description</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-700 dark:text-gray-300">
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>maxResponseTimeMs</code></td>
+                  <td className="py-2">Max response time before marking as degraded</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>bodyContains</code></td>
+                  <td className="py-2">Response body must contain this string</td>
+                </tr>
+                <tr className="border-b border-gray-200 dark:border-gray-800">
+                  <td className="py-2"><code>bodyNotContains</code></td>
+                  <td className="py-2">Response body must NOT contain this string</td>
+                </tr>
+              </tbody>
+            </table>
+            <CodeBlock title="Example">
+{`curl -X POST \\
+  -H "Authorization: Bearer sk_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Production API",
+    "url": "https://api.example.com/health",
+    "method": "GET",
+    "intervalSeconds": 60,
+    "expectedStatusCodes": [200],
+    "assertions": {
+      "maxResponseTimeMs": 2000,
+      "bodyContains": "\"status\":\"ok\""
+    },
+    "alertAfterFailures": 2,
+    "tags": ["production", "api"]
+  }' \\
+  https://cronowl.com/api/v1/http-monitors`}
+            </CodeBlock>
+          </Endpoint>
+
+          <Endpoint method="GET" path="/api/v1/http-monitors/:id" description="Get a single HTTP monitor by ID">
+            <CodeBlock title="Response">
+{`{
+  "success": true,
+  "data": {
+    "id": "mon_abc123",
+    "name": "Production API",
+    "url": "https://api.example.com/health",
+    "method": "GET",
+    "expectedStatusCodes": [200],
+    "timeoutMs": 10000,
+    "intervalSeconds": 60,
+    "headers": { "Authorization": "Bear****" },
+    "body": "[REDACTED]",
+    "status": "up",
+    "lastCheckedAt": "2024-01-20T15:30:00Z",
+    "lastResponseTimeMs": 145,
+    "lastStatusCode": 200,
+    "uptimePercent24h": 99.9,
+    "avgResponseTime24h": 156,
+    "isEnabled": true,
+    "tags": ["production", "api"],
+    "createdAt": "2024-01-01T10:00:00Z"
+  }
+}`}
+            </CodeBlock>
+          </Endpoint>
+
+          <Endpoint method="PATCH" path="/api/v1/http-monitors/:id" description="Update an HTTP monitor">
+            <CodeBlock title="Example - Update interval and add assertion">
+{`curl -X PATCH \\
+  -H "Authorization: Bearer sk_live_xxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "intervalSeconds": 120,
+    "assertions": { "maxResponseTimeMs": 3000 }
+  }' \\
+  https://cronowl.com/api/v1/http-monitors/mon_abc123`}
+            </CodeBlock>
+          </Endpoint>
+
+          <Endpoint method="DELETE" path="/api/v1/http-monitors/:id" description="Delete an HTTP monitor">
+            <CodeBlock title="Response">
+{`{
+  "success": true,
+  "data": { "deleted": true, "id": "mon_abc123" }
+}`}
+            </CodeBlock>
+          </Endpoint>
+        </section>
+
+        {/* HTTP Monitor Limits */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">HTTP Monitor Plan Limits</h2>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <th className="text-left py-3 text-gray-500 dark:text-gray-400">Feature</th>
+                <th className="text-left py-3 text-gray-500 dark:text-gray-400">Free</th>
+                <th className="text-left py-3 text-gray-500 dark:text-gray-400">Starter</th>
+                <th className="text-left py-3 text-gray-500 dark:text-gray-400">Pro</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-700 dark:text-gray-300">
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <td className="py-3">HTTP Monitors</td>
+                <td className="py-3">5</td>
+                <td className="py-3">25</td>
+                <td className="py-3">50</td>
+              </tr>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <td className="py-3">Min Check Interval</td>
+                <td className="py-3">5 minutes</td>
+                <td className="py-3">2 minutes</td>
+                <td className="py-3">1 minute</td>
+              </tr>
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                <td className="py-3">Check History</td>
+                <td className="py-3">24 hours</td>
+                <td className="py-3">7 days</td>
+                <td className="py-3">30 days</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
         {/* Ping History */}
         <section className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Ping History</h2>
