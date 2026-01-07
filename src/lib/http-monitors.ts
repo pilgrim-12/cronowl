@@ -151,7 +151,9 @@ export async function createHttpMonitor(
   }
 
   const now = Timestamp.now();
-  const monitorData: Omit<HttpMonitor, "id"> = {
+  // Build monitor data, excluding undefined fields (Firestore doesn't accept undefined)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const monitorData: Record<string, any> = {
     userId,
     name: data.name,
     url: data.url,
@@ -159,19 +161,21 @@ export async function createHttpMonitor(
     expectedStatusCodes: data.expectedStatusCodes || [200, 201, 204],
     timeoutMs: data.timeoutMs || 10000,
     intervalSeconds: data.intervalSeconds,
-    headers: data.headers,
-    body: data.body,
-    contentType: data.contentType,
-    assertions: data.assertions,
     status: "pending",
     alertAfterFailures: data.alertAfterFailures || 2,
     consecutiveFailures: 0,
     isEnabled: true,
-    webhookUrl: data.webhookUrl,
-    tags: data.tags,
     createdAt: now,
     updatedAt: now,
   };
+
+  // Only add optional fields if they have values
+  if (data.headers) monitorData.headers = data.headers;
+  if (data.body) monitorData.body = data.body;
+  if (data.contentType) monitorData.contentType = data.contentType;
+  if (data.assertions) monitorData.assertions = data.assertions;
+  if (data.webhookUrl) monitorData.webhookUrl = data.webhookUrl;
+  if (data.tags && data.tags.length > 0) monitorData.tags = data.tags;
 
   const docRef = await addDoc(collection(db, "httpMonitors"), monitorData);
   return docRef.id;
