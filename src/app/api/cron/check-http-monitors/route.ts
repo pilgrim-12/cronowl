@@ -51,6 +51,45 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Debug: log monitor details for debugging
+    if (monitors.length === 0) {
+      // Try to get all monitors for debugging
+      const { collection, getDocs, query: fsQuery, where: fsWhere } = await import("firebase/firestore");
+      const { db: fireDb } = await import("@/lib/firebase");
+
+      const allQuery = fsQuery(collection(fireDb, "httpMonitors"));
+      const allSnapshot = await getDocs(allQuery);
+      const allCount = allSnapshot.docs.length;
+
+      const enabledQuery = fsQuery(collection(fireDb, "httpMonitors"), fsWhere("isEnabled", "==", true));
+      const enabledSnapshot = await getDocs(enabledQuery);
+      const enabledCount = enabledSnapshot.docs.length;
+
+      return NextResponse.json({
+        ok: true,
+        checked: 0,
+        down: 0,
+        recovered: 0,
+        degraded: 0,
+        debug: {
+          totalMonitors: allCount,
+          enabledMonitors: enabledCount,
+          allMonitorIds: allSnapshot.docs.map(d => d.id),
+          monitorDetails: allSnapshot.docs.slice(0, 5).map(d => {
+            const data = d.data();
+            return {
+              id: d.id,
+              isEnabled: data.isEnabled,
+              lastCheckedAt: data.lastCheckedAt?.toDate?.()?.toISOString() || null,
+              intervalSeconds: data.intervalSeconds,
+            };
+          }),
+        },
+        durationMs: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     // Process monitors in parallel with concurrency limit
     const CONCURRENCY_LIMIT = 10;
     const results: Promise<void>[] = [];
