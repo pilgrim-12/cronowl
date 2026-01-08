@@ -50,7 +50,7 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v5"; // Track deployed version
+const BUILD_VERSION = "v6"; // Track deployed version
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       down,
       recovered,
       degraded,
-      debug: { totalEnabled: debugInfo.totalEnabled },
+      debug: { totalEnabled: debugInfo.totalEnabled, dueCount: debugInfo.dueCount, monitorsLength: monitors.length },
       durationMs: duration,
       timestamp: new Date().toISOString(),
     });
