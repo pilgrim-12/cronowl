@@ -445,6 +445,32 @@ export default function DashboardPage() {
     }
   };
 
+  // Admin: Toggle test endpoint status
+  const handleTestEndpointToggle = async (action: "up" | "down") => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/admin/test-endpoint-toggle", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to toggle test endpoint");
+      }
+    } catch (error) {
+      console.error("Failed to toggle test endpoint:", error);
+    }
+  };
+
+  // Check if URL is the test endpoint
+  const isTestEndpointUrl = (url: string) => {
+    return url.includes("/api/test-endpoint");
+  };
+
   const getStatusColor = (check: Check) => {
     const realStatus = calculateRealStatus(check);
     switch (realStatus) {
@@ -1383,6 +1409,26 @@ export default function DashboardPage() {
                         >
                           Delete
                         </button>
+                        {/* Admin: Test endpoint toggle buttons */}
+                        {isAdmin && isTestEndpointUrl(monitor.url) && (
+                          <>
+                            <span className="text-gray-300 dark:text-gray-700">|</span>
+                            <button
+                              onClick={() => handleTestEndpointToggle("down")}
+                              className="text-orange-500 hover:text-orange-600 text-xs px-2 py-1 font-medium"
+                              title="Set test endpoint to DOWN (503)"
+                            >
+                              ▼ Down
+                            </button>
+                            <button
+                              onClick={() => handleTestEndpointToggle("up")}
+                              className="text-green-500 hover:text-green-600 text-xs px-2 py-1 font-medium"
+                              title="Set test endpoint to UP (200)"
+                            >
+                              ▲ Up
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
 
