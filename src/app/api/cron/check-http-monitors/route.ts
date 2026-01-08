@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, Timestamp, collection, getDocs, query, where } from "firebase/firestore";
 import {
-  getMonitorsDueForCheck,
   updateHttpMonitor,
   addHttpMonitorCheck,
   addHttpMonitorStatusEvent,
@@ -17,6 +16,40 @@ import {
   sendHttpMonitorDegradedNotifications,
 } from "@/lib/http-monitor-notifications";
 import { logger } from "@/lib/logger";
+
+// Get monitors due for check - inline to avoid module caching issues
+async function getMonitorsDueForCheckInline(): Promise<HttpMonitor[]> {
+  const monitorsQuery = query(
+    collection(db, "httpMonitors"),
+    where("isEnabled", "==", true)
+  );
+
+  const snapshot = await getDocs(monitorsQuery);
+  const now = Date.now();
+
+  const dueMonitors: HttpMonitor[] = [];
+
+  for (const docSnapshot of snapshot.docs) {
+    const monitor = {
+      id: docSnapshot.id,
+      ...docSnapshot.data(),
+    } as HttpMonitor;
+
+    // Check if monitor is due
+    if (!monitor.lastCheckedAt) {
+      // Never checked - due immediately
+      dueMonitors.push(monitor);
+    } else {
+      const lastChecked = monitor.lastCheckedAt.toDate().getTime();
+      const intervalMs = monitor.intervalSeconds * 1000;
+      if (now - lastChecked >= intervalMs) {
+        dueMonitors.push(monitor);
+      }
+    }
+  }
+
+  return dueMonitors;
+}
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
 
@@ -35,10 +68,10 @@ export async function GET(request: NextRequest) {
   let degraded = 0;
 
   try {
-    // Get all monitors due for check
+    // Get all monitors due for check - use inline function to avoid module caching
     let monitors;
     try {
-      monitors = await getMonitorsDueForCheck();
+      monitors = await getMonitorsDueForCheckInline();
       logger.info(`Found ${monitors.length} HTTP monitors due for check`);
     } catch (fetchError) {
       logger.error("Error fetching monitors due for check", undefined, fetchError instanceof Error ? fetchError : new Error(String(fetchError)));
@@ -49,45 +82,6 @@ export async function GET(request: NextRequest) {
         durationMs: Date.now() - startTime,
         timestamp: new Date().toISOString(),
       }, { status: 500 });
-    }
-
-    // Debug: log monitor details for debugging
-    if (monitors.length === 0) {
-      // Try to get all monitors for debugging
-      const { collection, getDocs, query: fsQuery, where: fsWhere } = await import("firebase/firestore");
-      const { db: fireDb } = await import("@/lib/firebase");
-
-      const allQuery = fsQuery(collection(fireDb, "httpMonitors"));
-      const allSnapshot = await getDocs(allQuery);
-      const allCount = allSnapshot.docs.length;
-
-      const enabledQuery = fsQuery(collection(fireDb, "httpMonitors"), fsWhere("isEnabled", "==", true));
-      const enabledSnapshot = await getDocs(enabledQuery);
-      const enabledCount = enabledSnapshot.docs.length;
-
-      return NextResponse.json({
-        ok: true,
-        checked: 0,
-        down: 0,
-        recovered: 0,
-        degraded: 0,
-        debug: {
-          totalMonitors: allCount,
-          enabledMonitors: enabledCount,
-          allMonitorIds: allSnapshot.docs.map(d => d.id),
-          monitorDetails: allSnapshot.docs.slice(0, 5).map(d => {
-            const data = d.data();
-            return {
-              id: d.id,
-              isEnabled: data.isEnabled,
-              lastCheckedAt: data.lastCheckedAt?.toDate?.()?.toISOString() || null,
-              intervalSeconds: data.intervalSeconds,
-            };
-          }),
-        },
-        durationMs: Date.now() - startTime,
-        timestamp: new Date().toISOString(),
-      });
     }
 
     // Process monitors in parallel with concurrency limit
