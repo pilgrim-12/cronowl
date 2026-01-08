@@ -1,53 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import crypto from "crypto";
 
 // Test endpoint that can be toggled up/down for testing HTTP monitors
-// Status is stored in Firestore so it persists across deploys
+// Status is stored in Firestore per URL so each monitor can be controlled independently
 
-const STATUS_DOC = "testEndpointStatus";
+function urlToDocId(url: string): string {
+  return crypto.createHash("md5").update(url).digest("hex").slice(0, 16);
+}
 
 interface TestStatus {
   isUp: boolean;
   updatedAt: string;
+  url?: string;
+}
+
+// Helper to check status for a specific URL
+async function getUrlStatus(url: string): Promise<boolean> {
+  const docId = urlToDocId(url);
+  const statusDoc = await getDoc(doc(db, "testEndpointStatuses", docId));
+  if (statusDoc.exists()) {
+    const status = statusDoc.data() as TestStatus;
+    return status.isUp;
+  }
+  return true; // Default to up if no status set
 }
 
 // GET /api/test-endpoint - Returns 200 if up, 503 if down
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const fullUrl = request.url.split("?")[0]; // Remove query params for status check
 
-  // Check for toggle command
-  const action = searchParams.get("action");
-  const secret = searchParams.get("secret");
-
-  if (action && secret === process.env.CRON_SECRET) {
-    if (action === "down") {
-      await setDoc(doc(db, "settings", STATUS_DOC), {
-        isUp: false,
-        updatedAt: new Date().toISOString(),
-      });
-      return NextResponse.json({ status: "down", message: "Endpoint is now DOWN" });
-    }
-    if (action === "up") {
-      await setDoc(doc(db, "settings", STATUS_DOC), {
-        isUp: true,
-        updatedAt: new Date().toISOString(),
-      });
-      return NextResponse.json({ status: "up", message: "Endpoint is now UP" });
-    }
-    if (action === "status") {
-      const statusDoc = await getDoc(doc(db, "settings", STATUS_DOC));
-      const status = statusDoc.exists() ? (statusDoc.data() as TestStatus) : { isUp: true };
-      return NextResponse.json({ status: status.isUp ? "up" : "down", ...status });
-    }
-  }
-
-  // Normal health check
+  // Normal health check - check status for this specific URL
   try {
-    const statusDoc = await getDoc(doc(db, "settings", STATUS_DOC));
-    const status = statusDoc.exists() ? (statusDoc.data() as TestStatus) : { isUp: true };
+    const isUp = await getUrlStatus(fullUrl);
 
-    if (!status.isUp) {
+    if (!isUp) {
       return NextResponse.json(
         { status: "error", message: "Service unavailable" },
         { status: 503 }
@@ -69,11 +57,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/test-endpoint - Echoes back the request for testing POST monitors
 export async function POST(request: NextRequest) {
-  try {
-    const statusDoc = await getDoc(doc(db, "settings", STATUS_DOC));
-    const status = statusDoc.exists() ? (statusDoc.data() as TestStatus) : { isUp: true };
+  const fullUrl = request.url.split("?")[0]; // Remove query params for status check
 
-    if (!status.isUp) {
+  try {
+    const isUp = await getUrlStatus(fullUrl);
+
+    if (!isUp) {
       return NextResponse.json(
         { status: "error", message: "Service unavailable" },
         { status: 503 }

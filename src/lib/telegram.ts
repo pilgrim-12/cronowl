@@ -138,6 +138,7 @@ export function generateLinkingCode(): string {
 export interface HttpMonitorTelegramData {
   name: string;
   url: string;
+  method?: string;
   statusCode?: number;
   responseTimeMs?: number;
   error?: string;
@@ -157,7 +158,8 @@ export async function sendTelegramHttpMonitorDownAlert(
     ? `${data.statusCode} ${getStatusText(data.statusCode)}`
     : "Connection Failed";
 
-  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  const methodPrefix = data.method ? `${data.method} ` : "";
+  let body = `URL: ${methodPrefix}${data.url}\nStatus: ${statusText}`;
   if (data.responseTimeMs) {
     body += `\nResponse time: ${data.responseTimeMs}ms`;
   }
@@ -186,7 +188,8 @@ export async function sendTelegramHttpMonitorRecoveryAlert(
     ? `${data.statusCode} ${getStatusText(data.statusCode)}`
     : "OK";
 
-  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  const methodPrefix = data.method ? `${data.method} ` : "";
+  let body = `URL: ${methodPrefix}${data.url}\nStatus: ${statusText}`;
   if (data.responseTimeMs) {
     body += `\nResponse time: ${data.responseTimeMs}ms`;
   }
@@ -212,7 +215,8 @@ export async function sendTelegramHttpMonitorDegradedAlert(
     ? `${data.statusCode} ${getStatusText(data.statusCode)}`
     : "OK";
 
-  let body = `URL: ${data.url}\nStatus: ${statusText}`;
+  const methodPrefix = data.method ? `${data.method} ` : "";
+  let body = `URL: ${methodPrefix}${data.url}\nStatus: ${statusText}`;
   body += `\nResponse time: ${data.responseTimeMs}ms (threshold: ${data.maxResponseTimeMs}ms)`;
 
   return sendTelegramMessage(chatId, {

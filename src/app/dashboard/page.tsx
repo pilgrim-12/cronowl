@@ -448,7 +448,7 @@ export default function DashboardPage() {
   // Admin: Toggle test endpoint status
   const [testEndpointLoading, setTestEndpointLoading] = useState<"up" | "down" | null>(null);
 
-  const handleTestEndpointToggle = async (action: "up" | "down") => {
+  const handleTestEndpointToggle = async (action: "up" | "down", url: string) => {
     if (!user) return;
     setTestEndpointLoading(action);
     try {
@@ -459,7 +459,7 @@ export default function DashboardPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, url }),
       });
       if (!response.ok) {
         throw new Error("Failed to toggle test endpoint");
@@ -1419,7 +1419,7 @@ export default function DashboardPage() {
                           <>
                             <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
-                              onClick={() => handleTestEndpointToggle("down")}
+                              onClick={() => handleTestEndpointToggle("down", monitor.url)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
                                 testEndpointLoading === "down"
@@ -1431,7 +1431,7 @@ export default function DashboardPage() {
                               {testEndpointLoading === "down" ? "..." : "▼ Down"}
                             </button>
                             <button
-                              onClick={() => handleTestEndpointToggle("up")}
+                              onClick={() => handleTestEndpointToggle("up", monitor.url)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
                                 testEndpointLoading === "up"

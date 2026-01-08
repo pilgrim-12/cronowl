@@ -57,6 +57,7 @@ export interface HttpMonitorInfo {
   id: string;
   name: string;
   url: string;
+  method?: string;
   status: "up" | "down" | "degraded" | "pending";
   statusCode?: number;
   responseTimeMs?: number;
@@ -167,6 +168,7 @@ export async function sendHttpMonitorDownNotifications(
         sendTelegramHttpMonitorDownAlert(user.telegramChatId!, {
           name: monitor.name,
           url: monitor.url,
+          method: monitor.method,
           statusCode: monitor.statusCode,
           responseTimeMs: monitor.responseTimeMs,
           error: monitor.error,
@@ -272,6 +274,7 @@ export async function sendHttpMonitorRecoveryNotifications(
         sendTelegramHttpMonitorRecoveryAlert(user.telegramChatId!, {
           name: monitor.name,
           url: monitor.url,
+          method: monitor.method,
           statusCode: monitor.statusCode,
           responseTimeMs: monitor.responseTimeMs,
           downtimeDuration,
@@ -372,6 +375,7 @@ export async function sendHttpMonitorDegradedNotifications(
         sendTelegramHttpMonitorDegradedAlert(user.telegramChatId!, {
           name: monitor.name,
           url: monitor.url,
+          method: monitor.method,
           statusCode: monitor.statusCode,
           responseTimeMs: monitor.responseTimeMs,
           maxResponseTimeMs: monitor.maxResponseTimeMs,

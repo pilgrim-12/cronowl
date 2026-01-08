@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import crypto from "crypto";
 
-// Admin-only endpoint to toggle test endpoint status
+// Generate a short hash for URL to use as document ID
+function urlToDocId(url: string): string {
+  return crypto.createHash("md5").update(url).digest("hex").slice(0, 16);
+}
+
+// Admin-only endpoint to toggle test endpoint status for a specific URL
 export async function POST(request: NextRequest) {
   // Verify auth
   const authHeader = request.headers.get("authorization");
@@ -19,16 +25,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    // Get action from body
+    // Get action and URL from body
     const body = await request.json();
-    const action = body.action;
+    const { action, url } = body;
 
     if (action !== "up" && action !== "down") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
 
-    // Update test endpoint status in Firestore
-    await adminDb.collection("settings").doc("testEndpointStatus").set({
+    if (!url) {
+      return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    }
+
+    // Update test endpoint status in Firestore for this specific URL
+    const docId = urlToDocId(url);
+    await adminDb.collection("testEndpointStatuses").doc(docId).set({
+      url,
       isUp: action === "up",
       updatedAt: new Date().toISOString(),
     });
@@ -36,7 +48,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       status: action,
-      message: `Test endpoint is now ${action.toUpperCase()}`
+      url,
+      message: `Test endpoint for ${url} is now ${action.toUpperCase()}`
     });
   } catch (error) {
     console.error("Failed to toggle test endpoint:", error);
