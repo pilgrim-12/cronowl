@@ -216,8 +216,13 @@ export async function updateHttpMonitor(
   monitorId: string,
   data: Partial<Omit<HttpMonitor, "id" | "userId" | "createdAt">>
 ): Promise<void> {
+  // Filter out undefined values - Firestore doesn't accept undefined
+  const cleanData = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined)
+  );
+
   await updateDoc(doc(db, "httpMonitors", monitorId), {
-    ...data,
+    ...cleanData,
     updatedAt: Timestamp.now(),
   });
 }
