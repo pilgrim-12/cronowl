@@ -446,8 +446,11 @@ export default function DashboardPage() {
   };
 
   // Admin: Toggle test endpoint status
+  const [testEndpointLoading, setTestEndpointLoading] = useState<"up" | "down" | null>(null);
+
   const handleTestEndpointToggle = async (action: "up" | "down") => {
     if (!user) return;
+    setTestEndpointLoading(action);
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/admin/test-endpoint-toggle", {
@@ -463,6 +466,8 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Failed to toggle test endpoint:", error);
+    } finally {
+      setTestEndpointLoading(null);
     }
   };
 
@@ -1415,17 +1420,27 @@ export default function DashboardPage() {
                             <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
                               onClick={() => handleTestEndpointToggle("down")}
-                              className="text-orange-500 hover:text-orange-600 text-xs px-2 py-1 font-medium"
+                              disabled={testEndpointLoading !== null}
+                              className={`text-xs px-2 py-1 font-medium transition-colors ${
+                                testEndpointLoading === "down"
+                                  ? "text-orange-300 cursor-wait"
+                                  : "text-orange-500 hover:text-orange-600"
+                              }`}
                               title="Set test endpoint to DOWN (503)"
                             >
-                              ▼ Down
+                              {testEndpointLoading === "down" ? "..." : "▼ Down"}
                             </button>
                             <button
                               onClick={() => handleTestEndpointToggle("up")}
-                              className="text-green-500 hover:text-green-600 text-xs px-2 py-1 font-medium"
+                              disabled={testEndpointLoading !== null}
+                              className={`text-xs px-2 py-1 font-medium transition-colors ${
+                                testEndpointLoading === "up"
+                                  ? "text-green-300 cursor-wait"
+                                  : "text-green-500 hover:text-green-600"
+                              }`}
                               title="Set test endpoint to UP (200)"
                             >
-                              ▲ Up
+                              {testEndpointLoading === "up" ? "..." : "▲ Up"}
                             </button>
                           </>
                         )}
