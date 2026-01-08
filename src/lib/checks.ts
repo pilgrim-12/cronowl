@@ -13,6 +13,8 @@ import {
   deleteField,
   getDoc,
   getCountFromServer,
+  onSnapshot,
+  Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { SCHEDULE_MINUTES } from "./constants";
@@ -352,6 +354,34 @@ export async function getUserChecks(userId: string): Promise<Check[]> {
     id: doc.id,
     ...doc.data(),
   })) as Check[];
+}
+
+// Realtime subscription for user checks
+export function subscribeToUserChecks(
+  userId: string,
+  onUpdate: (checks: Check[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const checksQuery = query(
+    collection(db, "checks"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(
+    checksQuery,
+    (snapshot) => {
+      const checks = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Check[];
+      onUpdate(checks);
+    },
+    (error) => {
+      console.error("Error in checks subscription:", error);
+      onError?.(error);
+    }
+  );
 }
 
 export async function deleteCheck(checkId: string): Promise<void> {

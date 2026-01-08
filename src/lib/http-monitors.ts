@@ -12,6 +12,8 @@ import {
   Timestamp,
   getDoc,
   getCountFromServer,
+  onSnapshot,
+  Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { PLANS, PlanType } from "./plans";
@@ -194,6 +196,34 @@ export async function getUserHttpMonitors(userId: string): Promise<HttpMonitor[]
     id: doc.id,
     ...doc.data(),
   })) as HttpMonitor[];
+}
+
+// Realtime subscription for user HTTP monitors
+export function subscribeToUserHttpMonitors(
+  userId: string,
+  onUpdate: (monitors: HttpMonitor[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const monitorsQuery = query(
+    collection(db, "httpMonitors"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(
+    monitorsQuery,
+    (snapshot) => {
+      const monitors = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as HttpMonitor[];
+      onUpdate(monitors);
+    },
+    (error) => {
+      console.error("Error in HTTP monitors subscription:", error);
+      onError?.(error);
+    }
+  );
 }
 
 // Get single HTTP monitor

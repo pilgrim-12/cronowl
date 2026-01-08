@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -8,7 +8,7 @@ import {
   Ping,
   StatusEvent,
   ScheduleType,
-  getUserChecks,
+  subscribeToUserChecks,
   createCheck,
   deleteCheck,
   updateCheck,
@@ -31,7 +31,7 @@ import {
   ContentType,
   HttpMonitorLimitResult,
   CreateHttpMonitorData,
-  getUserHttpMonitors,
+  subscribeToUserHttpMonitors,
   createHttpMonitor,
   deleteHttpMonitor,
   updateHttpMonitor,
@@ -81,19 +81,9 @@ export default function DashboardPage() {
     }
     return "list";
   });
-  const [refreshInterval, setRefreshInterval] = useState(() => {
-    if (typeof window !== "undefined") {
-      return Number(localStorage.getItem("cronowl-refresh-interval")) || 30;
-    }
-    return 30;
-  });
-  const [countdown, setCountdown] = useState(30);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const [planUsage, setPlanUsage] = useState<CheckLimitResult | null>(null);
   const [limitError, setLimitError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [showRefreshDropdown, setShowRefreshDropdown] = useState(false);
-  const refreshDropdownRef = useRef<HTMLDivElement>(null);
 
   // HTTP Monitors state
   const [httpMonitors, setHttpMonitors] = useState<HttpMonitor[]>([]);
@@ -137,95 +127,70 @@ export default function DashboardPage() {
   }, [viewMode]);
 
   useEffect(() => {
-    localStorage.setItem("cronowl-refresh-interval", String(refreshInterval));
-  }, [refreshInterval]);
-
-  // Close refresh dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (refreshDropdownRef.current && !refreshDropdownRef.current.contains(event.target as Node)) {
-        setShowRefreshDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
 
-  const loadChecks = useCallback(async (silent = false) => {
+  // Load plan usage
+  const loadPlanUsage = useCallback(async () => {
     if (!user) return;
-    if (!silent) {
-      setLoadingChecks(true);
-    }
     try {
-      const userChecks = await getUserChecks(user.uid);
-      setChecks(userChecks);
-      setLastUpdated(new Date());
-      // Load plan usage
-      const usage = await canCreateCheck(user.uid);
-      setPlanUsage(usage);
+      const [checksUsage, monitorsUsage] = await Promise.all([
+        canCreateCheck(user.uid),
+        canCreateHttpMonitor(user.uid),
+      ]);
+      setPlanUsage(checksUsage);
+      setHttpMonitorUsage(monitorsUsage);
     } catch (error) {
-      console.error("Failed to load checks:", error);
-    } finally {
-      if (!silent) {
-        setLoadingChecks(false);
-      }
+      console.error("Failed to load plan usage:", error);
     }
   }, [user]);
 
-  const loadHttpMonitors = useCallback(async (silent = false) => {
-    if (!user) return;
-    if (!silent) {
-      setLoadingMonitors(true);
-    }
-    try {
-      const monitors = await getUserHttpMonitors(user.uid);
-      setHttpMonitors(monitors);
-      setLastUpdated(new Date());
-      // Load HTTP monitor plan usage
-      const usage = await canCreateHttpMonitor(user.uid);
-      setHttpMonitorUsage(usage);
-    } catch (error) {
-      console.error("Failed to load HTTP monitors:", error);
-    } finally {
-      if (!silent) {
-        setLoadingMonitors(false);
-      }
-    }
-  }, [user]);
-
-  const loadAll = useCallback(async (silent = false) => {
-    await Promise.all([loadChecks(silent), loadHttpMonitors(silent)]);
-  }, [loadChecks, loadHttpMonitors]);
-
+  // Realtime subscriptions for checks and HTTP monitors
   useEffect(() => {
     if (!user) return;
 
-    loadAll();
-    setCountdown(refreshInterval);
+    setLoadingChecks(true);
+    setLoadingMonitors(true);
 
-    // Countdown timer (every second)
-    countdownRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          loadAll(true);
-          return refreshInterval;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (countdownRef.current) {
-        clearInterval(countdownRef.current);
+    // Subscribe to checks - realtime updates
+    const unsubscribeChecks = subscribeToUserChecks(
+      user.uid,
+      (updatedChecks) => {
+        setChecks(updatedChecks);
+        setLastUpdated(new Date());
+        setLoadingChecks(false);
+      },
+      (error) => {
+        console.error("Checks subscription error:", error);
+        setLoadingChecks(false);
       }
+    );
+
+    // Subscribe to HTTP monitors - realtime updates
+    const unsubscribeMonitors = subscribeToUserHttpMonitors(
+      user.uid,
+      (updatedMonitors) => {
+        setHttpMonitors(updatedMonitors);
+        setLastUpdated(new Date());
+        setLoadingMonitors(false);
+      },
+      (error) => {
+        console.error("HTTP monitors subscription error:", error);
+        setLoadingMonitors(false);
+      }
+    );
+
+    // Load plan usage once
+    loadPlanUsage();
+
+    // Cleanup subscriptions on unmount
+    return () => {
+      unsubscribeChecks();
+      unsubscribeMonitors();
     };
-  }, [user, loadAll, refreshInterval]);
+  }, [user, loadPlanUsage]);
 
   const loadPings = async (checkId: string) => {
     try {
@@ -349,8 +314,9 @@ export default function DashboardPage() {
         return;
       }
       await createCheck(user.uid, data);
-      await loadChecks();
       setShowCreateModal(false);
+      // Data will update automatically via realtime subscription
+      loadPlanUsage(); // Refresh plan usage
     } catch (error) {
       console.error("Failed to create check:", error);
     }
@@ -388,8 +354,8 @@ export default function DashboardPage() {
         await removeWebhookUrl(editingCheck.id);
       }
 
-      await loadChecks();
       setEditingCheck(null);
+      // Data will update automatically via realtime subscription
     } catch (error) {
       console.error("Failed to update check:", error);
     }
@@ -406,7 +372,8 @@ export default function DashboardPage() {
     if (!confirmed) return;
     try {
       await deleteCheck(checkId);
-      await loadChecks();
+      // Data will update automatically via realtime subscription
+      loadPlanUsage(); // Refresh plan usage
     } catch (error) {
       console.error("Failed to delete check:", error);
     }
@@ -423,8 +390,9 @@ export default function DashboardPage() {
         return;
       }
       await createHttpMonitor(user.uid, data);
-      await loadHttpMonitors();
       setShowCreateHttpMonitorModal(false);
+      // Data will update automatically via realtime subscription
+      loadPlanUsage(); // Refresh plan usage
     } catch (error) {
       console.error("Failed to create HTTP monitor:", error);
     }
@@ -434,8 +402,8 @@ export default function DashboardPage() {
     if (!editingHttpMonitor) return;
     try {
       await updateHttpMonitor(editingHttpMonitor.id, data);
-      await loadHttpMonitors();
       setEditingHttpMonitor(null);
+      // Data will update automatically via realtime subscription
     } catch (error) {
       console.error("Failed to update HTTP monitor:", error);
     }
@@ -452,7 +420,8 @@ export default function DashboardPage() {
     if (!confirmed) return;
     try {
       await deleteHttpMonitor(monitorId);
-      await loadHttpMonitors();
+      // Data will update automatically via realtime subscription
+      loadPlanUsage(); // Refresh plan usage
     } catch (error) {
       console.error("Failed to delete HTTP monitor:", error);
     }
@@ -461,7 +430,7 @@ export default function DashboardPage() {
   const handlePauseMonitor = async (monitorId: string) => {
     try {
       await pauseHttpMonitor(monitorId);
-      await loadHttpMonitors();
+      // Data will update automatically via realtime subscription
     } catch (error) {
       console.error("Failed to pause monitor:", error);
     }
@@ -470,7 +439,7 @@ export default function DashboardPage() {
   const handleResumeMonitor = async (monitorId: string) => {
     try {
       await resumeHttpMonitor(monitorId);
-      await loadHttpMonitors();
+      // Data will update automatically via realtime subscription
     } catch (error) {
       console.error("Failed to resume monitor:", error);
     }
@@ -641,65 +610,13 @@ export default function DashboardPage() {
                   Last updated: {lastUpdated.toLocaleTimeString()}
                 </p>
                 <span className="text-gray-400 dark:text-gray-600">•</span>
-                {/* Compact refresh indicator with dropdown */}
-                <div className="relative" ref={refreshDropdownRef}>
-                  <button
-                    onClick={() => setShowRefreshDropdown(!showRefreshDropdown)}
-                    className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors group"
-                    title="Auto-refresh interval"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    <span className="text-xs tabular-nums w-6 text-right">{countdown}s</span>
-                    <svg className={`w-3 h-3 transition-transform ${showRefreshDropdown ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  {/* Dropdown menu */}
-                  {showRefreshDropdown && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1 min-w-[120px]">
-                      <div className="px-3 py-1.5 text-xs text-gray-500 border-b border-gray-200 dark:border-gray-700">
-                        Auto-refresh
-                      </div>
-                      {[
-                        { value: 5, label: "5 seconds" },
-                        { value: 10, label: "10 seconds" },
-                        { value: 15, label: "15 seconds" },
-                        { value: 30, label: "30 seconds" },
-                        { value: 60, label: "1 minute" },
-                        { value: 120, label: "2 minutes" },
-                        { value: 300, label: "5 minutes" },
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => {
-                            setRefreshInterval(option.value);
-                            setCountdown(option.value);
-                            setShowRefreshDropdown(false);
-                          }}
-                          className={`w-full px-3 py-1.5 text-left text-sm transition-colors flex items-center justify-between ${
-                            refreshInterval === option.value
-                              ? "bg-blue-600/20 text-blue-600 dark:text-blue-400"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          {option.label}
-                          {refreshInterval === option.value && (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                {/* Live indicator */}
+                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-xs font-medium">Live</span>
                 </div>
               </div>
             )}
@@ -1274,9 +1191,20 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">HTTP Monitors</h2>
                 {lastUpdated && (
-                  <p className="text-gray-500 text-xs mt-1">
-                    Last updated: {lastUpdated.toLocaleTimeString()} • Refresh in {countdown}s
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-gray-500 text-xs">
+                      Last updated: {lastUpdated.toLocaleTimeString()}
+                    </p>
+                    <span className="text-gray-400 dark:text-gray-600">•</span>
+                    {/* Live indicator */}
+                    <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                      <span className="text-xs font-medium">Live</span>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2">
