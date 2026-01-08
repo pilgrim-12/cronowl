@@ -66,3 +66,61 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// POST /api/test-endpoint - Echoes back the request for testing POST monitors
+export async function POST(request: NextRequest) {
+  try {
+    const statusDoc = await getDoc(doc(db, "settings", STATUS_DOC));
+    const status = statusDoc.exists() ? (statusDoc.data() as TestStatus) : { isUp: true };
+
+    if (!status.isUp) {
+      return NextResponse.json(
+        { status: "error", message: "Service unavailable" },
+        { status: 503 }
+      );
+    }
+
+    // Parse the request body
+    const contentType = request.headers.get("content-type") || "";
+    let body: unknown = null;
+
+    if (contentType.includes("application/json")) {
+      try {
+        body = await request.json();
+      } catch {
+        body = { parseError: "Invalid JSON" };
+      }
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
+      const formData = await request.formData();
+      body = Object.fromEntries(formData.entries());
+    } else if (contentType.includes("text/plain")) {
+      body = await request.text();
+    }
+
+    // Echo back the request details
+    return NextResponse.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      message: "POST received successfully",
+      echo: {
+        method: "POST",
+        contentType,
+        body,
+        headers: {
+          authorization: request.headers.get("authorization") ? "[PRESENT]" : null,
+          "x-api-key": request.headers.get("x-api-key") ? "[PRESENT]" : null,
+        },
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { status: "error", message: "Internal error" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/test-endpoint - Same as POST for testing PUT monitors
+export async function PUT(request: NextRequest) {
+  return POST(request);
+}

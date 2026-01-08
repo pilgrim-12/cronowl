@@ -1645,6 +1645,9 @@ export default function DashboardPage() {
             alertAfterFailures: editingHttpMonitor.alertAfterFailures,
             tags: editingHttpMonitor.tags,
             webhookUrl: editingHttpMonitor.webhookUrl,
+            headers: editingHttpMonitor.headers,
+            body: editingHttpMonitor.body,
+            contentType: editingHttpMonitor.contentType,
             assertions: editingHttpMonitor.assertions,
           }}
         />
@@ -1678,6 +1681,9 @@ function HttpMonitorModal({
     alertAfterFailures?: number;
     tags?: string[];
     webhookUrl?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    contentType?: ContentType;
     assertions?: {
       maxResponseTimeMs?: number;
       bodyContains?: string;
@@ -1706,6 +1712,17 @@ function HttpMonitorModal({
   const [webhookUrl, setWebhookUrl] = useState(initialData?.webhookUrl || "");
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState("");
+
+  // POST/PUT request fields
+  const [requestBody, setRequestBody] = useState(initialData?.body || "");
+  const [contentType, setContentType] = useState<ContentType>(initialData?.contentType || "application/json");
+  const [headers, setHeaders] = useState<Array<{key: string; value: string}>>(
+    initialData?.headers
+      ? Object.entries(initialData.headers).map(([key, value]) => ({ key, value }))
+      : []
+  );
+  const [newHeaderKey, setNewHeaderKey] = useState("");
+  const [newHeaderValue, setNewHeaderValue] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [maxResponseTimeMs, setMaxResponseTimeMs] = useState(
     initialData?.assertions?.maxResponseTimeMs || 0
@@ -1741,6 +1758,14 @@ function HttpMonitorModal({
       .map(s => parseInt(s.trim()))
       .filter(n => !isNaN(n) && n >= 100 && n < 600);
 
+    // Convert headers array to object
+    const headersObj = headers.reduce((acc, { key, value }) => {
+      if (key.trim()) {
+        acc[key.trim()] = value;
+      }
+      return acc;
+    }, {} as Record<string, string>);
+
     const data: CreateHttpMonitorData = {
       name: name.trim(),
       url: url.trim(),
@@ -1751,6 +1776,9 @@ function HttpMonitorModal({
       alertAfterFailures,
       tags: tags.length > 0 ? tags : undefined,
       webhookUrl: webhookUrl.trim() || undefined,
+      headers: Object.keys(headersObj).length > 0 ? headersObj : undefined,
+      body: (method === "POST" || method === "PUT") && requestBody.trim() ? requestBody.trim() : undefined,
+      contentType: (method === "POST" || method === "PUT") ? contentType : undefined,
       assertions: showAdvanced && (maxResponseTimeMs > 0 || bodyContains || bodyNotContains)
         ? {
             maxResponseTimeMs: maxResponseTimeMs > 0 ? maxResponseTimeMs : undefined,
@@ -1852,6 +1880,119 @@ function HttpMonitorModal({
                   max={30000}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+            </div>
+
+            {/* POST/PUT Request Settings */}
+            {(method === "POST" || method === "PUT") && (
+              <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Request Body Settings
+                </h4>
+
+                {/* Content-Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Content-Type
+                  </label>
+                  <select
+                    value={contentType}
+                    onChange={(e) => setContentType(e.target.value as ContentType)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="application/json">application/json</option>
+                    <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                    <option value="text/plain">text/plain</option>
+                  </select>
+                </div>
+
+                {/* Request Body */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Request Body
+                  </label>
+                  <textarea
+                    value={requestBody}
+                    onChange={(e) => setRequestBody(e.target.value)}
+                    placeholder={contentType === "application/json" ? '{"key": "value"}' : "key=value&key2=value2"}
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Custom Headers */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Custom Headers (optional)
+              </label>
+              <div className="space-y-2">
+                {headers.map((header, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={header.key}
+                      onChange={(e) => {
+                        const newHeaders = [...headers];
+                        newHeaders[index].key = e.target.value;
+                        setHeaders(newHeaders);
+                      }}
+                      placeholder="Header name"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={header.value}
+                      onChange={(e) => {
+                        const newHeaders = [...headers];
+                        newHeaders[index].value = e.target.value;
+                        setHeaders(newHeaders);
+                      }}
+                      placeholder="Value"
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setHeaders(headers.filter((_, i) => i !== index))}
+                      className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newHeaderKey}
+                    onChange={(e) => setNewHeaderKey(e.target.value)}
+                    placeholder="Header name (e.g. Authorization)"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={newHeaderValue}
+                    onChange={(e) => setNewHeaderValue(e.target.value)}
+                    placeholder="Value"
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newHeaderKey.trim()) {
+                        setHeaders([...headers, { key: newHeaderKey.trim(), value: newHeaderValue }]);
+                        setNewHeaderKey("");
+                        setNewHeaderValue("");
+                      }
+                    }}
+                    className="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">Add custom headers like Authorization, X-API-Key, etc.</p>
               </div>
             </div>
 
