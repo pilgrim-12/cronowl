@@ -50,7 +50,7 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v8"; // Track deployed version - better error logging
+const BUILD_VERSION = "v9"; // Fix: filter undefined values for Firestore
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -194,30 +194,32 @@ async function processMonitorCheck(monitor: HttpMonitor): Promise<CheckResultTyp
     throw checkError;
   }
 
-  // Record the check result
+  // Record the check result - filter out undefined values (Firestore doesn't accept undefined)
   try {
-    await addHttpMonitorCheck(monitor.id, {
+    const checkData: Record<string, unknown> = {
       timestamp: Timestamp.now(),
       status: result.status,
-      statusCode: result.statusCode,
-      responseTimeMs: result.responseTimeMs,
-      error: result.error,
-      responseBodyPreview: result.responseBody,
-    });
+    };
+    if (result.statusCode !== undefined) checkData.statusCode = result.statusCode;
+    if (result.responseTimeMs !== undefined) checkData.responseTimeMs = result.responseTimeMs;
+    if (result.error !== undefined) checkData.error = result.error;
+    if (result.responseBody !== undefined) checkData.responseBodyPreview = result.responseBody;
+
+    await addHttpMonitorCheck(monitor.id, checkData);
     logger.info(`Recorded check for ${monitor.id}`);
   } catch (addCheckError) {
     logger.error(`Failed to add check record for ${monitor.id}`, { monitorId: monitor.id }, addCheckError instanceof Error ? addCheckError : new Error(String(addCheckError)));
     throw addCheckError;
   }
 
-  // Prepare update data
+  // Prepare update data - filter out undefined values (Firestore doesn't accept undefined)
   const updateData: Partial<HttpMonitor> = {
     lastCheckedAt: Timestamp.now(),
-    lastResponseTimeMs: result.responseTimeMs,
-    lastStatusCode: result.statusCode,
-    lastError: result.error,
-    lastResponseBody: result.responseBody,
   };
+  if (result.responseTimeMs !== undefined) updateData.lastResponseTimeMs = result.responseTimeMs;
+  if (result.statusCode !== undefined) updateData.lastStatusCode = result.statusCode;
+  if (result.error !== undefined) updateData.lastError = result.error;
+  if (result.responseBody !== undefined) updateData.lastResponseBody = result.responseBody;
 
   let resultType: CheckResultType = "ok";
 
