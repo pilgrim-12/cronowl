@@ -52,6 +52,7 @@ async function getMonitorsDueForCheckInline(): Promise<HttpMonitor[]> {
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
+const BUILD_VERSION = "v2"; // Track deployed version
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -127,6 +128,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      version: BUILD_VERSION,
       checked,
       down,
       recovered,
