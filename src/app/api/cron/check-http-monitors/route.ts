@@ -18,7 +18,7 @@ import {
 import { logger } from "@/lib/logger";
 
 // Get monitors due for check - inline to avoid module caching issues
-async function getMonitorsDueForCheckInline(): Promise<HttpMonitor[]> {
+async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[], debugInfo: { totalEnabled: number } }> {
   const monitorsQuery = query(
     collection(db, "httpMonitors"),
     where("isEnabled", "==", true)
@@ -26,6 +26,7 @@ async function getMonitorsDueForCheckInline(): Promise<HttpMonitor[]> {
 
   const snapshot = await getDocs(monitorsQuery);
   const now = Date.now();
+  const totalEnabled = snapshot.docs.length;
 
   const dueMonitors: HttpMonitor[] = [];
 
@@ -48,11 +49,11 @@ async function getMonitorsDueForCheckInline(): Promise<HttpMonitor[]> {
     }
   }
 
-  return dueMonitors;
+  return { monitors: dueMonitors, debugInfo: { totalEnabled } };
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v2"; // Track deployed version
+const BUILD_VERSION = "v3"; // Track deployed version
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -70,10 +71,13 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get all monitors due for check - use inline function to avoid module caching
-    let monitors;
+    let monitors: HttpMonitor[];
+    let debugInfo: { totalEnabled: number };
     try {
-      monitors = await getMonitorsDueForCheckInline();
-      logger.info(`Found ${monitors.length} HTTP monitors due for check`);
+      const result = await getMonitorsDueForCheckInline();
+      monitors = result.monitors;
+      debugInfo = result.debugInfo;
+      logger.info(`Found ${monitors.length} HTTP monitors due for check (total enabled: ${debugInfo.totalEnabled})`);
     } catch (fetchError) {
       logger.error("Error fetching monitors due for check", undefined, fetchError instanceof Error ? fetchError : new Error(String(fetchError)));
       return NextResponse.json({
@@ -133,6 +137,7 @@ export async function GET(request: NextRequest) {
       down,
       recovered,
       degraded,
+      debug: { totalEnabled: debugInfo.totalEnabled },
       durationMs: duration,
       timestamp: new Date().toISOString(),
     });
