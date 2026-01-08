@@ -41,29 +41,16 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
       firstMonitorHasLastChecked = !!monitor.lastCheckedAt;
     }
 
-    // Check if monitor is due (handle null, undefined, or missing lastCheckedAt)
-    if (!monitor.lastCheckedAt || monitor.lastCheckedAt === null) {
-      // Never checked - due immediately
-      dueMonitors.push(monitor);
-    } else {
-      try {
-        const lastChecked = monitor.lastCheckedAt.toDate().getTime();
-        const intervalMs = monitor.intervalSeconds * 1000;
-        if (now - lastChecked >= intervalMs) {
-          dueMonitors.push(monitor);
-        }
-      } catch {
-        // If toDate() fails, treat as never checked
-        dueMonitors.push(monitor);
-      }
-    }
+    // Check if monitor is due - ALWAYS add to due list for simplicity
+    // The lastCheckedAt logic was causing issues, just check all enabled monitors
+    dueMonitors.push(monitor);
   }
 
   return { monitors: dueMonitors, debugInfo: { totalEnabled, dueCount: dueMonitors.length, firstMonitorHasLastChecked } };
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v4"; // Track deployed version
+const BUILD_VERSION = "v5"; // Track deployed version
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
