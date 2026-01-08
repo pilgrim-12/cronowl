@@ -198,16 +198,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate assertions
-    let assertions = undefined;
+    // Validate assertions - filter out undefined values (Firestore doesn't accept undefined)
+    let assertions: Record<string, unknown> | undefined = undefined;
     if (body.assertions) {
-      assertions = {
-        maxResponseTimeMs: body.assertions.maxResponseTimeMs
-          ? Math.max(0, parseInt(body.assertions.maxResponseTimeMs, 10))
-          : undefined,
-        bodyContains: body.assertions.bodyContains || undefined,
-        bodyNotContains: body.assertions.bodyNotContains || undefined,
-      };
+      const assertionsObj: Record<string, unknown> = {};
+      if (body.assertions.maxResponseTimeMs) {
+        assertionsObj.maxResponseTimeMs = Math.max(0, parseInt(body.assertions.maxResponseTimeMs, 10));
+      }
+      if (body.assertions.bodyContains) {
+        assertionsObj.bodyContains = body.assertions.bodyContains;
+      }
+      if (body.assertions.bodyNotContains) {
+        assertionsObj.bodyNotContains = body.assertions.bodyNotContains;
+      }
+      if (Object.keys(assertionsObj).length > 0) {
+        assertions = assertionsObj;
+      }
     }
 
     // Encrypt sensitive data
@@ -246,8 +252,8 @@ export async function POST(request: NextRequest) {
       contentType,
       assertions,
       alertAfterFailures: Math.max(1, Math.min(10, parseInt(body.alertAfterFailures, 10) || 2)),
-      webhookUrl: body.webhookUrl || undefined,
-      tags,
+      ...(body.webhookUrl ? { webhookUrl: body.webhookUrl } : {}),
+      ...(tags && tags.length > 0 ? { tags } : {}),
     });
 
     // Fetch and return the created monitor

@@ -227,18 +227,22 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updates.contentType = body.contentType || null;
     }
 
-    // Assertions
+    // Assertions - filter out undefined values (Firestore doesn't accept undefined)
     if (body.assertions !== undefined) {
       if (body.assertions === null) {
         updates.assertions = null;
       } else {
-        updates.assertions = {
-          maxResponseTimeMs: body.assertions.maxResponseTimeMs
-            ? Math.max(0, parseInt(body.assertions.maxResponseTimeMs, 10))
-            : undefined,
-          bodyContains: body.assertions.bodyContains || undefined,
-          bodyNotContains: body.assertions.bodyNotContains || undefined,
-        };
+        const assertionsObj: Record<string, unknown> = {};
+        if (body.assertions.maxResponseTimeMs) {
+          assertionsObj.maxResponseTimeMs = Math.max(0, parseInt(body.assertions.maxResponseTimeMs, 10));
+        }
+        if (body.assertions.bodyContains) {
+          assertionsObj.bodyContains = body.assertions.bodyContains;
+        }
+        if (body.assertions.bodyNotContains) {
+          assertionsObj.bodyNotContains = body.assertions.bodyNotContains;
+        }
+        updates.assertions = Object.keys(assertionsObj).length > 0 ? assertionsObj : null;
       }
     }
 
