@@ -50,7 +50,7 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v7"; // Track deployed version
+const BUILD_VERSION = "v8"; // Track deployed version - better error logging
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -151,13 +151,31 @@ export async function GET(request: NextRequest) {
 type CheckResultType = "ok" | "down" | "recovered" | "degraded";
 
 async function processMonitorCheck(monitor: HttpMonitor): Promise<CheckResultType> {
+  logger.info(`Starting check for monitor ${monitor.id} (${monitor.name}): ${monitor.url}`);
+
   // Decrypt headers and body if encrypted
-  const decryptedHeaders = monitor.headers
-    ? await decryptHeaders(monitor.headers)
-    : undefined;
-  const decryptedBody = monitor.body
-    ? await decryptBody(monitor.body)
-    : undefined;
+  let decryptedHeaders: Record<string, string> | undefined;
+  let decryptedBody: string | undefined;
+
+  try {
+    decryptedHeaders = monitor.headers
+      ? await decryptHeaders(monitor.headers)
+      : undefined;
+    logger.info(`Decrypted headers for ${monitor.id}: ${decryptedHeaders ? 'yes' : 'no'}`);
+  } catch (decryptError) {
+    logger.error(`Failed to decrypt headers for ${monitor.id}`, { monitorId: monitor.id }, decryptError instanceof Error ? decryptError : new Error(String(decryptError)));
+    throw decryptError;
+  }
+
+  try {
+    decryptedBody = monitor.body
+      ? await decryptBody(monitor.body)
+      : undefined;
+    logger.info(`Decrypted body for ${monitor.id}: ${decryptedBody ? 'yes' : 'no'}`);
+  } catch (decryptError) {
+    logger.error(`Failed to decrypt body for ${monitor.id}`, { monitorId: monitor.id }, decryptError instanceof Error ? decryptError : new Error(String(decryptError)));
+    throw decryptError;
+  }
 
   // Create monitor copy with decrypted values for check
   const monitorForCheck: HttpMonitor = {
@@ -167,17 +185,30 @@ async function processMonitorCheck(monitor: HttpMonitor): Promise<CheckResultTyp
   };
 
   // Execute the HTTP check
-  const result = await executeHttpCheck(monitorForCheck);
+  let result;
+  try {
+    result = await executeHttpCheck(monitorForCheck);
+    logger.info(`HTTP check result for ${monitor.id}: status=${result.status}, statusCode=${result.statusCode}, responseTimeMs=${result.responseTimeMs}`);
+  } catch (checkError) {
+    logger.error(`executeHttpCheck failed for ${monitor.id}`, { monitorId: monitor.id }, checkError instanceof Error ? checkError : new Error(String(checkError)));
+    throw checkError;
+  }
 
   // Record the check result
-  await addHttpMonitorCheck(monitor.id, {
-    timestamp: Timestamp.now(),
-    status: result.status,
-    statusCode: result.statusCode,
-    responseTimeMs: result.responseTimeMs,
-    error: result.error,
-    responseBodyPreview: result.responseBody,
-  });
+  try {
+    await addHttpMonitorCheck(monitor.id, {
+      timestamp: Timestamp.now(),
+      status: result.status,
+      statusCode: result.statusCode,
+      responseTimeMs: result.responseTimeMs,
+      error: result.error,
+      responseBodyPreview: result.responseBody,
+    });
+    logger.info(`Recorded check for ${monitor.id}`);
+  } catch (addCheckError) {
+    logger.error(`Failed to add check record for ${monitor.id}`, { monitorId: monitor.id }, addCheckError instanceof Error ? addCheckError : new Error(String(addCheckError)));
+    throw addCheckError;
+  }
 
   // Prepare update data
   const updateData: Partial<HttpMonitor> = {
