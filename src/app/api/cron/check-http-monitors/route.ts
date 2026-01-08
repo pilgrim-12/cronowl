@@ -18,7 +18,7 @@ import {
 import { logger } from "@/lib/logger";
 
 // Get monitors due for check - inline to avoid module caching issues
-async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[], debugInfo: { totalEnabled: number } }> {
+async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[], debugInfo: { totalEnabled: number, dueCount: number, firstMonitorHasLastChecked: boolean | null } }> {
   const monitorsQuery = query(
     collection(db, "httpMonitors"),
     where("isEnabled", "==", true)
@@ -29,6 +29,7 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
   const totalEnabled = snapshot.docs.length;
 
   const dueMonitors: HttpMonitor[] = [];
+  let firstMonitorHasLastChecked: boolean | null = null;
 
   for (const docSnapshot of snapshot.docs) {
     const monitor = {
@@ -36,24 +37,33 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
       ...docSnapshot.data(),
     } as HttpMonitor;
 
-    // Check if monitor is due
-    if (!monitor.lastCheckedAt) {
+    if (firstMonitorHasLastChecked === null) {
+      firstMonitorHasLastChecked = !!monitor.lastCheckedAt;
+    }
+
+    // Check if monitor is due (handle null, undefined, or missing lastCheckedAt)
+    if (!monitor.lastCheckedAt || monitor.lastCheckedAt === null) {
       // Never checked - due immediately
       dueMonitors.push(monitor);
     } else {
-      const lastChecked = monitor.lastCheckedAt.toDate().getTime();
-      const intervalMs = monitor.intervalSeconds * 1000;
-      if (now - lastChecked >= intervalMs) {
+      try {
+        const lastChecked = monitor.lastCheckedAt.toDate().getTime();
+        const intervalMs = monitor.intervalSeconds * 1000;
+        if (now - lastChecked >= intervalMs) {
+          dueMonitors.push(monitor);
+        }
+      } catch {
+        // If toDate() fails, treat as never checked
         dueMonitors.push(monitor);
       }
     }
   }
 
-  return { monitors: dueMonitors, debugInfo: { totalEnabled } };
+  return { monitors: dueMonitors, debugInfo: { totalEnabled, dueCount: dueMonitors.length, firstMonitorHasLastChecked } };
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v3"; // Track deployed version
+const BUILD_VERSION = "v4"; // Track deployed version
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -72,7 +82,7 @@ export async function GET(request: NextRequest) {
   try {
     // Get all monitors due for check - use inline function to avoid module caching
     let monitors: HttpMonitor[];
-    let debugInfo: { totalEnabled: number };
+    let debugInfo: { totalEnabled: number, dueCount: number, firstMonitorHasLastChecked: boolean | null };
     try {
       const result = await getMonitorsDueForCheckInline();
       monitors = result.monitors;
