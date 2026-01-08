@@ -50,7 +50,7 @@ async function getMonitorsDueForCheckInline(): Promise<{ monitors: HttpMonitor[]
 }
 
 export const maxDuration = 60; // Allow up to 60 seconds for this function
-const BUILD_VERSION = "v9"; // Fix: filter undefined values for Firestore
+const BUILD_VERSION = "v10"; // Fix: proper types for Firestore
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -196,7 +196,14 @@ async function processMonitorCheck(monitor: HttpMonitor): Promise<CheckResultTyp
 
   // Record the check result - filter out undefined values (Firestore doesn't accept undefined)
   try {
-    const checkData: Record<string, unknown> = {
+    const checkData: {
+      timestamp: typeof Timestamp.prototype;
+      status: "success" | "failure";
+      statusCode?: number;
+      responseTimeMs?: number;
+      error?: string;
+      responseBodyPreview?: string;
+    } = {
       timestamp: Timestamp.now(),
       status: result.status,
     };
