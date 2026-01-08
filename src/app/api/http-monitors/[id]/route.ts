@@ -256,11 +256,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       updates.webhookUrl = body.webhookUrl || null;
     }
 
-    // Tags
+    // Tags - ensure we never send undefined to Firestore
     if (body.tags !== undefined) {
-      if (body.tags === null) {
+      if (body.tags === null || !Array.isArray(body.tags)) {
         updates.tags = [];
-      } else if (Array.isArray(body.tags)) {
+      } else {
         updates.tags = body.tags
           .filter((t: unknown) => typeof t === "string")
           .map((t: string) => t.trim().toLowerCase())
@@ -277,7 +277,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
-    await updateHttpMonitor(id, updates);
+    // Filter out any undefined values before sending to Firestore
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([, v]) => v !== undefined)
+    );
+
+    await updateHttpMonitor(id, cleanUpdates);
 
     // Fetch updated monitor
     const updatedMonitor = await getHttpMonitor(id);
