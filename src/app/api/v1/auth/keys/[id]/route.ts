@@ -5,6 +5,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 
 // DELETE /api/v1/auth/keys/:id - Revoke an API key
@@ -26,7 +27,11 @@ export async function DELETE(
         );
       }
 
-      return apiSuccess({ revoked: true });
+      return apiSuccess(
+        { revoked: true },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to revoke API key:", error);
       return apiError("INTERNAL_ERROR", "Failed to revoke API key", 500);

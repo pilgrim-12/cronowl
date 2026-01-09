@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import { getUserChecks, updateCheck } from "@/lib/checks";
 
@@ -30,7 +31,11 @@ export async function POST(
 
       await updateCheck(id, { paused: true });
 
-      return apiSuccess({ paused: true, id });
+      return apiSuccess(
+        { paused: true, id },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to pause check:", error);
       return apiError("INTERNAL_ERROR", "Failed to pause check", 500);

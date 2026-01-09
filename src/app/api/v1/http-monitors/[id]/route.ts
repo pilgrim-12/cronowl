@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import {
   getHttpMonitor,
@@ -71,7 +72,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
         return apiError("FORBIDDEN", "Access denied", 403);
       }
 
-      return apiSuccess(serializeMonitor(monitor));
+      return apiSuccess(
+        serializeMonitor(monitor),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to get HTTP monitor:", error);
       return apiError("INTERNAL_ERROR", "Failed to get HTTP monitor", 500);
@@ -276,7 +281,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return apiError("INTERNAL_ERROR", "Monitor updated but could not be retrieved", 500);
       }
 
-      return apiSuccess(serializeMonitor(updatedMonitor));
+      return apiSuccess(
+        serializeMonitor(updatedMonitor),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to update HTTP monitor:", error);
       return apiError("INTERNAL_ERROR", "Failed to update HTTP monitor", 500);
@@ -301,7 +310,11 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
       await deleteHttpMonitor(id);
 
-      return apiSuccess({ deleted: true, id });
+      return apiSuccess(
+        { deleted: true, id },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to delete HTTP monitor:", error);
       return apiError("INTERNAL_ERROR", "Failed to delete HTTP monitor", 500);

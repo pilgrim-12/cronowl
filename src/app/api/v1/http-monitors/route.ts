@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import {
   getUserHttpMonitors,
@@ -87,7 +88,8 @@ export async function GET(request: NextRequest) {
           limit,
           total,
           totalPages: Math.ceil(total / limit),
-        }
+        },
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
       );
     } catch (error) {
       console.error("Failed to list HTTP monitors:", error);
@@ -266,7 +268,11 @@ export async function POST(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "Monitor created but could not be retrieved", 500);
       }
 
-      return apiSuccess(serializeMonitor(createdMonitor));
+      return apiSuccess(
+        serializeMonitor(createdMonitor),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to create HTTP monitor:", error);
       return apiError("INTERNAL_ERROR", "Failed to create HTTP monitor", 500);

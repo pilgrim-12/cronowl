@@ -6,6 +6,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 
 // GET /api/v1/auth/keys - List all API keys for the authenticated user
@@ -23,7 +24,11 @@ export async function GET(request: NextRequest) {
         lastUsedAt: key.lastUsedAt?.toDate().toISOString() || null,
       }));
 
-      return apiSuccess(safeKeys);
+      return apiSuccess(
+        safeKeys,
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to list API keys:", error);
       return apiError("INTERNAL_ERROR", "Failed to list API keys", 500);
@@ -49,13 +54,17 @@ export async function POST(request: NextRequest) {
 
       const { key, keyData } = await createApiKey(auth.userId, name);
 
-      return apiSuccess({
-        id: keyData.id,
-        name: keyData.name,
-        key, // Full key, shown only once!
-        prefix: keyData.keyPrefix,
-        createdAt: keyData.createdAt.toDate().toISOString(),
-      });
+      return apiSuccess(
+        {
+          id: keyData.id,
+          name: keyData.name,
+          key, // Full key, shown only once!
+          prefix: keyData.keyPrefix,
+          createdAt: keyData.createdAt.toDate().toISOString(),
+        },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       if (error instanceof Error && error.message.includes("Maximum")) {
         return apiError("LIMIT_EXCEEDED", error.message, 400);

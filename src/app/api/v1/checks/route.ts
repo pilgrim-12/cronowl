@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import {
   getUserChecks,
@@ -74,7 +75,8 @@ export async function GET(request: NextRequest) {
           limit,
           total,
           totalPages: Math.ceil(total / limit),
-        }
+        },
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
       );
     } catch (error) {
       console.error("Failed to list checks:", error);
@@ -197,7 +199,11 @@ export async function POST(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "Check created but could not be retrieved", 500);
       }
 
-      return apiSuccess(serializeCheck(createdCheck as unknown as Record<string, unknown>));
+      return apiSuccess(
+        serializeCheck(createdCheck as unknown as Record<string, unknown>),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to create check:", error);
       return apiError("INTERNAL_ERROR", "Failed to create check", 500);

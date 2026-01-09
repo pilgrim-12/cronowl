@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import {
   getUserChecks,
@@ -56,7 +57,11 @@ export async function GET(
         return apiError("NOT_FOUND", "Check not found", 404);
       }
 
-      return apiSuccess(serializeCheck(check as unknown as Record<string, unknown>));
+      return apiSuccess(
+        serializeCheck(check as unknown as Record<string, unknown>),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to get check:", error);
       return apiError("INTERNAL_ERROR", "Failed to get check", 500);
@@ -199,7 +204,11 @@ export async function PATCH(
       const updatedChecks = await getUserChecks(auth.userId);
       const updatedCheck = updatedChecks.find((c) => c.id === id);
 
-      return apiSuccess(serializeCheck(updatedCheck as unknown as Record<string, unknown>));
+      return apiSuccess(
+        serializeCheck(updatedCheck as unknown as Record<string, unknown>),
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to update check:", error);
       return apiError("INTERNAL_ERROR", "Failed to update check", 500);
@@ -226,7 +235,11 @@ export async function DELETE(
 
       await deleteCheck(id);
 
-      return apiSuccess({ deleted: true });
+      return apiSuccess(
+        { deleted: true },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to delete check:", error);
       return apiError("INTERNAL_ERROR", "Failed to delete check", 500);

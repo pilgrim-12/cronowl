@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import { getUserChecks, updateCheck } from "@/lib/checks";
 
@@ -30,7 +31,11 @@ export async function POST(
 
       await updateCheck(id, { paused: false });
 
-      return apiSuccess({ paused: false, id });
+      return apiSuccess(
+        { paused: false, id },
+        undefined,
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to resume check:", error);
       return apiError("INTERNAL_ERROR", "Failed to resume check", 500);

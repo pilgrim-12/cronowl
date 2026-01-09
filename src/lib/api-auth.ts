@@ -159,20 +159,41 @@ export async function revokeApiKey(
   return true;
 }
 
+// Rate limit headers helper
+export function rateLimitHeaders(
+  limit: number,
+  remaining: number,
+  resetTime: number
+): HeadersInit {
+  return {
+    "X-RateLimit-Limit": limit.toString(),
+    "X-RateLimit-Remaining": Math.max(0, remaining).toString(),
+    "X-RateLimit-Reset": Math.ceil(resetTime / 1000).toString(),
+  };
+}
+
 // API response helpers
-export function apiSuccess<T>(data: T, meta?: Record<string, unknown>) {
-  return NextResponse.json({
-    success: true,
-    data,
-    ...(meta && { meta }),
-  });
+export function apiSuccess<T>(
+  data: T,
+  meta?: Record<string, unknown>,
+  headers?: HeadersInit
+) {
+  return NextResponse.json(
+    {
+      success: true,
+      data,
+      ...(meta && { meta }),
+    },
+    { headers }
+  );
 }
 
 export function apiError(
   code: string,
   message: string,
   status: number = 400,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
+  headers?: HeadersInit
 ) {
   return NextResponse.json(
     {
@@ -183,7 +204,7 @@ export function apiError(
         ...(details && { details }),
       },
     },
-    { status }
+    { status, headers }
   );
 }
 
@@ -193,6 +214,11 @@ export interface ApiAuthContext {
   keyId: string;
   plan: PlanType;
   planLimits: (typeof PLANS)[PlanType];
+  rateLimit: {
+    limit: number;
+    remaining: number;
+    resetTime: number;
+  };
 }
 
 // Middleware to authenticate API requests
@@ -271,15 +297,24 @@ export async function withApiAuth(
         retryAfter,
         limit: RATE_LIMITS.api.maxRequests,
         remaining: 0,
+      },
+      {
+        ...rateLimitHeaders(RATE_LIMITS.api.maxRequests, 0, rateLimit.resetTime),
+        "Retry-After": retryAfter.toString(),
       }
     );
   }
 
-  // Call the handler with auth context including plan info
+  // Call the handler with auth context including plan and rate limit info
   return handler(request, {
     userId: validation.userId,
     keyId: validation.keyId,
     plan,
     planLimits,
+    rateLimit: {
+      limit: RATE_LIMITS.api.maxRequests,
+      remaining: rateLimit.remaining,
+      resetTime: rateLimit.resetTime,
+    },
   });
 }

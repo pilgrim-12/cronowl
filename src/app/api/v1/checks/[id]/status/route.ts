@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import { getUserChecks, getStatusHistory } from "@/lib/checks";
 
@@ -36,12 +37,16 @@ export async function GET(
         duration: event.duration || null, // Duration in previous status (seconds)
       }));
 
-      return apiSuccess(serializedEvents, {
-        checkId: id,
-        checkName: check.name,
-        currentStatus: check.status,
-        count: serializedEvents.length,
-      });
+      return apiSuccess(
+        serializedEvents,
+        {
+          checkId: id,
+          checkName: check.name,
+          currentStatus: check.status,
+          count: serializedEvents.length,
+        },
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to get status history:", error);
       return apiError("INTERNAL_ERROR", "Failed to get status history", 500);

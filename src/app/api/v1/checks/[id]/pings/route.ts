@@ -4,6 +4,7 @@ import {
   apiSuccess,
   apiError,
   ApiAuthContext,
+  rateLimitHeaders,
 } from "@/lib/api-auth";
 import { getUserChecks, getCheckPings } from "@/lib/checks";
 
@@ -40,11 +41,15 @@ export async function GET(
         status: ping.status || null,
       }));
 
-      return apiSuccess(serializedPings, {
-        checkId: id,
-        checkName: check.name,
-        count: serializedPings.length,
-      });
+      return apiSuccess(
+        serializedPings,
+        {
+          checkId: id,
+          checkName: check.name,
+          count: serializedPings.length,
+        },
+        rateLimitHeaders(auth.rateLimit.limit, auth.rateLimit.remaining, auth.rateLimit.resetTime)
+      );
     } catch (error) {
       console.error("Failed to get pings:", error);
       return apiError("INTERNAL_ERROR", "Failed to get pings", 500);
