@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# audit reports (internal only)
+AUDIT_REPORT.md
+IMPROVEMENTS.md
