@@ -22,7 +22,9 @@
       "Bash(npx tsx:*)",
       "Bash(dir:*)",
       "Bash(xargs cat:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git restore:*)",
+      "Bash(curl.exe:*)"
     ],
     "deny": [],
     "ask": []
