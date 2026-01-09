@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import crypto from "crypto";
 
-// Generate a short hash for URL+method to use as document ID
+// Extract just the path from a URL for consistent hashing
+function getPathFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname;
+  } catch {
+    return url;
+  }
+}
+
+// Generate a short hash for path+method to use as document ID
 function urlMethodToDocId(url: string, method: string): string {
-  return crypto.createHash("md5").update(`${method}:${url}`).digest("hex").slice(0, 16);
+  const path = getPathFromUrl(url);
+  return crypto.createHash("md5").update(`${method}:${path}`).digest("hex").slice(0, 16);
 }
 
 // Admin-only endpoint to toggle test endpoint status for a specific URL+method

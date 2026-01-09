@@ -446,11 +446,11 @@ export default function DashboardPage() {
   };
 
   // Admin: Toggle test endpoint status
-  const [testEndpointLoading, setTestEndpointLoading] = useState<"up" | "down" | null>(null);
+  const [testEndpointLoading, setTestEndpointLoading] = useState<string | null>(null); // monitorId:action
 
-  const handleTestEndpointToggle = async (action: "up" | "down", url: string, method: string) => {
+  const handleTestEndpointToggle = async (action: "up" | "down", url: string, method: string, monitorId: string) => {
     if (!user) return;
-    setTestEndpointLoading(action);
+    setTestEndpointLoading(`${monitorId}:${action}`);
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/admin/test-endpoint-toggle", {
@@ -1419,28 +1419,28 @@ export default function DashboardPage() {
                           <>
                             <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
-                              onClick={() => handleTestEndpointToggle("down", monitor.url, monitor.method)}
+                              onClick={() => handleTestEndpointToggle("down", monitor.url, monitor.method, monitor.id)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
-                                testEndpointLoading === "down"
+                                testEndpointLoading === `${monitor.id}:down`
                                   ? "text-orange-300 cursor-wait"
                                   : "text-orange-500 hover:text-orange-600"
                               }`}
                               title={`Set test endpoint to DOWN for ${monitor.method}`}
                             >
-                              {testEndpointLoading === "down" ? "..." : "▼ Down"}
+                              {testEndpointLoading === `${monitor.id}:down` ? "..." : "▼ Down"}
                             </button>
                             <button
-                              onClick={() => handleTestEndpointToggle("up", monitor.url, monitor.method)}
+                              onClick={() => handleTestEndpointToggle("up", monitor.url, monitor.method, monitor.id)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
-                                testEndpointLoading === "up"
+                                testEndpointLoading === `${monitor.id}:up`
                                   ? "text-green-300 cursor-wait"
                                   : "text-green-500 hover:text-green-600"
                               }`}
                               title={`Set test endpoint to UP for ${monitor.method}`}
                             >
-                              {testEndpointLoading === "up" ? "..." : "▲ Up"}
+                              {testEndpointLoading === `${monitor.id}:up` ? "..." : "▲ Up"}
                             </button>
                           </>
                         )}

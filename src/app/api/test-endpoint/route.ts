@@ -6,8 +6,20 @@ import crypto from "crypto";
 // Test endpoint that can be toggled up/down for testing HTTP monitors
 // Status is stored in Firestore per URL so each monitor can be controlled independently
 
+// Extract just the path from a URL for consistent hashing
+function getPathFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname;
+  } catch {
+    // If not a valid URL, assume it's already a path
+    return url;
+  }
+}
+
 function urlMethodToDocId(url: string, method: string): string {
-  return crypto.createHash("md5").update(`${method}:${url}`).digest("hex").slice(0, 16);
+  const path = getPathFromUrl(url);
+  return crypto.createHash("md5").update(`${method}:${path}`).digest("hex").slice(0, 16);
 }
 
 interface TestStatus {
