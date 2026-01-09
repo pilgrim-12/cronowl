@@ -6,19 +6,20 @@ import crypto from "crypto";
 // Test endpoint that can be toggled up/down for testing HTTP monitors
 // Status is stored in Firestore per URL so each monitor can be controlled independently
 
-function urlToDocId(url: string): string {
-  return crypto.createHash("md5").update(url).digest("hex").slice(0, 16);
+function urlMethodToDocId(url: string, method: string): string {
+  return crypto.createHash("md5").update(`${method}:${url}`).digest("hex").slice(0, 16);
 }
 
 interface TestStatus {
   isUp: boolean;
   updatedAt: string;
   url?: string;
+  method?: string;
 }
 
-// Helper to check status for a specific URL
-async function getUrlStatus(url: string): Promise<boolean> {
-  const docId = urlToDocId(url);
+// Helper to check status for a specific URL+method
+async function getUrlMethodStatus(url: string, method: string): Promise<boolean> {
+  const docId = urlMethodToDocId(url, method);
   const statusDoc = await getDoc(doc(db, "testEndpointStatuses", docId));
   if (statusDoc.exists()) {
     const status = statusDoc.data() as TestStatus;
@@ -31,9 +32,9 @@ async function getUrlStatus(url: string): Promise<boolean> {
 export async function GET(request: NextRequest) {
   const fullUrl = request.url.split("?")[0]; // Remove query params for status check
 
-  // Normal health check - check status for this specific URL
+  // Normal health check - check status for this specific URL+method
   try {
-    const isUp = await getUrlStatus(fullUrl);
+    const isUp = await getUrlMethodStatus(fullUrl, "GET");
 
     if (!isUp) {
       return NextResponse.json(
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
   const fullUrl = request.url.split("?")[0]; // Remove query params for status check
 
   try {
-    const isUp = await getUrlStatus(fullUrl);
+    const isUp = await getUrlMethodStatus(fullUrl, "POST");
 
     if (!isUp) {
       return NextResponse.json(
@@ -109,7 +110,55 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/test-endpoint - Same as POST for testing PUT monitors
+// PUT /api/test-endpoint - For testing PUT monitors
 export async function PUT(request: NextRequest) {
-  return POST(request);
+  const fullUrl = request.url.split("?")[0];
+
+  try {
+    const isUp = await getUrlMethodStatus(fullUrl, "PUT");
+
+    if (!isUp) {
+      return NextResponse.json(
+        { status: "error", message: "Service unavailable" },
+        { status: 503 }
+      );
+    }
+
+    // Parse the request body
+    const contentType = request.headers.get("content-type") || "";
+    let body: unknown = null;
+
+    if (contentType.includes("application/json")) {
+      try {
+        body = await request.json();
+      } catch {
+        body = { parseError: "Invalid JSON" };
+      }
+    } else if (contentType.includes("application/x-www-form-urlencoded")) {
+      const formData = await request.formData();
+      body = Object.fromEntries(formData.entries());
+    } else if (contentType.includes("text/plain")) {
+      body = await request.text();
+    }
+
+    return NextResponse.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      message: "PUT received successfully",
+      echo: {
+        method: "PUT",
+        contentType,
+        body,
+        headers: {
+          authorization: request.headers.get("authorization") ? "[PRESENT]" : null,
+          "x-api-key": request.headers.get("x-api-key") ? "[PRESENT]" : null,
+        },
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { status: "error", message: "Internal error" },
+      { status: 500 }
+    );
+  }
 }

@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import crypto from "crypto";
 
-// Generate a short hash for URL to use as document ID
-function urlToDocId(url: string): string {
-  return crypto.createHash("md5").update(url).digest("hex").slice(0, 16);
+// Generate a short hash for URL+method to use as document ID
+function urlMethodToDocId(url: string, method: string): string {
+  return crypto.createHash("md5").update(`${method}:${url}`).digest("hex").slice(0, 16);
 }
 
-// Admin-only endpoint to toggle test endpoint status for a specific URL
+// Admin-only endpoint to toggle test endpoint status for a specific URL+method
 export async function POST(request: NextRequest) {
   // Verify auth
   const authHeader = request.headers.get("authorization");
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
-    // Get action and URL from body
+    // Get action, URL and method from body
     const body = await request.json();
-    const { action, url } = body;
+    const { action, url, method } = body;
 
     if (action !== "up" && action !== "down") {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -37,10 +37,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    // Update test endpoint status in Firestore for this specific URL
-    const docId = urlToDocId(url);
+    const httpMethod = method || "GET";
+
+    // Update test endpoint status in Firestore for this specific URL+method
+    const docId = urlMethodToDocId(url, httpMethod);
     await adminDb.collection("testEndpointStatuses").doc(docId).set({
       url,
+      method: httpMethod,
       isUp: action === "up",
       updatedAt: new Date().toISOString(),
     });
@@ -49,7 +52,8 @@ export async function POST(request: NextRequest) {
       success: true,
       status: action,
       url,
-      message: `Test endpoint for ${url} is now ${action.toUpperCase()}`
+      method: httpMethod,
+      message: `Test endpoint for ${httpMethod} ${url} is now ${action.toUpperCase()}`
     });
   } catch (error) {
     console.error("Failed to toggle test endpoint:", error);

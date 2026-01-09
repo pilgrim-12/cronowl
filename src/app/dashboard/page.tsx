@@ -448,7 +448,7 @@ export default function DashboardPage() {
   // Admin: Toggle test endpoint status
   const [testEndpointLoading, setTestEndpointLoading] = useState<"up" | "down" | null>(null);
 
-  const handleTestEndpointToggle = async (action: "up" | "down", url: string) => {
+  const handleTestEndpointToggle = async (action: "up" | "down", url: string, method: string) => {
     if (!user) return;
     setTestEndpointLoading(action);
     try {
@@ -459,7 +459,7 @@ export default function DashboardPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`,
         },
-        body: JSON.stringify({ action, url }),
+        body: JSON.stringify({ action, url, method }),
       });
       if (!response.ok) {
         throw new Error("Failed to toggle test endpoint");
@@ -1419,26 +1419,26 @@ export default function DashboardPage() {
                           <>
                             <span className="text-gray-300 dark:text-gray-700">|</span>
                             <button
-                              onClick={() => handleTestEndpointToggle("down", monitor.url)}
+                              onClick={() => handleTestEndpointToggle("down", monitor.url, monitor.method)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
                                 testEndpointLoading === "down"
                                   ? "text-orange-300 cursor-wait"
                                   : "text-orange-500 hover:text-orange-600"
                               }`}
-                              title="Set test endpoint to DOWN (503)"
+                              title={`Set test endpoint to DOWN for ${monitor.method}`}
                             >
                               {testEndpointLoading === "down" ? "..." : "▼ Down"}
                             </button>
                             <button
-                              onClick={() => handleTestEndpointToggle("up", monitor.url)}
+                              onClick={() => handleTestEndpointToggle("up", monitor.url, monitor.method)}
                               disabled={testEndpointLoading !== null}
                               className={`text-xs px-2 py-1 font-medium transition-colors ${
                                 testEndpointLoading === "up"
                                   ? "text-green-300 cursor-wait"
                                   : "text-green-500 hover:text-green-600"
                               }`}
-                              title="Set test endpoint to UP (200)"
+                              title={`Set test endpoint to UP for ${monitor.method}`}
                             >
                               {testEndpointLoading === "up" ? "..." : "▲ Up"}
                             </button>
