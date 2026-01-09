@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from "crypto";
-import { checkRateLimit, RATE_LIMITS } from "./rate-limit";
+import { checkRateLimit, RATE_LIMITS, RateLimitError } from "./rate-limit";
 import { PLANS, PlanType } from "./plans";
 
 // API Key interface
@@ -249,12 +249,14 @@ export async function withApiAuth(
   let rateLimit;
   try {
     rateLimit = await checkRateLimit(`api:user:${validation.userId}`, RATE_LIMITS.api);
-  } catch (rateLimitError) {
-    console.error("Rate limit error:", rateLimitError);
-    // Fail closed on rate limit errors
+  } catch (error) {
+    // Fail closed on rate limit errors - typed error contains context for debugging
+    const errorMessage = error instanceof RateLimitError
+      ? error.message
+      : "Rate limit check failed";
     return apiError(
       "RATE_LIMIT_ERROR",
-      "Rate limit check failed. Please try again.",
+      `${errorMessage}. Please try again.`,
       500
     );
   }

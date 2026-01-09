@@ -13,6 +13,17 @@ export interface RateLimitResult {
   resetTime: number;
 }
 
+export class RateLimitError extends Error {
+  constructor(
+    message: string,
+    public readonly key: string,
+    public readonly cause?: unknown
+  ) {
+    super(message);
+    this.name = "RateLimitError";
+  }
+}
+
 /**
  * Check rate limit for a given key (usually user ID)
  * Uses Firestore transaction to prevent race conditions
@@ -84,8 +95,11 @@ export async function checkRateLimit(
 
     return result;
   } catch (error) {
-    console.error("Rate limit check failed:", error);
-    throw error;
+    throw new RateLimitError(
+      `Rate limit check failed for key: ${sanitizedKey}`,
+      sanitizedKey,
+      error
+    );
   }
 }
 
