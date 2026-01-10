@@ -50,6 +50,7 @@ import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Header } from "@/components/Header";
 import { OwlLogo } from "@/components/OwlLogo";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { OnboardingTour } from "@/components/OnboardingTour";
 
 type DashboardTab = "checks" | "http-monitors";
 
@@ -561,6 +562,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header user={user} signOut={signOut} isAdmin={isAdmin} />
+      <OnboardingTour />
 
       <main className="max-w-6xl mx-auto px-4 py-4 sm:py-8">
         <EmailVerificationBanner />
